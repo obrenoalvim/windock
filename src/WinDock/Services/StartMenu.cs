@@ -19,6 +19,7 @@ public static class StartMenu
         {
             foreach (var file in Directory.EnumerateFiles(root, "*.lnk", SearchOption.AllDirectories))
             {
+                if (file.Contains(@"\Startup\", StringComparison.OrdinalIgnoreCase)) continue;
                 var name = System.IO.Path.GetFileNameWithoutExtension(file);
                 if (Noise.Any(n => name.Contains(n, StringComparison.CurrentCultureIgnoreCase))) continue;
                 apps[name] = new StartApp(name, file);

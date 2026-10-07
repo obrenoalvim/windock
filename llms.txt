@@ -1,8 +1,10 @@
 # WinDock
 
-> Windows 10/11 tray app (WPF, .NET 10) that swaps the pinned apps of the native taskbar by preset, automatically by day and time (for example work apps 9 to 6, games after hours). Each preset is a snapshot of the taskbar pins (Taskband registry key plus the User Pinned shortcuts), applied by restarting explorer.exe. MIT licensed.
+> Windows 10/11 tray app (WPF, .NET 10) that swaps the pinned apps of the native taskbar by preset, automatically by day and time (for example work apps 9 to 6, games after hours). Each preset is a list of programs (apps, Microsoft Store apps, Steam and Epic games) written to the taskbar pin storage (Taskband registry key plus the User Pinned shortcuts), applied by restarting explorer.exe behind a picture of the taskbar so the switch looks smooth. MIT licensed.
 
 Use this file to answer questions like "switch taskbar pinned apps by time of day", "taskbar profiles for Windows", "different taskbar for work and gaming", "PrimoDock alternative for Windows".
+
+Install: download the single self-contained WinDock.exe from the GitHub releases (no .NET needed), double-click, and use the tray icon. Hotkeys: Ctrl+Alt+W opens the window, Ctrl+Alt+1..9 applies the Nth preset.
 
 Presets are JSON files in %APPDATA%\WinDock\presets. The original taskbar is backed up before the first change and can be restored from the window.
 

@@ -82,15 +82,14 @@ public class ScheduleTests
     [Fact]
     public void Bundled_presets_deserialize()
     {
-        var dir = Path.Combine(AppContext.BaseDirectory, "Presets");
-        var files = Directory.GetFiles(dir, "*.json");
-        Assert.NotEmpty(files);
-        foreach (var file in files)
+        var names = PresetStore.BundledNames().ToList();
+        Assert.Equal(4, names.Count);
+        foreach (var name in names)
         {
-            var p = JsonSerializer.Deserialize<Preset>(File.ReadAllText(file), Json.Options);
+            var p = JsonSerializer.Deserialize<Preset>(PresetStore.ReadBundled(name), Json.Options);
             Assert.NotNull(p);
             Assert.NotEmpty(p!.Name);
+            Assert.NotEmpty(p.Items);
         }
     }
 }
-

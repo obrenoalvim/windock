@@ -59,6 +59,40 @@ public static class ShellLinks
     [DllImport("ole32.dll")]
     static extern int PropVariantClear(IntPtr value);
 
+    public static byte[] CreateLauncher(string target, string args, string? iconPath, string appId)
+    {
+        var link = (IShellLinkW)new ShellLinkCoClass();
+        link.SetPath(target);
+        link.SetArguments(args);
+        link.SetWorkingDirectory(Path.GetDirectoryName(target) ?? "");
+        if (iconPath is not null) link.SetIconLocation(iconPath, 0);
+
+        var value = Marshal.AllocCoTaskMem(24);
+        try
+        {
+            for (var i = 0; i < 24; i++) Marshal.WriteByte(value, i, 0);
+            Marshal.WriteInt16(value, 31);
+            Marshal.WriteIntPtr(value, 8, Marshal.StringToCoTaskMemUni(appId));
+            var store = (IPropertyStore)link;
+            var key = new PropertyKey { Format = AppUserModelFormat, Id = 5 };
+            store.SetValue(ref key, value);
+            store.Commit();
+        }
+        finally
+        {
+            PropVariantClear(value);
+            Marshal.FreeCoTaskMem(value);
+        }
+
+        var temp = Path.Combine(Path.GetTempPath(), $"windock-{Guid.NewGuid():N}.lnk");
+        try
+        {
+            ((IPersistFile)link).Save(temp, true);
+            return File.ReadAllBytes(temp);
+        }
+        finally { File.Delete(temp); }
+    }
+
     public static byte[] CreateForExe(string exePath)
     {
         var link = (IShellLinkW)new ShellLinkCoClass();

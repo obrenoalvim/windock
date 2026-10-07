@@ -13,6 +13,9 @@
     <Version>0.1.0</Version>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <Product>WinDock</Product>
+    <Company>Breno Alvim</Company>
+    <Description>Swap the pinned apps of the Windows taskbar by preset and schedule</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,7 +31,7 @@
   <ItemGroup>
     <Resource Include="Assets\Fonts\*.ttf" />
     <Resource Include="Assets\app.ico" />
-    <Content Include="Presets\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="Presets\*.json" LogicalName="Presets/%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

@@ -18,8 +18,4 @@
     <ProjectReference Include="..\..\src\WinDock\WinDock.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="..\..\src\WinDock\Presets\*.json" Link="Presets\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
 </Project>

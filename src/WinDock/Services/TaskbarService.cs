@@ -43,8 +43,62 @@ public sealed class TaskbarService
 
     public void Apply(Snapshot snapshot)
     {
-        StopExplorer();
+        var previous = Capture();
+        var cover = TaskbarCover.Begin(Signature(previous), Signature(snapshot));
+        var ticket = cover?.Generation ?? 0;
+        try
+        {
+            try
+            {
+                Write(snapshot);
+            }
+            catch
+            {
+                try { Write(previous); } catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+                throw;
+            }
+            KillShell();
+            EnsureShell();
+        }
+        finally
+        {
+            if (cover is not null) _ = Task.Run(() => cover.Release(ticket));
+        }
+    }
 
+    static List<string> Ids(Snapshot s) =>
+        s.Binary.TryGetValue("Favorites", out var fav) && s.Binary.TryGetValue("FavoritesResolve", out var res)
+            ? TaskbarBlob.Parse(Convert.FromBase64String(fav), Convert.FromBase64String(res))
+                .Select(p => (p.AppId ?? p.LinkName ?? p.Name).ToLowerInvariant()).ToList()
+            : [];
+
+    public static bool SamePins(Snapshot a, Snapshot b)
+    {
+        var left = Ids(a);
+        return left.Count > 0 && left.SequenceEqual(Ids(b));
+    }
+
+    static string? Signature(Snapshot s)
+    {
+        var ids = Ids(s);
+        return ids.Count == 0 ? null : string.Join('|', ids);
+    }
+
+    static void EnsureShell()
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(500);
+        while (DateTime.UtcNow < deadline)
+        {
+            var shells = Process.GetProcessesByName("explorer");
+            foreach (var p in shells) p.Dispose();
+            if (shells.Length > 0) return;
+            Thread.Sleep(25);
+        }
+        Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true });
+    }
+
+    static void Write(Snapshot snapshot)
+    {
         using (var key = Registry.CurrentUser.CreateSubKey(KeyPath))
         {
             foreach (var name in BinaryValues)
@@ -67,22 +121,20 @@ public sealed class TaskbarService
         foreach (var file in Directory.GetFiles(LinksDir, "*.lnk")) File.Delete(file);
         foreach (var (name, b64) in snapshot.Links)
             File.WriteAllBytes(Path.Combine(LinksDir, Path.GetFileName(name)), Convert.FromBase64String(b64));
-
-        StopExplorer();
-        Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true });
     }
 
-    static void StopExplorer()
+    static void KillShell()
     {
-        for (var attempt = 0; attempt < 2; attempt++)
+        foreach (var p in Process.GetProcessesByName("explorer"))
         {
-            foreach (var p in Process.GetProcessesByName("explorer"))
-            {
-                try { p.Kill(); p.WaitForExit(3000); }
-                catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception) { }
-                finally { p.Dispose(); }
-            }
-            Thread.Sleep(700);
+            Kill(p);
+            p.Dispose();
         }
+    }
+
+    static void Kill(Process p)
+    {
+        try { p.Kill(); p.WaitForExit(3000); }
+        catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception) { }
     }
 }

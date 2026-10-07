@@ -67,6 +67,14 @@ public partial class ConfigWindow : Window
         if (picker.ShowDialog() == true) vm.AddPrograms(preset, picker.Chosen);
     }
 
+    void OnDelete(object sender, RoutedEventArgs e)
+    {
+        if (((FrameworkElement)sender).DataContext is not PresetViewModel preset) return;
+        var answer = MessageBox.Show(this, $"Excluir o preset \"{preset.Model.Name}\"?", "WinDock",
+            MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (answer == MessageBoxResult.Yes) vm.DeleteCommand.Execute(preset);
+    }
+
     void OnClose(object sender, RoutedEventArgs e) => Hide();
 
     nint WndProc(nint hwnd, int msg, nint wParam, nint lParam, ref bool handled)

@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -42,9 +42,11 @@ public static class ShellIcons
     [DllImport("gdi32.dll")]
     static extern bool DeleteObject(IntPtr handle);
 
-    public static ImageSource? ForPath(string path) => Get(path);
+    public static ImageSource? ForPath(string path) => Get(path, 96);
 
-    public static ImageSource? ForAppId(string appId) => Get(@"shell:AppsFolder\" + appId);
+    public static ImageSource? ForAppId(string appId) => Get(@"shell:AppsFolder\" + appId, 96);
+
+    public static BitmapSource? Render(string parsingName, int size) => Get(parsingName, size) as BitmapSource;
 
     public static string? NameForAppId(string appId)
     {
@@ -62,19 +64,39 @@ public static class ShellIcons
         catch (Exception e) when (e is COMException or ArgumentException or IOException) { return Names[key] = null; }
     }
 
-    static ImageSource? Get(string parsingName)
+    static ImageSource? Get(string parsingName, int size)
     {
-        if (Cache.TryGetValue(parsingName, out var hit)) return hit;
-        return Cache[parsingName] = Load(parsingName);
+        var key = $"{size}|{parsingName}";
+        if (Cache.TryGetValue(key, out var hit)) return hit;
+        return Cache[key] = Load(parsingName, size);
     }
 
-    static ImageSource? Load(string parsingName)
+    static ImageSource? LoadImage(string path, int size)
     {
+        try
+        {
+            var image = new BitmapImage();
+            image.BeginInit();
+            image.UriSource = new Uri(path);
+            image.DecodePixelWidth = size;
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.EndInit();
+            image.Freeze();
+            return image;
+        }
+        catch (Exception e) when (e is IOException or NotSupportedException or UriFormatException) { return null; }
+    }
+
+    static ImageSource? Load(string parsingName, int size)
+    {
+        if (Path.GetExtension(parsingName).ToLowerInvariant() is ".jpg" or ".jpeg" or ".png" or ".bmp" && File.Exists(parsingName))
+            return LoadImage(parsingName, size);
+
         try
         {
             var iid = ImageFactoryId;
             SHCreateItemFromParsingName(parsingName, IntPtr.Zero, ref iid, out var obj);
-            ((IShellItemImageFactory)obj).GetImage(new Size { Width = 96, Height = 96 }, 0x4 | 0x100, out var bitmap);
+            ((IShellItemImageFactory)obj).GetImage(new Size { Width = size, Height = size }, 0x4 | 0x100, out var bitmap);
             try
             {
                 var source = Imaging.CreateBitmapSourceFromHBitmap(bitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
@@ -86,4 +108,3 @@ public static class ShellIcons
         catch (Exception e) when (e is COMException or ArgumentException or IOException) { return null; }
     }
 }
-

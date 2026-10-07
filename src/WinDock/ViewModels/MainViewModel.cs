@@ -16,6 +16,7 @@ public sealed partial class MainViewModel : ObservableObject
     readonly PresetStore store;
     readonly TaskbarService taskbar;
     readonly DispatcherTimer tick = new() { Interval = TimeSpan.FromSeconds(5) };
+    (PresetViewModel Preset, bool Auto)? pending;
     string? lastScheduledId;
     bool scheduleStarted;
     int lastMinute = -1;
@@ -25,18 +26,24 @@ public sealed partial class MainViewModel : ObservableObject
         this.store = store;
         this.taskbar = taskbar;
         Settings = settings;
+        Always = new PresetViewModel(new Preset { Id = "always", Name = "Sempre fixos", Items = settings.AlwaysPinned }, 0, Save);
         tick.Tick += (_, _) => Tick();
     }
 
     public Settings Settings { get; }
     public PresetStore Store => store;
     public ObservableCollection<PresetViewModel> Presets { get; } = [];
+    public PresetViewModel Always { get; }
 
     public event Action<string>? Notice;
 
     [ObservableProperty] string status = "";
     [ObservableProperty] string nextText = "";
-    [ObservableProperty] bool isBusy;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsIdle))]
+    bool isBusy;
+
+    public bool IsIdle => !IsBusy;
 
     public bool AutoSwitch
     {
@@ -63,6 +70,8 @@ public sealed partial class MainViewModel : ObservableObject
         var loaded = store.Load();
         for (var i = 0; i < loaded.Count; i++) Presets.Add(new PresetViewModel(loaded[i], i + 1, Save));
         if (store.Seeded) AdoptCurrentTaskbar();
+        foreach (var p in Presets) p.RemoveDuplicates();
+        Always.RemoveDuplicates();
         MarkActive();
         scheduleStarted = false;
         lastMinute = -1;
@@ -91,7 +100,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     void Save(PresetViewModel p)
     {
-        store.Save(p.Model);
+        if (p == Always) Settings.Save();
+        else store.Save(p.Model);
         RefreshNext(DateTime.Now);
     }
 
@@ -100,7 +110,11 @@ public sealed partial class MainViewModel : ObservableObject
 
     public async Task ApplyAsync(PresetViewModel preset, bool auto)
     {
-        if (IsBusy) return;
+        if (IsBusy)
+        {
+            pending = (preset, auto);
+            return;
+        }
         if (!preset.HasItems)
         {
             Notice?.Invoke($"{preset.Model.Name}: nenhum programa, adicione alguns primeiro");
@@ -112,7 +126,9 @@ public sealed partial class MainViewModel : ObservableObject
         try
         {
             taskbar.BackupOnce();
-            await Task.Run(() => taskbar.Apply(PinBuilder.Build(preset.Model, taskbar.Capture())));
+            var current = taskbar.Capture();
+            var built = PinBuilder.Build(preset.Model, current, Settings.AlwaysPinned);
+            if (!TaskbarService.SamePins(current, built)) await Task.Run(() => taskbar.Apply(built));
             SetActive(preset.Id);
             Status = $"Taskbar: {preset.Model.Name}";
             if (!auto || Settings.Notify) Notice?.Invoke($"{preset.Glyph}  {preset.Model.Name}");
@@ -123,6 +139,12 @@ public sealed partial class MainViewModel : ObservableObject
             Notice?.Invoke(Status);
         }
         finally { IsBusy = false; }
+
+        if (pending is var (next, nextAuto))
+        {
+            pending = null;
+            await ApplyAsync(next, nextAuto);
+        }
     }
 
     public async Task ApplyIndexAsync(int index)
@@ -163,9 +185,19 @@ public sealed partial class MainViewModel : ObservableObject
         Status = $"Programas fixados agora copiados para {preset.Model.Name}";
     }
 
-    public void AddPrograms(PresetViewModel preset, IEnumerable<string> paths)
+    public void AddPrograms(PresetViewModel preset, IEnumerable<PinItem> items)
     {
-        preset.AddItems(paths.Select(p => new PinItem { Name = Path.GetFileNameWithoutExtension(p), Target = p }));
+        var known = new HashSet<string>();
+        foreach (var existing in preset.Model.Items) PinBuilder.TryAdd(known, existing);
+        var fresh = new List<PinItem>();
+        var skipped = 0;
+        foreach (var item in items)
+        {
+            if (PinBuilder.TryAdd(known, item)) fresh.Add(item);
+            else skipped++;
+        }
+        preset.AddItems(fresh);
+        if (skipped > 0) Status = skipped == 1 ? "1 programa já estava na lista e foi ignorado" : $"{skipped} programas já estavam na lista e foram ignorados";
     }
 
     [RelayCommand]
@@ -203,6 +235,7 @@ public sealed partial class MainViewModel : ObservableObject
             RefreshNext(now);
         }
 
+        if (IsBusy) return;
         var scheduled = ScheduleResolver.At(Presets.Select(p => p.Model), now);
         if (scheduleStarted && scheduled?.Id == lastScheduledId) return;
         scheduleStarted = true;

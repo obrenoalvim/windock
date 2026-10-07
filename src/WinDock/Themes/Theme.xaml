@@ -203,4 +203,30 @@
         </Setter>
     </Style>
 
+    <Style x:Key="ChipToggle" TargetType="ToggleButton">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Pill" CornerRadius="14" Padding="13,7" Margin="0,0,6,0"
+                            Background="Transparent" BorderBrush="{StaticResource Hairline}" BorderThickness="1">
+                        <TextBlock x:Name="Label" Text="{TemplateBinding Content}" FontFamily="{StaticResource Mono}" FontSize="11"
+                                   Foreground="{StaticResource Muted}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Pill" Property="Background" Value="#33FFB547"/>
+                            <Setter TargetName="Pill" Property="BorderBrush" Value="#66FFB547"/>
+                            <Setter TargetName="Label" Property="Foreground" Value="#FFB547"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Label" Property="Foreground" Value="{StaticResource Ink}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

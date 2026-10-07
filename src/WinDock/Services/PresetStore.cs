@@ -43,20 +43,27 @@ public sealed class PresetStore
         return Path.Combine(Dir, $"{next:00}-{id}.json");
     }
 
+    public static IEnumerable<string> BundledNames() =>
+        typeof(PresetStore).Assembly.GetManifestResourceNames().Where(n => n.StartsWith("Presets/")).Order(StringComparer.Ordinal);
+
+    public static string ReadBundled(string name)
+    {
+        using var stream = typeof(PresetStore).Assembly.GetManifestResourceStream(name)!;
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+
     void Seed()
     {
         if (Directory.Exists(Dir) && Directory.EnumerateFiles(Dir, "*.json").Any()) return;
         Directory.CreateDirectory(Dir);
         Seeded = true;
-        var bundled = Path.Combine(AppContext.BaseDirectory, "Presets");
-        if (!Directory.Exists(bundled)) return;
-        foreach (var f in Directory.GetFiles(bundled, "*.json"))
+        foreach (var name in BundledNames())
         {
-            var preset = JsonSerializer.Deserialize<Preset>(File.ReadAllText(f), Json.Options);
+            var preset = JsonSerializer.Deserialize<Preset>(ReadBundled(name), Json.Options);
             if (preset is null) continue;
             preset.Items = preset.Items.Where(i => i.Exists).ToList();
-            File.WriteAllText(Path.Combine(Dir, Path.GetFileName(f)), JsonSerializer.Serialize(preset, Json.Options));
+            File.WriteAllText(Path.Combine(Dir, name["Presets/".Length..]), JsonSerializer.Serialize(preset, Json.Options));
         }
     }
 }
-

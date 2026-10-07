@@ -97,7 +97,7 @@ public static partial class TaskbarBlob
         body.Write(BitConverter.GetBytes((ushort)list.Bytes.Length));
         body.Write(list.Bytes);
         body.Write(BuildLinkInfo(linkPath));
-        body.Write(Tracker);
+        body.Write(MachineTracker());
         body.Write(Props);
         body.Write(new byte[4]);
 
@@ -105,6 +105,14 @@ public static partial class TaskbarBlob
         ms.Write(BitConverter.GetBytes((int)body.Length));
         ms.Write(body.ToArray());
         return ms.ToArray();
+    }
+
+    static byte[] MachineTracker()
+    {
+        var tracker = (byte[])Tracker.Clone();
+        Array.Clear(tracker, 16, 16);
+        Encoding.ASCII.GetBytes(Environment.MachineName.ToLowerInvariant()[..Math.Min(15, Environment.MachineName.Length)]).CopyTo(tracker, 16);
+        return tracker;
     }
 
     static byte[] BuildLinkInfo(string linkPath)

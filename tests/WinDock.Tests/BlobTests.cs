@@ -37,6 +37,89 @@ public class BlobTests
     }
 
     [Fact]
+    public void Built_snapshot_pins_the_programs_in_order_and_skips_missing_ones()
+    {
+        var preset = new WinDock.Models.Preset
+        {
+            Items =
+            [
+                new() { Name = "Notepad", Target = Path.Combine(Environment.SystemDirectory, "notepad.exe") },
+                new() { Name = "Ghost", Target = @"C:\does\not\exist.exe" },
+                new() { Name = "Calculator", Target = Path.Combine(Environment.SystemDirectory, "calc.exe") }
+            ]
+        };
+
+        var snapshot = PinBuilder.Build(preset, new WinDock.Models.Snapshot());
+        var pins = TaskbarBlob.Parse(
+            Convert.FromBase64String(snapshot.Binary["Favorites"]),
+            Convert.FromBase64String(snapshot.Binary["FavoritesResolve"]));
+
+        Assert.Equal(["Notepad.lnk", "Calculator.lnk"], pins.Select(p => p.LinkName));
+        Assert.Equal(["Notepad.lnk", "Calculator.lnk"], snapshot.Links.Keys);
+        Assert.Equal(3, snapshot.Numbers["FavoritesVersion"]);
+    }
+
+    [Fact]
+    public void Same_program_listed_twice_is_pinned_once_and_always_pinned_come_first()
+    {
+        var notepad = Path.Combine(Environment.SystemDirectory, "notepad.exe");
+        var calc = Path.Combine(Environment.SystemDirectory, "calc.exe");
+        var preset = new WinDock.Models.Preset
+        {
+            Items =
+            [
+                new() { Name = "Calculator", Target = calc },
+                new() { Name = "Notepad again", Target = notepad.Replace(Environment.SystemDirectory, "%SystemRoot%\\System32") },
+                new() { Name = "Notepad", Target = notepad }
+            ]
+        };
+        List<WinDock.Models.PinItem> always = [new() { Name = "Notepad", Target = notepad }];
+
+        var snapshot = PinBuilder.Build(preset, new WinDock.Models.Snapshot(), always);
+
+        Assert.Equal(["Notepad.lnk", "Calculator.lnk"], snapshot.Links.Keys);
+    }
+
+    [Fact]
+    public void Importing_a_built_snapshot_gives_the_same_programs_back()
+    {
+        var preset = new WinDock.Models.Preset
+        {
+            Items = [new() { Name = "Notepad", Target = Path.Combine(Environment.SystemDirectory, "notepad.exe") }]
+        };
+
+        var imported = PinBuilder.Import(PinBuilder.Build(preset, new WinDock.Models.Snapshot()));
+
+        Assert.Equal("Notepad", Assert.Single(imported).Name);
+    }
+
+    [Fact]
+    public void Identical_pin_lists_are_detected_so_no_restart_is_needed()
+    {
+        var notepad = Path.Combine(Environment.SystemDirectory, "notepad.exe");
+        var calc = Path.Combine(Environment.SystemDirectory, "calc.exe");
+        var one = new WinDock.Models.Preset { Items = [new() { Name = "Notepad", Target = notepad }, new() { Name = "Calc", Target = calc }] };
+        var swapped = new WinDock.Models.Preset { Items = [new() { Name = "Calc", Target = calc }, new() { Name = "Notepad", Target = notepad }] };
+        var empty = new WinDock.Models.Snapshot();
+
+        var a = PinBuilder.Build(one, empty);
+
+        Assert.True(TaskbarService.SamePins(a, PinBuilder.Build(one, empty)));
+        Assert.False(TaskbarService.SamePins(a, PinBuilder.Build(swapped, empty)));
+    }
+
+    [Fact]
+    public void Cache_keys_depend_on_the_pins_and_the_taskbar_geometry()
+    {
+        var strip = new System.Drawing.Rectangle(0, 1032, 1920, 48);
+        var key = TaskbarImages.Key("brave|spotify", strip);
+
+        Assert.Equal(key, TaskbarImages.Key("brave|spotify", strip));
+        Assert.NotEqual(key, TaskbarImages.Key("spotify|brave", strip));
+        Assert.NotEqual(key, TaskbarImages.Key("brave|spotify", new System.Drawing.Rectangle(0, 1032, 2560, 48)));
+    }
+
+    [Fact]
     public void Favorites_blob_ends_with_the_terminator()
     {
         var (fav, _) = Chunk("Brave.lnk", "Brave");

@@ -7,77 +7,8 @@
         WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
         UseLayoutRounding="True" TextOptions.TextFormattingMode="Ideal">
 
-    <Grid Margin="26">
-        <Border CornerRadius="30" Background="{StaticResource ShellBrush}"
-                BorderBrush="{StaticResource RimBrush}" BorderThickness="1">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="46" ShadowDepth="12" Direction="270" Opacity="0.6" Color="Black"/>
-            </Border.Effect>
-
-            <Grid Margin="26,22,26,22">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
-                <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="OnHeaderDrag" Margin="0,0,0,18">
-                    <StackPanel>
-                        <TextBlock Text="WINDOCK" FontFamily="{StaticResource Display}" FontSize="20" Foreground="{StaticResource Ink}"/>
-                        <TextBlock Text="Quem fica na taskbar, e quando." FontFamily="{StaticResource Mono}" FontSize="11.5"
-                                   Foreground="{StaticResource Muted}" Margin="0,7,0,0"/>
-                    </StackPanel>
-                    <Button Content="✕" Style="{StaticResource GhostButton}" HorizontalAlignment="Right" VerticalAlignment="Top"
-                            Click="OnClose" Padding="0"/>
-                </Grid>
-
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
-                    <ItemsControl ItemsSource="{Binding Presets}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Margin="0,0,0,12" Padding="18,16" CornerRadius="20" Background="{StaticResource Plate}" BorderThickness="1">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Setter Property="BorderBrush" Value="{StaticResource Hairline}"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                                    <Setter Property="BorderBrush" Value="{Binding Accent}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <StackPanel>
-                                        <DockPanel>
-                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                                <Button Content="Aplicar" Style="{StaticResource ActionButton}" FontWeight="Bold"
-                                                        Background="{Binding Accent}" Foreground="#101114" Margin="0,0,8,0"
-                                                        Command="{Binding DataContext.ApplyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                        CommandParameter="{Binding}"/>
-                                                <Button Content="Usar taskbar atual" Style="{StaticResource ActionButton}" Margin="0,0,8,0"
-                                                        Command="{Binding DataContext.UseCurrentCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                        CommandParameter="{Binding}"/>
-                                                <Button Content="Excluir" Style="{StaticResource GhostButton}"
-                                                        Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                        CommandParameter="{Binding}"/>
-                                            </StackPanel>
-                                            <TextBlock Text="{Binding Glyph}" FontSize="22" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                            <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FlatBox}"
-                                                     FontFamily="{StaticResource Display}" FontSize="12.5" Width="200" HorizontalAlignment="Left"/>
-                                            <Border CornerRadius="9" Padding="9,4" Margin="12,0,0,0" Background="{Binding Accent}" VerticalAlignment="Center"
-                                                    HorizontalAlignment="Left" Visibility="{Binding IsActive, Converter={StaticResource Show}}">
-                                                <TextBlock Text="NA TASKBAR" FontFamily="{StaticResource Mono}" FontWeight="Bold" FontSize="9" Foreground="#101114"/>
-                                            </Border>
-                                        </DockPanel>
-
-                                        <TextBlock Text="{Binding Count}" FontFamily="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Muted}"
-                                                   Margin="2,16,0,10"/>
-
-                                        <ItemsControl ItemsSource="{Binding Pins}">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
+    <Window.Resources>
+        <DataTemplate x:Key="PinTemplate">
                                                     <Border Width="52" Height="52" CornerRadius="15" Margin="0,0,8,8" Background="{StaticResource Plate}"
                                                             BorderBrush="{StaticResource Hairline}" BorderThickness="1" ToolTip="{Binding Tip}"
                                                             Opacity="{Binding Fade}">
@@ -116,8 +47,109 @@
                                                         </Grid>
                                                     </Border>
                                                 </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
+    </Window.Resources>
+
+    <Grid Margin="26">
+        <Border CornerRadius="30" Background="{StaticResource ShellBrush}"
+                BorderBrush="{StaticResource RimBrush}" BorderThickness="1">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="46" ShadowDepth="12" Direction="270" Opacity="0.6" Color="Black"/>
+            </Border.Effect>
+
+            <Grid Margin="26,22,26,22">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="OnHeaderDrag" Margin="0,0,0,18">
+                    <StackPanel>
+                        <TextBlock Text="WINDOCK" FontFamily="{StaticResource Display}" FontSize="20" Foreground="{StaticResource Ink}"/>
+                        <TextBlock Text="Quem fica na taskbar, e quando." FontFamily="{StaticResource Mono}" FontSize="11.5"
+                                   Foreground="{StaticResource Muted}" Margin="0,7,0,0"/>
+                    </StackPanel>
+                    <Button Content="✕" Style="{StaticResource GhostButton}" HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Click="OnClose" Padding="0" AutomationProperties.Name="Fechar" ToolTip="Fechar (Esc)"/>
+                </Grid>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
+                    <StackPanel>
+                    <Border DataContext="{Binding Always}" Margin="0,0,0,12" Padding="18,16" CornerRadius="20"
+                            Background="{StaticResource Plate}" BorderBrush="{StaticResource Hairline}" BorderThickness="1">
+                        <StackPanel>
+                            <TextBlock Text="SEMPRE FIXOS" FontFamily="{StaticResource Display}" FontSize="12.5" Foreground="{StaticResource Ink}"/>
+                            <TextBlock Text="Entram em todos os presets, antes dos outros programas." FontFamily="{StaticResource Mono}" FontSize="11"
+                                       Foreground="{StaticResource Muted}" Margin="0,8,0,14"/>
+                            <ItemsControl ItemsSource="{Binding Pins}" ItemTemplate="{StaticResource PinTemplate}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                            <Button Content="+ Programa" Style="{StaticResource ActionButton}" HorizontalAlignment="Left"
+                                    Margin="0,2,0,0" Click="OnAddProgram"/>
+                        </StackPanel>
+                    </Border>
+                    <ItemsControl ItemsSource="{Binding Presets}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,0,12" Padding="18,16" CornerRadius="20" Background="{StaticResource Plate}" BorderThickness="1">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="BorderBrush" Value="{StaticResource Hairline}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="{Binding Accent}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel>
+                                        <DockPanel>
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button Content="Aplicar" Style="{StaticResource ActionButton}" FontWeight="Bold"
+                                                        Background="{Binding Accent}" Foreground="#101114" Margin="0,0,8,0"
+                                                        IsEnabled="{Binding DataContext.IsIdle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        Command="{Binding DataContext.ApplyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"/>
+                                                <Button Content="Usar taskbar atual" Style="{StaticResource ActionButton}" Margin="0,0,8,0"
+                                                        Command="{Binding DataContext.UseCurrentCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"/>
+                                                <Button Content="Excluir" Style="{StaticResource GhostButton}" Click="OnDelete"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding Glyph}" FontSize="22" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                            <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FlatBox}"
+                                                     FontFamily="{StaticResource Display}" FontSize="12.5" Width="200" HorizontalAlignment="Left"/>
+                                            <Border CornerRadius="9" Padding="9,4" Margin="12,0,0,0" Background="{Binding Accent}" VerticalAlignment="Center"
+                                                    HorizontalAlignment="Left" Visibility="{Binding IsActive, Converter={StaticResource Show}}">
+                                                <TextBlock Text="NA TASKBAR" FontFamily="{StaticResource Mono}" FontWeight="Bold" FontSize="9" Foreground="#101114"/>
+                                            </Border>
+                                        </DockPanel>
+
+                                        <TextBlock Text="{Binding Count}" FontFamily="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Muted}"
+                                                   Margin="2,16,0,10"/>
+
+                                        <ItemsControl ItemsSource="{Binding Pins}" ItemTemplate="{StaticResource PinTemplate}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            
                                         </ItemsControl>
+
+                                        <TextBlock Text="Nenhum programa ainda. Clique em + Programa para escolher o que fica fixo."
+                                                   FontFamily="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Muted}"
+                                                   Margin="2,0,0,12">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasItems}" Value="False">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
 
                                         <Button Content="+ Programa" Style="{StaticResource ActionButton}" HorizontalAlignment="Left"
                                                 Margin="0,2,0,0" Click="OnAddProgram"/>
@@ -160,6 +192,7 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    </StackPanel>
                 </ScrollViewer>
 
                 <StackPanel Grid.Row="2" Margin="0,16,0,0">

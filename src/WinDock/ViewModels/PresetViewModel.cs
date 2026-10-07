@@ -4,6 +4,7 @@ using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using WinDock.Models;
+using WinDock.Services;
 
 namespace WinDock.ViewModels;
 
@@ -63,6 +64,18 @@ public sealed partial class PresetViewModel : ObservableObject
         Model.Items.Clear();
         Pins.Clear();
         AddItems(items);
+    }
+
+    public void RemoveDuplicates()
+    {
+        var seen = new HashSet<string>();
+        var duplicates = Pins.Where(p => !PinBuilder.TryAdd(seen, p.Model)).ToList();
+        foreach (var d in duplicates)
+        {
+            Model.Items.Remove(d.Model);
+            Pins.Remove(d);
+        }
+        if (duplicates.Count > 0) ItemsChanged();
     }
 
     PinViewModel WrapPin(PinItem item) => new(item, RemovePin, MovePin);

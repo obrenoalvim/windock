@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Adicionar programas"
-        Width="600" Height="700"
+        Width="640" Height="740"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize" ShowInTaskbar="False"
         UseLayoutRounding="True" TextOptions.TextFormattingMode="Ideal">
@@ -18,6 +18,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
@@ -25,28 +26,32 @@
                 <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="OnDrag" Margin="0,0,0,14">
                     <StackPanel>
                         <TextBlock Text="ADICIONAR PROGRAMAS" FontFamily="{StaticResource Display}" FontSize="15" Foreground="{StaticResource Ink}"/>
-                        <TextBlock Text="Escolha o que vai ficar fixo na taskbar." FontFamily="{StaticResource Mono}" FontSize="11"
+                        <TextBlock Text="Programas, apps da Loja e jogos instalados." FontFamily="{StaticResource Mono}" FontSize="11"
                                    Foreground="{StaticResource Muted}" Margin="0,6,0,0"/>
                     </StackPanel>
                 </Grid>
 
-                <TextBox x:Name="Search" Grid.Row="1" Style="{StaticResource FlatBox}" Margin="0,0,0,12"
+                <StackPanel x:Name="Tabs" Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12"/>
+
+                <TextBox x:Name="Search" Grid.Row="2" Style="{StaticResource FlatBox}" Margin="0,0,0,12"
                          TextChanged="OnSearch"/>
 
-                <ListBox x:Name="List" Grid.Row="2" SelectionMode="Extended" Background="Transparent" BorderThickness="0"
+                <ListBox x:Name="List" Grid.Row="3" SelectionMode="Extended" Background="Transparent" BorderThickness="0"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="OnConfirm">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel Orientation="Horizontal" Margin="4,2">
-                                <Image Source="{Binding Icon}" Width="30" Height="30" RenderOptions.BitmapScalingMode="HighQuality"/>
-                                <TextBlock Text="{Binding Name}" FontFamily="{StaticResource Mono}" FontSize="12.5"
+                            <DockPanel Margin="4,2" LastChildFill="True">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Category}" FontFamily="{StaticResource Mono}" FontSize="9.5"
+                                           Foreground="{StaticResource Muted}" VerticalAlignment="Center" Margin="12,0,6,0"/>
+                                <Image Source="{Binding Icon}" Width="30" Height="30" DockPanel.Dock="Left" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                <TextBlock Text="{Binding Name}" FontFamily="{StaticResource Mono}" FontSize="12.5" TextTrimming="CharacterEllipsis"
                                            Foreground="{StaticResource Ink}" VerticalAlignment="Center" Margin="14,0,0,0"/>
-                            </StackPanel>
+                            </DockPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
 
-                <DockPanel Grid.Row="3" Margin="0,16,0,0">
+                <DockPanel Grid.Row="4" Margin="0,16,0,0">
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                         <Button Content="Cancelar" Style="{StaticResource GhostButton}" Margin="0,0,8,0" Click="OnCancel"/>
                         <Button Content="Adicionar" Style="{StaticResource ActionButton}" Background="#FFB547" Foreground="#101114"
