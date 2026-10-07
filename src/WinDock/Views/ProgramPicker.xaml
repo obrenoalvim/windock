@@ -1,7 +1,8 @@
-<Window x:Class="WinDock.Views.ProgramPicker"
+﻿<Window x:Class="WinDock.Views.ProgramPicker"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Adicionar programas"
+        xmlns:svc="clr-namespace:WinDock.Services"
+        Title="Add programs"
         Width="640" Height="740"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize" ShowInTaskbar="False"
@@ -25,8 +26,8 @@
 
                 <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="OnDrag" Margin="0,0,0,14">
                     <StackPanel>
-                        <TextBlock Text="ADICIONAR PROGRAMAS" FontFamily="{StaticResource Display}" FontSize="15" Foreground="{StaticResource Ink}"/>
-                        <TextBlock Text="Programas, apps da Loja e jogos instalados." FontFamily="{StaticResource Mono}" FontSize="11"
+                        <TextBlock Text="{Binding [pickerTitle], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" FontFamily="{StaticResource Display}" FontSize="15" Foreground="{StaticResource Ink}"/>
+                        <TextBlock Text="{Binding [pickerSub], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" FontFamily="{StaticResource Mono}" FontSize="11"
                                    Foreground="{StaticResource Muted}" Margin="0,6,0,0"/>
                     </StackPanel>
                 </Grid>
@@ -53,13 +54,14 @@
 
                 <DockPanel Grid.Row="4" Margin="0,16,0,0">
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                        <Button Content="Cancelar" Style="{StaticResource GhostButton}" Margin="0,0,8,0" Click="OnCancel"/>
-                        <Button Content="Adicionar" Style="{StaticResource ActionButton}" Background="#FFB547" Foreground="#101114"
+                        <Button Content="{Binding [cancel], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource GhostButton}" Margin="0,0,8,0" Click="OnCancel"/>
+                        <Button Content="{Binding [add], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource ActionButton}" Background="#FFB547" Foreground="#101114"
                                 FontWeight="Bold" Click="OnConfirm"/>
                     </StackPanel>
-                    <Button Content="Procurar arquivo..." Style="{StaticResource ActionButton}" HorizontalAlignment="Left" Click="OnBrowse"/>
+                    <Button Content="{Binding [browse], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource ActionButton}" HorizontalAlignment="Left" Click="OnBrowse"/>
                 </DockPanel>
             </Grid>
         </Border>
     </Grid>
 </Window>
+

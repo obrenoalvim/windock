@@ -10,7 +10,6 @@ namespace WinDock.ViewModels;
 
 public sealed partial class MainViewModel : ObservableObject
 {
-    static readonly CultureInfo Pt = new("pt-BR");
     static readonly string[] Palette = ["#FFB547", "#7C5CFF", "#3DDC97", "#FF6B8A", "#3B9EFF", "#FF8A3D"];
 
     readonly PresetStore store;
@@ -26,7 +25,7 @@ public sealed partial class MainViewModel : ObservableObject
         this.store = store;
         this.taskbar = taskbar;
         Settings = settings;
-        Always = new PresetViewModel(new Preset { Id = "always", Name = "Sempre fixos", Items = settings.AlwaysPinned }, 0, Save);
+        Always = new PresetViewModel(new Preset { Id = "always", Name = "Always pinned", Items = settings.AlwaysPinned }, 0, Save);
         tick.Tick += (_, _) => Tick();
     }
 
@@ -117,12 +116,12 @@ public sealed partial class MainViewModel : ObservableObject
         }
         if (!preset.HasItems)
         {
-            Notice?.Invoke($"{preset.Model.Name}: nenhum programa, adicione alguns primeiro");
+            Notice?.Invoke(Loc.F("noPrograms", preset.Model.Name));
             return;
         }
 
         IsBusy = true;
-        Status = $"Trocando a taskbar para {preset.Model.Name}...";
+        Status = Loc.F("switching", preset.Model.Name);
         try
         {
             taskbar.BackupOnce();
@@ -130,12 +129,12 @@ public sealed partial class MainViewModel : ObservableObject
             var built = PinBuilder.Build(preset.Model, current, Settings.AlwaysPinned);
             if (!TaskbarService.SamePins(current, built)) await Task.Run(() => taskbar.Apply(built));
             SetActive(preset.Id);
-            Status = $"Taskbar: {preset.Model.Name}";
+            Status = Loc.F("taskbarNow", preset.Model.Name);
             if (!auto || Settings.Notify) Notice?.Invoke($"{preset.Glyph}  {preset.Model.Name}");
         }
         catch (Exception e)
         {
-            Status = $"Falhou: {e.Message}";
+            Status = Loc.F("failed", e.Message);
             Notice?.Invoke(Status);
         }
         finally { IsBusy = false; }
@@ -156,18 +155,18 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (IsBusy || taskbar.LoadBackup() is not { } original)
         {
-            Notice?.Invoke("Nenhum backup da taskbar original ainda");
+            Notice?.Invoke(Loc.T("noBackup"));
             return;
         }
         IsBusy = true;
-        Status = "Restaurando a taskbar original...";
+        Status = Loc.T("restoring");
         try
         {
             await Task.Run(() => taskbar.Apply(original));
             SetActive(null);
-            Status = "Taskbar original restaurada";
+            Status = Loc.T("restored");
         }
-        catch (Exception e) { Status = $"Falhou: {e.Message}"; }
+        catch (Exception e) { Status = Loc.F("failed", e.Message); }
         finally { IsBusy = false; }
     }
 
@@ -182,7 +181,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         preset.ReplaceItems(PinBuilder.Import(taskbar.Capture()));
         SetActive(preset.Id);
-        Status = $"Programas fixados agora copiados para {preset.Model.Name}";
+        Status = Loc.F("copiedCurrent", preset.Model.Name);
     }
 
     public void AddPrograms(PresetViewModel preset, IEnumerable<PinItem> items)
@@ -197,7 +196,7 @@ public sealed partial class MainViewModel : ObservableObject
             else skipped++;
         }
         preset.AddItems(fresh);
-        if (skipped > 0) Status = skipped == 1 ? "1 programa já estava na lista e foi ignorado" : $"{skipped} programas já estavam na lista e foram ignorados";
+        if (skipped > 0) Status = skipped == 1 ? Loc.T("dupOne") : Loc.F("dupMany", skipped);
     }
 
     [RelayCommand]
@@ -215,7 +214,7 @@ public sealed partial class MainViewModel : ObservableObject
         };
         store.Save(model);
         Presets.Add(new PresetViewModel(model, n, Save));
-        Status = "Preset criado. Adicione programas nele.";
+        Status = Loc.T("presetCreated");
     }
 
     [RelayCommand]
@@ -245,12 +244,23 @@ public sealed partial class MainViewModel : ObservableObject
         if (target.Id != Settings.ActiveId && target.HasItems) _ = ApplyAsync(target, auto: true);
     }
 
+    public void SetLanguage(string code)
+    {
+        Loc.Instance.Set(code);
+        Settings.Language = Loc.Instance.Language;
+        Settings.Save();
+        Always.RefreshText();
+        foreach (var p in Presets) p.RefreshText();
+        RefreshNext(DateTime.Now);
+        Status = "";
+    }
+
     void RefreshNext(DateTime now)
     {
         var next = ScheduleResolver.Next(Presets.Select(p => p.Model).ToList(), now);
         NextText = next is { } n
-            ? $"Próxima troca: {n.At.ToString("ddd HH:mm", Pt).TrimEnd('.')} → {n.To?.Name ?? "livre"}"
-            : "Sem agenda";
+            ? Loc.F("nextSwitch", n.At.ToString("ddd HH:mm", Loc.Instance.Culture).TrimEnd('.'), n.To?.Name ?? Loc.T("free"))
+            : Loc.T("noSchedule");
     }
 }
 

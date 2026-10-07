@@ -4,12 +4,15 @@ using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using WinDock.Models;
+using WinDock.Services;
 
 namespace WinDock.ViewModels;
 
-public sealed partial class DayFlag(string label, DayOfWeek day, bool isOn, Action changed) : ObservableObject
+public sealed partial class DayFlag(string labelKey, DayOfWeek day, bool isOn, Action changed) : ObservableObject
 {
-    public string Label { get; } = label;
+    public string Label => Loc.T(labelKey);
+
+    public void RefreshText() => OnPropertyChanged(nameof(Label));
     public DayOfWeek Day { get; } = day;
 
     [ObservableProperty] bool isOn = isOn;
@@ -21,8 +24,8 @@ public sealed class SlotViewModel : ObservableObject
 {
     static readonly (string Label, DayOfWeek Day)[] Week =
     [
-        ("S", DayOfWeek.Monday), ("T", DayOfWeek.Tuesday), ("Q", DayOfWeek.Wednesday), ("Q", DayOfWeek.Thursday),
-        ("S", DayOfWeek.Friday), ("S", DayOfWeek.Saturday), ("D", DayOfWeek.Sunday)
+        ("day1", DayOfWeek.Monday), ("day2", DayOfWeek.Tuesday), ("day3", DayOfWeek.Wednesday), ("day4", DayOfWeek.Thursday),
+        ("day5", DayOfWeek.Friday), ("day6", DayOfWeek.Saturday), ("day7", DayOfWeek.Sunday)
     ];
 
     readonly Slot model;
@@ -53,6 +56,11 @@ public sealed class SlotViewModel : ObservableObject
     {
         get => model.End;
         set { Assign(value, v => model.End = v); OnPropertyChanged(); }
+    }
+
+    public void RefreshText()
+    {
+        foreach (var day in Days) day.RefreshText();
     }
 
     void Assign(string text, Action<string> set)

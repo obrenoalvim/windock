@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- The window, picker and tray menu are available in English and Portuguese. English is the default; EN/PT buttons at the top of the window and a tray submenu switch it on the fly and the choice is remembered. Starter presets are named in English.
 - One-file, self-contained `WinDock.exe` for each release (no .NET install needed), with install steps, shortcuts and usage in both READMEs.
 - Presets that are a list of programs, each shown with its real icon, written to the native taskbar by restarting the shell.
 - Program picker: Start Menu apps with search and multi-select, or any `.exe`/`.lnk`; reorder and remove from the card.

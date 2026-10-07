@@ -6,6 +6,7 @@ public sealed class Settings
 {
     public bool AutoSwitch { get; set; } = true;
     public bool Notify { get; set; } = true;
+    public string Language { get; set; } = "en";
     public string? ActiveId { get; set; }
     public List<PinItem> AlwaysPinned { get; set; } = [];
 

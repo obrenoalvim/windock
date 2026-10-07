@@ -1,6 +1,7 @@
 <Window x:Class="WinDock.Views.ConfigWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:svc="clr-namespace:WinDock.Services"
         Title="WinDock"
         Width="860" Height="700"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
@@ -14,9 +15,9 @@
                                                             Opacity="{Binding Fade}">
                                                         <Border.ContextMenu>
                                                             <ContextMenu>
-                                                                <MenuItem Header="Mover para a esquerda" Command="{Binding MoveLeftCommand}"/>
-                                                                <MenuItem Header="Mover para a direita" Command="{Binding MoveRightCommand}"/>
-                                                                <MenuItem Header="Remover do preset" Command="{Binding RemoveCommand}"/>
+                                                                <MenuItem Header="{Binding [moveLeft], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Command="{Binding MoveLeftCommand}"/>
+                                                                <MenuItem Header="{Binding [moveRight], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Command="{Binding MoveRightCommand}"/>
+                                                                <MenuItem Header="{Binding [removeFromPreset], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Command="{Binding RemoveCommand}"/>
                                                             </ContextMenu>
                                                         </Border.ContextMenu>
                                                         <Grid>
@@ -66,11 +67,14 @@
                 <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="OnHeaderDrag" Margin="0,0,0,18">
                     <StackPanel>
                         <TextBlock Text="WINDOCK" FontFamily="{StaticResource Display}" FontSize="20" Foreground="{StaticResource Ink}"/>
-                        <TextBlock Text="Quem fica na taskbar, e quando." FontFamily="{StaticResource Mono}" FontSize="11.5"
+                        <TextBlock Text="{Binding [subtitle], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" FontFamily="{StaticResource Mono}" FontSize="11.5"
                                    Foreground="{StaticResource Muted}" Margin="0,7,0,0"/>
                     </StackPanel>
-                    <Button Content="✕" Style="{StaticResource GhostButton}" HorizontalAlignment="Right" VerticalAlignment="Top"
-                            Click="OnClose" Padding="0" AutomationProperties.Name="Fechar" ToolTip="Fechar (Esc)"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                        <ToggleButton x:Name="EnChip" Content="EN" Style="{StaticResource ChipToggle}" Click="OnEnglish" ToolTip="English" Margin="0,0,0,0"/>
+                        <ToggleButton x:Name="PtChip" Content="PT" Style="{StaticResource ChipToggle}" Click="OnPortuguese" ToolTip="Português" Margin="0,0,6,0"/>
+                        <Button Content="✕" Style="{StaticResource GhostButton}" Click="OnClose" Padding="0" AutomationProperties.Name="{Binding [closeName], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" ToolTip="{Binding [close], Source={x:Static svc:Loc.Instance}, Mode=OneWay}"/>
+                    </StackPanel>
                 </Grid>
 
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
@@ -78,15 +82,15 @@
                     <Border DataContext="{Binding Always}" Margin="0,0,0,12" Padding="18,16" CornerRadius="20"
                             Background="{StaticResource Plate}" BorderBrush="{StaticResource Hairline}" BorderThickness="1">
                         <StackPanel>
-                            <TextBlock Text="SEMPRE FIXOS" FontFamily="{StaticResource Display}" FontSize="12.5" Foreground="{StaticResource Ink}"/>
-                            <TextBlock Text="Entram em todos os presets, antes dos outros programas." FontFamily="{StaticResource Mono}" FontSize="11"
+                            <TextBlock Text="{Binding [alwaysTitle], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" FontFamily="{StaticResource Display}" FontSize="12.5" Foreground="{StaticResource Ink}"/>
+                            <TextBlock Text="{Binding [alwaysDesc], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" FontFamily="{StaticResource Mono}" FontSize="11"
                                        Foreground="{StaticResource Muted}" Margin="0,8,0,14"/>
                             <ItemsControl ItemsSource="{Binding Pins}" ItemTemplate="{StaticResource PinTemplate}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                             </ItemsControl>
-                            <Button Content="+ Programa" Style="{StaticResource ActionButton}" HorizontalAlignment="Left"
+                            <Button Content="{Binding [addProgram], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource ActionButton}" HorizontalAlignment="Left"
                                     Margin="0,2,0,0" Click="OnAddProgram"/>
                         </StackPanel>
                     </Border>
@@ -107,22 +111,22 @@
                                     <StackPanel>
                                         <DockPanel>
                                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                                <Button Content="Aplicar" Style="{StaticResource ActionButton}" FontWeight="Bold"
+                                                <Button Content="{Binding [apply], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource ActionButton}" FontWeight="Bold"
                                                         Background="{Binding Accent}" Foreground="#101114" Margin="0,0,8,0"
                                                         IsEnabled="{Binding DataContext.IsIdle, RelativeSource={RelativeSource AncestorType=Window}}"
                                                         Command="{Binding DataContext.ApplyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                         CommandParameter="{Binding}"/>
-                                                <Button Content="Usar taskbar atual" Style="{StaticResource ActionButton}" Margin="0,0,8,0"
+                                                <Button Content="{Binding [useCurrent], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource ActionButton}" Margin="0,0,8,0"
                                                         Command="{Binding DataContext.UseCurrentCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                         CommandParameter="{Binding}"/>
-                                                <Button Content="Excluir" Style="{StaticResource GhostButton}" Click="OnDelete"/>
+                                                <Button Content="{Binding [delete], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource GhostButton}" Click="OnDelete"/>
                                             </StackPanel>
                                             <TextBlock Text="{Binding Glyph}" FontSize="22" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                             <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FlatBox}"
                                                      FontFamily="{StaticResource Display}" FontSize="12.5" Width="200" HorizontalAlignment="Left"/>
                                             <Border CornerRadius="9" Padding="9,4" Margin="12,0,0,0" Background="{Binding Accent}" VerticalAlignment="Center"
                                                     HorizontalAlignment="Left" Visibility="{Binding IsActive, Converter={StaticResource Show}}">
-                                                <TextBlock Text="NA TASKBAR" FontFamily="{StaticResource Mono}" FontWeight="Bold" FontSize="9" Foreground="#101114"/>
+                                                <TextBlock Text="{Binding [onTaskbar], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" FontFamily="{StaticResource Mono}" FontWeight="Bold" FontSize="9" Foreground="#101114"/>
                                             </Border>
                                         </DockPanel>
 
@@ -136,7 +140,7 @@
                                             
                                         </ItemsControl>
 
-                                        <TextBlock Text="Nenhum programa ainda. Clique em + Programa para escolher o que fica fixo."
+                                        <TextBlock Text="{Binding [emptyHint], Source={x:Static svc:Loc.Instance}, Mode=OneWay}"
                                                    FontFamily="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Muted}"
                                                    Margin="2,0,0,12">
                                             <TextBlock.Style>
@@ -151,10 +155,10 @@
                                             </TextBlock.Style>
                                         </TextBlock>
 
-                                        <Button Content="+ Programa" Style="{StaticResource ActionButton}" HorizontalAlignment="Left"
+                                        <Button Content="{Binding [addProgram], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource ActionButton}" HorizontalAlignment="Left"
                                                 Margin="0,2,0,0" Click="OnAddProgram"/>
 
-                                        <TextBlock Text="AGENDA" FontFamily="{StaticResource Mono}" FontSize="9" Foreground="{StaticResource Muted}"
+                                        <TextBlock Text="{Binding [schedule], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" FontFamily="{StaticResource Mono}" FontSize="9" Foreground="{StaticResource Muted}"
                                                    Margin="2,16,0,8"/>
 
                                         <ItemsControl ItemsSource="{Binding Slots}">
@@ -173,19 +177,19 @@
                                                                 </DataTemplate>
                                                             </ItemsControl.ItemTemplate>
                                                         </ItemsControl>
-                                                        <TextBlock Text="das" FontFamily="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Muted}"
+                                                        <TextBlock Text="{Binding [from], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" FontFamily="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Muted}"
                                                                    VerticalAlignment="Center" Margin="14,0,8,0"/>
                                                         <TextBox Text="{Binding Start, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FlatBox}" Width="62"/>
-                                                        <TextBlock Text="às" FontFamily="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Muted}"
+                                                        <TextBlock Text="{Binding [to], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" FontFamily="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Muted}"
                                                                    VerticalAlignment="Center" Margin="8,0,8,0"/>
                                                         <TextBox Text="{Binding End, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FlatBox}" Width="62"/>
-                                                        <Button Content="remover" Style="{StaticResource GhostButton}" Command="{Binding RemoveCommand}" Margin="8,0,0,0"/>
+                                                        <Button Content="{Binding [remove], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource GhostButton}" Command="{Binding RemoveCommand}" Margin="8,0,0,0"/>
                                                     </StackPanel>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
 
-                                        <Button Content="+ horário" Style="{StaticResource GhostButton}" HorizontalAlignment="Left"
+                                        <Button Content="{Binding [addSlot], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource GhostButton}" HorizontalAlignment="Left"
                                                 Command="{Binding AddSlotCommand}" Margin="-6,2,0,0"/>
                                     </StackPanel>
                                 </Border>
@@ -199,16 +203,16 @@
                     <Rectangle Height="1" Fill="{StaticResource Hairline}" Margin="0,0,0,16"/>
                     <DockPanel>
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                            <Button Content="Restaurar original" Style="{StaticResource GhostButton}" Margin="0,0,6,0"
+                            <Button Content="{Binding [restoreOriginal], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource GhostButton}" Margin="0,0,6,0"
                                     Command="{Binding RestoreOriginalCommand}"/>
-                            <Button Content="Pasta" Style="{StaticResource GhostButton}" Margin="0,0,10,0"
+                            <Button Content="{Binding [folder], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource GhostButton}" Margin="0,0,10,0"
                                     Command="{Binding OpenFolderCommand}"/>
-                            <Button Content="+ Novo preset" Style="{StaticResource ActionButton}" Background="#FFB547" Foreground="#101114" FontWeight="Bold"
+                            <Button Content="{Binding [newPreset], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource ActionButton}" Background="#FFB547" Foreground="#101114" FontWeight="Bold"
                                     Command="{Binding AddCommand}"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <ToggleButton Content="Troca automática" Style="{StaticResource SwitchToggle}" IsChecked="{Binding AutoSwitch, Mode=TwoWay}"/>
-                            <ToggleButton Content="Avisar trocas" Style="{StaticResource SwitchToggle}" IsChecked="{Binding NotifySwitch, Mode=TwoWay}"/>
+                            <ToggleButton Content="{Binding [autoSwitch], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource SwitchToggle}" IsChecked="{Binding AutoSwitch, Mode=TwoWay}"/>
+                            <ToggleButton Content="{Binding [notifySwitch], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource SwitchToggle}" IsChecked="{Binding NotifySwitch, Mode=TwoWay}"/>
                         </StackPanel>
                     </DockPanel>
                     <TextBlock FontFamily="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Muted}" Margin="2,14,0,0">

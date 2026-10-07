@@ -30,6 +30,8 @@ public partial class ConfigWindow : Window
         for (var i = 0; i < 9; i++) Native.RegisterHotKey(handle, PresetBaseId + i, mods, (uint)(0x31 + i));
 
         KeyDown += (_, e) => { if (e.Key == Key.Escape) Hide(); };
+        Loc.Instance.PropertyChanged += (_, _) => ShowLanguage();
+        ShowLanguage();
     }
 
     public void Toggle()
@@ -70,10 +72,20 @@ public partial class ConfigWindow : Window
     void OnDelete(object sender, RoutedEventArgs e)
     {
         if (((FrameworkElement)sender).DataContext is not PresetViewModel preset) return;
-        var answer = MessageBox.Show(this, $"Excluir o preset \"{preset.Model.Name}\"?", "WinDock",
+        var answer = MessageBox.Show(this, Loc.F("deleteAsk", preset.Model.Name), "WinDock",
             MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (answer == MessageBoxResult.Yes) vm.DeleteCommand.Execute(preset);
     }
+
+    void ShowLanguage()
+    {
+        EnChip.IsChecked = Loc.Instance.Language == Loc.English;
+        PtChip.IsChecked = Loc.Instance.Language == Loc.Portuguese;
+    }
+
+    void OnEnglish(object sender, RoutedEventArgs e) => vm.SetLanguage(Loc.English);
+
+    void OnPortuguese(object sender, RoutedEventArgs e) => vm.SetLanguage(Loc.Portuguese);
 
     void OnClose(object sender, RoutedEventArgs e) => Hide();
 

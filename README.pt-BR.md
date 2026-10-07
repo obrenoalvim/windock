@@ -39,7 +39,7 @@ Para remover: clique com o botão direito no ícone da bandeja, use **Restaurar 
 
 ## Primeiros passos
 
-1. Abra a janela (ícone na bandeja, ou `Ctrl+Alt+W`). Você vê um cartão por preset: **Trabalho**, **Jogos**, **Estudos** e **Fim de semana**. Sua taskbar atual foi copiada para o que combina com o horário de agora.
+1. Abra a janela (ícone na bandeja, ou `Ctrl+Alt+W`). O app abre em inglês: clique em **PT** no canto superior direito para ver em português (a escolha fica salva). Você vê um cartão por preset: **Work**, **Games**, **Study** e **Weekend**, que você pode renomear. Sua taskbar atual foi copiada para o que combina com o horário de agora.
 2. Clique em **+ Programa** em um cartão e escolha o que deve ficar fixo. O seletor tem abas para seus programas, apps da Microsoft Store (WhatsApp, Calculadora...) e os jogos da Steam e da Epic Games instalados.
 3. Em **Agenda**, escolha os dias e horários em que o preset deve ficar ativo. Ou pule isso e troque na mão.
 4. Clique em **Aplicar**, ou espere a agenda fazer. A taskbar muda em cerca de meio segundo para um preset já usado antes.
@@ -57,14 +57,15 @@ Os programas do cartão **Sempre fixos**, no topo (por exemplo Brave, Explorador
 | Mouse | O que faz |
 |---|---|
 | Ícone da bandeja, clique esquerdo | Abrir ou ocultar a janela |
-| Ícone da bandeja, clique direito | Lista de presets, opções e sair |
+| Ícone da bandeja, clique direito | Lista de presets, opções, idioma e sair |
 | Botão direito num ícone de app do cartão | Mover para a esquerda, mover para a direita, remover |
 | **Aplicar** no cartão | Colocar aquele preset na taskbar |
 | **Usar taskbar atual** no cartão | Trocar os programas do cartão pelo que está fixado agora |
 | **+ Novo preset** | Criar um preset vazio |
+| **EN** / **PT** (canto superior direito da janela) | Trocar o idioma do app. O padrão é inglês e a escolha fica salva |
 | **Restaurar original** | Trazer de volta a taskbar que você tinha antes do WinDock mexer |
 
-O menu da bandeja também tem **Troca automática por horário**, **Avisar trocas** e **Iniciar com o Windows**. Abrir o WinDock uma segunda vez só traz a janela para a frente.
+O menu da bandeja também tem **Troca automática por horário**, **Avisar trocas**, **Idioma** e **Iniciar com o Windows**. Abrir o WinDock uma segunda vez só traz a janela para a frente.
 
 ## Como funciona
 
@@ -77,7 +78,7 @@ O Windows guarda os apps fixados na chave de registro `Taskband` e os atalhos em
 
 ## Presets
 
-Presets iniciais são instalados na primeira execução: **Trabalho** (seg-sex 09:00-18:00), **Jogos** (seg-sex 18:00-09:00), **Estudos** (manual) e **Fim de semana** (sáb-dom). Programas que não estão instalados na sua máquina ficam de fora.
+Presets iniciais são instalados na primeira execução: **Work** (seg-sex 09:00-18:00), **Games** (seg-sex 18:00-09:00), **Study** (manual) e **Weekend** (sáb-dom); renomeie como quiser. Programas que não estão instalados na sua máquina ficam de fora.
 
 Os presets ficam em `%APPDATA%\WinDock\presets` como JSON, e a janela edita por você:
 

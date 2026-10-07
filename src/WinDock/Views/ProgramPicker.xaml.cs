@@ -16,13 +16,13 @@ public sealed class PickerEntry(CatalogEntry entry)
 
     public CatalogEntry Entry => entry;
     public string Name => entry.Name;
-    public string Category => entry.Category.ToUpperInvariant();
+    public string Category => Loc.T("cat" + entry.Category).ToUpperInvariant();
     public ImageSource? Icon => icon ??= entry.IconSource is { } source ? ShellIcons.ForPath(source) : null;
 }
 
 public partial class ProgramPicker : Window
 {
-    const string All = "Todos";
+    const string All = "All";
 
     string category = All;
 
@@ -35,7 +35,7 @@ public partial class ProgramPicker : Window
         var names = new[] { All, Catalog.Programs, Catalog.Store, Catalog.Steam, Catalog.Epic };
         foreach (var name in names.Where(n => n == All || entries.Any(e => e.Entry.Category == n)))
         {
-            var tab = new ToggleButton { Content = name, Style = (Style)FindResource("ChipToggle"), IsChecked = name == All, Tag = name };
+            var tab = new ToggleButton { Content = Loc.T(name == All ? "tabAll" : "cat" + name), Style = (Style)FindResource("ChipToggle"), IsChecked = name == All, Tag = name };
             tab.Click += OnTab;
             Tabs.Children.Add(tab);
         }
@@ -80,8 +80,8 @@ public partial class ProgramPicker : Window
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Escolha programas",
-            Filter = "Programas e atalhos|*.exe;*.lnk",
+            Title = Loc.T("browseTitle"),
+            Filter = Loc.T("browseFilter"),
             Multiselect = true
         };
         if (dialog.ShowDialog(this) != true) return;

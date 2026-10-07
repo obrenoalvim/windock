@@ -38,7 +38,7 @@ public sealed class TrayService : IDisposable
     {
         var menu = icon.ContextMenuStrip!.Items;
         menu.Clear();
-        menu.Add("Abrir configuração", null, (_, _) => window.Open());
+        menu.Add(Loc.T("trayOpen"), null, (_, _) => window.Open());
         menu.Add(new Forms.ToolStripSeparator());
 
         foreach (var p in vm.Presets)
@@ -51,11 +51,15 @@ public sealed class TrayService : IDisposable
         }
 
         menu.Add(new Forms.ToolStripSeparator());
-        menu.Add(new Forms.ToolStripMenuItem("Troca automática por horário", null, (_, _) => vm.AutoSwitch = !vm.AutoSwitch) { Checked = vm.AutoSwitch });
-        menu.Add(new Forms.ToolStripMenuItem("Avisar trocas", null, (_, _) => vm.NotifySwitch = !vm.NotifySwitch) { Checked = vm.NotifySwitch });
-        menu.Add(new Forms.ToolStripMenuItem("Iniciar com o Windows", null, (_, _) => SetAutostart(!IsAutostart())) { Checked = IsAutostart() });
+        menu.Add(new Forms.ToolStripMenuItem(Loc.T("trayAuto"), null, (_, _) => vm.AutoSwitch = !vm.AutoSwitch) { Checked = vm.AutoSwitch });
+        menu.Add(new Forms.ToolStripMenuItem(Loc.T("trayNotify"), null, (_, _) => vm.NotifySwitch = !vm.NotifySwitch) { Checked = vm.NotifySwitch });
+        menu.Add(new Forms.ToolStripMenuItem(Loc.T("trayStartup"), null, (_, _) => SetAutostart(!IsAutostart())) { Checked = IsAutostart() });
+        var language = new Forms.ToolStripMenuItem(Loc.T("trayLanguage"));
+        language.DropDownItems.Add(new Forms.ToolStripMenuItem("English", null, (_, _) => vm.SetLanguage(Loc.English)) { Checked = Loc.Instance.Language == Loc.English });
+        language.DropDownItems.Add(new Forms.ToolStripMenuItem("Português", null, (_, _) => vm.SetLanguage(Loc.Portuguese)) { Checked = Loc.Instance.Language == Loc.Portuguese });
+        menu.Add(language);
         menu.Add(new Forms.ToolStripSeparator());
-        menu.Add("Sair", null, (_, _) => Application.Current.Shutdown());
+        menu.Add(Loc.T("trayExit"), null, (_, _) => Application.Current.Shutdown());
     }
 
     static bool IsAutostart()

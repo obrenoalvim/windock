@@ -6,8 +6,8 @@ public sealed record CatalogEntry(string Name, string Category, string? IconSour
 
 public static class Catalog
 {
-    public const string Programs = "Programas";
-    public const string Store = "Loja";
+    public const string Programs = "Programs";
+    public const string Store = "Store";
     public const string Steam = "Steam";
     public const string Epic = "Epic";
 

@@ -33,7 +33,7 @@ public sealed partial class PresetViewModel : ObservableObject
     public ObservableCollection<PinViewModel> Pins { get; }
     public ICommand AddSlotCommand { get; }
     public bool HasItems => Model.Items.Count > 0;
-    public string Count => Model.Items.Count == 1 ? "1 programa" : $"{Model.Items.Count} programas";
+    public string Count => Model.Items.Count == 1 ? Loc.T("countOne") : Loc.F("countMany", Model.Items.Count);
 
     public string Name
     {
@@ -64,6 +64,13 @@ public sealed partial class PresetViewModel : ObservableObject
         Model.Items.Clear();
         Pins.Clear();
         AddItems(items);
+    }
+
+    public void RefreshText()
+    {
+        OnPropertyChanged(nameof(Count));
+        foreach (var pin in Pins) pin.RefreshText();
+        foreach (var slot in Slots) slot.RefreshText();
     }
 
     public void RemoveDuplicates()

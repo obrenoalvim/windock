@@ -28,7 +28,9 @@ public partial class App : System.Windows.Application
 
         base.OnStartup(e);
 
-        var vm = new MainViewModel(new PresetStore(), new TaskbarService(), Settings.Load());
+        var settings = Settings.Load();
+        Loc.Instance.Set(settings.Language);
+        var vm = new MainViewModel(new PresetStore(), new TaskbarService(), settings);
         window = new ConfigWindow(vm);
         tray = new TrayService(vm, window);
         vm.Start();

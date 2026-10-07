@@ -6,7 +6,7 @@ using WinDock.Services;
 
 namespace WinDock.ViewModels;
 
-public sealed class PinViewModel
+public sealed partial class PinViewModel : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
 {
     public PinViewModel(PinItem model, Action<PinViewModel> remove, Action<PinViewModel, int> move)
     {
@@ -27,13 +27,15 @@ public sealed class PinViewModel
         return model.ResolvedTarget is { } path ? ShellIcons.ForPath(path) : null;
     }
 
+    public void RefreshText() => OnPropertyChanged(nameof(Tip));
+
     public PinItem Model { get; }
     public string Name => Model.Name;
     public ImageSource? Icon { get; }
     public bool HasIcon => Icon is not null;
     public string Initial { get; }
     public double Fade => Model.Exists ? 1 : 0.35;
-    public string Tip => Model.Exists ? Model.Name : $"{Model.Name} (não encontrado)";
+    public string Tip => Model.Exists ? Model.Name : Loc.F("notFound", Model.Name);
     public ICommand RemoveCommand { get; }
     public ICommand MoveLeftCommand { get; }
     public ICommand MoveRightCommand { get; }
