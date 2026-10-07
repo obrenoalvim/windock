@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using WinDock.Models;
 using WinDock.Services;
 
@@ -57,6 +57,28 @@ public class ScheduleTests
     public void DaySet_parses_ranges_and_lists(string text, int count) =>
         Assert.Equal(count, DaySet.Parse(text).Count);
 
+    [Theory]
+    [InlineData("Mon-Fri")]
+    [InlineData("Sat,Sun")]
+    [InlineData("Mon,Wed,Sun")]
+    public void DaySet_format_round_trips(string text)
+    {
+        var parsed = DaySet.Parse(text);
+        Assert.Equal(parsed, DaySet.Parse(DaySet.Format(parsed)));
+    }
+
+    [Theory]
+    [InlineData("9:5", true, "09:05")]
+    [InlineData("09:30", true, "09:30")]
+    [InlineData("24:00", true, "24:00")]
+    [InlineData("24:30", false, "")]
+    [InlineData("abc", false, "")]
+    public void Slot_time_input_is_validated(string text, bool ok, string expected)
+    {
+        Assert.Equal(ok, Slot.TryNormalize(text, out var normalized));
+        Assert.Equal(expected, normalized);
+    }
+
     [Fact]
     public void Bundled_presets_deserialize()
     {
@@ -67,7 +89,8 @@ public class ScheduleTests
         {
             var p = JsonSerializer.Deserialize<Preset>(File.ReadAllText(file), Json.Options);
             Assert.NotNull(p);
-            Assert.NotEmpty(p!.Items);
+            Assert.NotEmpty(p!.Name);
         }
     }
 }
+

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Drawing;
 using System.Windows;
 using Microsoft.Win32;
@@ -13,10 +12,10 @@ public sealed class TrayService : IDisposable
     const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
 
     readonly MainViewModel vm;
-    readonly DockWindow window;
+    readonly ConfigWindow window;
     readonly Forms.NotifyIcon icon;
 
-    public TrayService(MainViewModel vm, DockWindow window)
+    public TrayService(MainViewModel vm, ConfigWindow window)
     {
         this.vm = vm;
         this.window = window;
@@ -39,33 +38,25 @@ public sealed class TrayService : IDisposable
     {
         var menu = icon.ContextMenuStrip!.Items;
         menu.Clear();
-        menu.Add("Mostrar / ocultar", null, (_, _) => window.Toggle());
+        menu.Add("Abrir configuração", null, (_, _) => window.Open());
         menu.Add(new Forms.ToolStripSeparator());
 
         foreach (var p in vm.Presets)
         {
             var preset = p;
-            var item = new Forms.ToolStripMenuItem($"{p.Glyph}  {p.Model.Name}", null, (_, _) => vm.SelectCommand.Execute(preset))
+            menu.Add(new Forms.ToolStripMenuItem($"{p.Glyph}  {p.Model.Name}", null, async (_, _) => await vm.ApplyAsync(preset, auto: false))
             {
                 Checked = p.IsActive
-            };
-            menu.Add(item);
+            });
         }
 
         menu.Add(new Forms.ToolStripSeparator());
-        menu.Add(Toggle("Troca automática por horário", vm.Settings.AutoSwitch, v => vm.Settings.AutoSwitch = v));
-        menu.Add(Toggle("Ocultar ao perder o foco", vm.Settings.AutoHide, v => vm.Settings.AutoHide = v));
-        menu.Add(Toggle("Notificar trocas", vm.Settings.Notify, v => vm.Settings.Notify = v));
+        menu.Add(new Forms.ToolStripMenuItem("Troca automática por horário", null, (_, _) => vm.AutoSwitch = !vm.AutoSwitch) { Checked = vm.AutoSwitch });
+        menu.Add(new Forms.ToolStripMenuItem("Avisar trocas", null, (_, _) => vm.NotifySwitch = !vm.NotifySwitch) { Checked = vm.NotifySwitch });
         menu.Add(new Forms.ToolStripMenuItem("Iniciar com o Windows", null, (_, _) => SetAutostart(!IsAutostart())) { Checked = IsAutostart() });
-        menu.Add(new Forms.ToolStripSeparator());
-        menu.Add("Abrir pasta de presets", null, (_, _) => Process.Start("explorer.exe", vm.Store.Dir));
-        menu.Add("Recarregar presets", null, (_, _) => vm.Reload());
         menu.Add(new Forms.ToolStripSeparator());
         menu.Add("Sair", null, (_, _) => Application.Current.Shutdown());
     }
-
-    Forms.ToolStripMenuItem Toggle(string text, bool state, Action<bool> set) =>
-        new(text, null, (_, _) => { set(!state); vm.Settings.Save(); }) { Checked = state };
 
     static bool IsAutostart()
     {
@@ -77,7 +68,7 @@ public sealed class TrayService : IDisposable
     {
         using var key = Registry.CurrentUser.OpenSubKey(RunKey, writable: true);
         if (key is null) return;
-        if (on) key.SetValue("WinDock", $"\"{Environment.ProcessPath}\"");
+        if (on) key.SetValue("WinDock", $"\"{Environment.ProcessPath}\" --tray");
         else key.DeleteValue("WinDock", throwOnMissingValue: false);
     }
 

@@ -30,6 +30,18 @@ public sealed class PresetStore
     public void Save(Preset p) =>
         File.WriteAllText(p.FilePath, JsonSerializer.Serialize(p, Json.Options));
 
+    public void Delete(Preset p) => File.Delete(p.FilePath);
+
+    public string NewPath(string id)
+    {
+        var next = Directory.GetFiles(Dir, "*.json")
+            .Select(f => Path.GetFileName(f).Split('-')[0])
+            .Select(n => int.TryParse(n, out var v) ? v : 0)
+            .DefaultIfEmpty(0)
+            .Max() + 1;
+        return Path.Combine(Dir, $"{next:00}-{id}.json");
+    }
+
     void Seed()
     {
         if (Directory.Exists(Dir) && Directory.EnumerateFiles(Dir, "*.json").Any()) return;

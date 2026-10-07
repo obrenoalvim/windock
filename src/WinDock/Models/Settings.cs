@@ -6,7 +6,7 @@ public sealed class Settings
 {
     public bool AutoSwitch { get; set; } = true;
     public bool Notify { get; set; } = true;
-    public bool AutoHide { get; set; }
+    public string? ActiveId { get; set; }
 
     public static string Dir { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "WinDock");

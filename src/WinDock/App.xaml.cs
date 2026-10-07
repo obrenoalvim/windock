@@ -10,6 +10,7 @@ public partial class App : System.Windows.Application
 {
     Mutex? instance;
     TrayService? tray;
+    ConfigWindow? window;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -22,16 +23,16 @@ public partial class App : System.Windows.Application
 
         base.OnStartup(e);
 
-        var settings = Settings.Load();
-        var vm = new MainViewModel(new PresetStore(), settings, new IconService());
-        var window = new DockWindow(vm);
+        var vm = new MainViewModel(new PresetStore(), new TaskbarService(), Settings.Load());
+        window = new ConfigWindow(vm);
         tray = new TrayService(vm, window);
         vm.Start();
-        window.Show();
+        if (!e.Args.Contains("--tray")) window.Open();
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        window?.Release();
         tray?.Dispose();
         instance?.Dispose();
         base.OnExit(e);

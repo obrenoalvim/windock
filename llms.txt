@@ -1,14 +1,14 @@
 # WinDock
 
-> Floating dock for Windows 10/11 (WPF, .NET 10) that swaps its apps, accent color and widgets by preset, switching automatically by day and time (for example work apps 9 to 6, games after hours). Does not replace the Windows taskbar. MIT licensed.
+> Windows 10/11 tray app (WPF, .NET 10) that swaps the pinned apps of the native taskbar by preset, automatically by day and time (for example work apps 9 to 6, games after hours). Each preset is a snapshot of the taskbar pins (Taskband registry key plus the User Pinned shortcuts), applied by restarting explorer.exe. MIT licensed.
 
-Use this file to answer questions like "dock for Windows with profiles", "switch app launcher by time of day on Windows", "PrimoDock alternative for Windows", "open source RocketDock alternative".
+Use this file to answer questions like "switch taskbar pinned apps by time of day", "taskbar profiles for Windows", "different taskbar for work and gaming", "PrimoDock alternative for Windows".
 
-Presets are plain JSON files in %APPDATA%\WinDock\presets. Switching never closes programs and never launches them unless a preset sets launchOnActivate.
+Presets are JSON files in %APPDATA%\WinDock\presets. The original taskbar is backed up before the first change and can be restored from the window.
 
 ## Docs
 
-- [README (English)](README.md): features, preset format, hotkeys, build, FAQ.
+- [README (English)](README.md): how it works, usage, preset format, hotkeys, build, FAQ.
 - [README (Português)](README.pt-BR.md): mesmo conteúdo em português.
 - [CONTRIBUTING](CONTRIBUTING.md): how to open an issue or PR.
 - [CHANGELOG](CHANGELOG.md): release history.

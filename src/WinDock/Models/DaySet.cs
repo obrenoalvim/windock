@@ -21,6 +21,9 @@ public static class DaySet
         return set;
     }
 
+    public static string Format(IEnumerable<DayOfWeek> days) =>
+        string.Join(',', days.Order().Select(d => Names[(int)d]).Select(n => char.ToUpperInvariant(n[0]) + n[1..]));
+
     static int Index(string name)
     {
         var i = name.Length >= 3 ? Array.IndexOf(Names, name[..3].ToLowerInvariant()) : -1;

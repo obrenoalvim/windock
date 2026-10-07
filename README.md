@@ -4,8 +4,8 @@
 
 # WinDock
 
-**One Windows PC. Several environments.**<br>
-A floating dock with presets that switch by time of day: work apps from 9 to 6, games after hours, one click or one hotkey to change.
+**One Windows PC. Several taskbars.**<br>
+Swap the pinned apps on your real Windows taskbar by preset and by schedule: work apps from 9 to 6, games after hours.
 
 [![Download](https://img.shields.io/badge/Download-WinDock.zip-FFB547?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/obrenoalvim/windock/releases/latest/download/WinDock-win-x64.zip)
 
@@ -16,65 +16,61 @@ A floating dock with presets that switch by time of day: work apps from 9 to 6, 
 
 **English** · [Português](README.pt-BR.md)
 
-[Features](#features) · [Presets](#presets) · [Hotkeys](#hotkeys) · [Build](#build) · [FAQ](#faq)
+[How it works](#how-it-works) · [Usage](#usage) · [Presets](#presets) · [Hotkeys](#hotkeys) · [Build](#build) · [FAQ](#faq)
 
 </div>
 
 ---
 
-WinDock is a small WPF app that puts a dock on your screen and swaps its contents by **preset**. A preset is a JSON file with the apps you want in that context, an accent color, a few widgets and, optionally, a schedule. At 9:00 on a weekday the dock becomes your work dock; at 18:00 it becomes your games dock. It does not replace the Windows taskbar, it sits next to it.
+WinDock does not draw a second dock. The icons stay exactly where Windows puts them. WinDock is the orchestrator behind them: it keeps one **preset** per context (work, games, study...), each one a saved copy of your taskbar pins, and swaps them on a schedule or with one click.
 
 Inspired by [PrimoDock](https://dock.oprimo.dev/) for macOS.
 
-## Features
+## How it works
 
-- **Presets with a schedule.** Days and time ranges per preset, switched automatically. A manual pick lasts until the next scheduled change.
-- **Real icons.** Taken from each program, including Steam, Epic and other URI launchers.
-- **Running indicator.** A dot under every app that is open.
-- **Widgets.** Clock, CPU, RAM and "next switch" (what the dock becomes and when).
-- **Drag and drop.** Drop an `.exe` or shortcut on the dock to pin it to the current preset. Right-click a tile to remove it.
-- **Tray icon.** Preset list, auto-switch toggle, auto-hide, notifications, start with Windows.
-- **Safe by default.** Switching never closes anything and never launches anything unless the preset sets `launchOnActivate`.
-- **Hand-editable.** Presets live in `%APPDATA%\WinDock\presets`. Reload from the tray, no restart.
+Windows stores taskbar pins in the `Taskband` registry key plus the shortcuts in `%APPDATA%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar`. A preset is a snapshot of both. Applying a preset closes the shell, restores the snapshot and starts `explorer.exe` again, which takes a couple of seconds.
+
+1. Arrange the taskbar the normal Windows way (pin, unpin, drag to reorder).
+2. In WinDock, hit **Capturar taskbar atual** on a preset.
+3. Set the days and hours it should be active.
+
+From then on WinDock swaps the real taskbar by itself. Nothing is installed into Windows, nothing runs in the background besides a tray icon.
+
+## Usage
+
+- **Window** (tray icon, or `Ctrl+Alt+W`): one card per preset with its name, the pinned shortcuts it holds, and its schedule. Per card: **Aplicar**, **Capturar taskbar atual**, **Excluir**.
+- **Schedule**: toggle the weekdays, type the start and end time. Add as many time slots as you want.
+- **+ Novo preset** creates a preset from the taskbar you have right now.
+- **Troca automática** turns the schedule on or off. **Avisar trocas** shows a tray notification when it swaps.
+- **Restaurar original** puts back the taskbar you had before WinDock ever touched it (saved on the first apply).
 
 ## Presets
 
-Four starters are installed on first run: **Trabalho** (Mon-Fri 09:00-18:00), **Jogos** (Mon-Fri 18:00-09:00), **Estudos** (manual) and **Fim de semana** (Sat-Sun). Apps that are not installed on your machine are hidden automatically.
+Starter presets are installed on first run: **Trabalho** (Mon-Fri 09:00-18:00), **Jogos** (Mon-Fri 18:00-09:00), **Estudos** (manual) and **Fim de semana** (Sat-Sun). The first run saves your current taskbar into the preset that matches the current time, so nothing changes until you capture the others.
+
+Presets live in `%APPDATA%\WinDock\presets` as JSON, and the window edits them for you:
 
 ```json
 {
-  "id": "trabalho",
-  "name": "Trabalho",
-  "glyph": "💼",
-  "accent": "#FFB547",
-  "launchOnActivate": false,
-  "schedule": [{ "days": "Mon-Fri", "start": "09:00", "end": "18:00" }],
-  "widgets": ["next", "cpu", "ram", "clock"],
-  "items": [
-    { "name": "VS Code", "target": "%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe", "process": "Code" },
-    { "name": "Steam", "target": "steam://open/main", "icon": "C:\\Program Files (x86)\\Steam\\steam.exe", "process": "steam" }
+  "id": "jogos",
+  "name": "Jogos",
+  "glyph": "🎮",
+  "accent": "#7C5CFF",
+  "schedule": [
+    { "days": "Mon-Fri", "start": "18:00", "end": "24:00" },
+    { "days": "Mon-Fri", "start": "00:00", "end": "09:00" }
   ]
 }
 ```
 
-| Field | Meaning |
-|---|---|
-| `schedule[].days` | `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. The first preset (by file name) that matches wins. |
-| `schedule[].start` / `end` | `HH:mm`, end is exclusive, `24:00` means midnight. For 18:00 to 09:00, use two slots (`18:00-24:00` and `00:00-09:00`). |
-| `items[].target` | Executable, shortcut, folder or URI (`steam://...`). Environment variables and `PATH` lookups work. |
-| `items[].icon` | Optional. Path to an image or exe used for the icon. If it does not exist, the item is hidden. |
-| `items[].process` | Optional. Process name for the running dot, when it differs from the exe name. |
-| `launchOnActivate` | Launch every item when the schedule activates this preset. Off by default. |
-| `widgets` | Any of `clock`, `cpu`, `ram`, `next`. |
-
-File names set the order (`01-`, `02-`...), which is also the `Ctrl+Alt+N` number.
+`days` accepts `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. `end` is exclusive and `24:00` means midnight, so 18:00 to 09:00 is two slots. The first preset (by file name) that matches the current time wins. A captured preset also stores a `snapshot` block.
 
 ## Hotkeys
 
 | Keys | Action |
 |---|---|
-| `Ctrl+Alt+Space` | Show or hide the dock |
-| `Ctrl+Alt+1` ... `9` | Switch to the Nth preset |
+| `Ctrl+Alt+W` | Open or hide the window |
+| `Ctrl+Alt+1` ... `9` | Apply the Nth preset |
 
 ## Build
 
@@ -86,17 +82,19 @@ dotnet test
 dotnet publish src/WinDock -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true
 ```
 
-Layout: `Models/` (presets, schedule), `Services/` (schedule resolver, launcher, icons, tray, stats), `ViewModels/` (MVVM Toolkit), `Views/` and `Themes/` (XAML).
+Layout: `Models/` (presets, schedule, snapshot), `Services/` (taskbar, schedule resolver, presets store, tray), `ViewModels/` (MVVM Toolkit), `Views/` and `Themes/` (XAML).
 
 ## FAQ
 
-**Does it hide or replace the Windows taskbar?** No. It is a floating window, so there is nothing to break when Windows updates.
+**Why does the screen flicker when it switches?** Windows only reads taskbar pins when the shell starts, so WinDock restarts `explorer.exe`. Open File Explorer windows are closed by that. Turn off **Troca automática** if you do not want it to happen on its own.
 
-**Does it close my work apps at 18:00?** No. Closing programs can lose unsaved work. The dock only changes what it shows.
+**Does it close my apps?** No. Only the shell restarts. Running programs keep running.
 
-**Why is an app missing from a preset?** Its path was not found on this machine. Fix the `target` in the JSON or drop the correct `.exe` on the dock.
+**Can it break my taskbar?** The original state is saved before the first change and **Restaurar original** brings it back. Snapshots are copies of what Windows itself wrote.
 
-**Does it isolate windows per environment like virtual desktops?** Not yet.
+**Which apps does a preset hold?** Everything pinned: classic shortcuts and Store apps. The card lists the classic shortcuts by name.
+
+**Does it work on Windows 10?** The same keys exist, so it should, but it has only been tested on Windows 11.
 
 ## License
 

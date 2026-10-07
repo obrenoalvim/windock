@@ -3,19 +3,11 @@
   "name": "Trabalho",
   "glyph": "💼",
   "accent": "#FFB547",
-  "launchOnActivate": false,
   "schedule": [
-    { "days": "Mon-Fri", "start": "09:00", "end": "18:00" }
-  ],
-  "widgets": ["next", "cpu", "ram", "clock"],
-  "items": [
-    { "name": "VS Code", "target": "%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe", "process": "Code" },
-    { "name": "Terminal", "target": "wt.exe", "process": "WindowsTerminal" },
-    { "name": "Chrome", "target": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" },
-    { "name": "Edge", "target": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe" },
-    { "name": "Arquivos", "target": "explorer.exe" },
-    { "name": "Obsidian", "target": "%LOCALAPPDATA%\\Programs\\Obsidian\\Obsidian.exe" },
-    { "name": "Slack", "target": "%LOCALAPPDATA%\\slack\\slack.exe" },
-    { "name": "Notion", "target": "%LOCALAPPDATA%\\Programs\\Notion\\Notion.exe" }
+    {
+      "days": "Mon-Fri",
+      "start": "09:00",
+      "end": "18:00"
+    }
   ]
 }

@@ -8,10 +8,8 @@ public sealed class Preset
     public string Name { get; set; } = "";
     public string Glyph { get; set; } = "●";
     public string Accent { get; set; } = "#FFB547";
-    public bool LaunchOnActivate { get; set; }
     public List<Slot> Schedule { get; set; } = [];
-    public List<string> Widgets { get; set; } = [];
-    public List<DockItem> Items { get; set; } = [];
+    public Snapshot? Snapshot { get; set; }
 
     [JsonIgnore]
     public string FilePath { get; set; } = "";

@@ -3,17 +3,11 @@
   "name": "Fim de semana",
   "glyph": "🌴",
   "accent": "#FF6B8A",
-  "launchOnActivate": false,
   "schedule": [
-    { "days": "Sat,Sun", "start": "00:00", "end": "24:00" }
-  ],
-  "widgets": ["next", "clock"],
-  "items": [
-    { "name": "Spotify", "target": "%APPDATA%\\Spotify\\Spotify.exe" },
-    { "name": "Steam", "target": "steam://open/main", "icon": "C:\\Program Files (x86)\\Steam\\steam.exe", "process": "steam" },
-    { "name": "Discord", "target": "%LOCALAPPDATA%\\Discord\\Update.exe", "args": "--processStart Discord.exe", "process": "Discord" },
-    { "name": "WhatsApp", "target": "whatsapp:" },
-    { "name": "Fotos", "target": "ms-photos:" },
-    { "name": "Chrome", "target": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" }
+    {
+      "days": "Sat,Sun",
+      "start": "00:00",
+      "end": "24:00"
+    }
   ]
 }
