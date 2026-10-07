@@ -9,7 +9,7 @@ public sealed class Preset
     public string Glyph { get; set; } = "●";
     public string Accent { get; set; } = "#FFB547";
     public List<Slot> Schedule { get; set; } = [];
-    public Snapshot? Snapshot { get; set; }
+    public List<PinItem> Items { get; set; } = [];
 
     [JsonIgnore]
     public string FilePath { get; set; } = "";

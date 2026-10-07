@@ -3,5 +3,31 @@
   "name": "Estudos",
   "glyph": "📚",
   "accent": "#3DDC97",
-  "schedule": []
+  "schedule": [],
+  "items": [
+    {
+      "name": "Obsidian",
+      "target": "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Obsidian.lnk"
+    },
+    {
+      "name": "Notion",
+      "target": "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Notion.lnk"
+    },
+    {
+      "name": "Chrome",
+      "target": "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\Google Chrome.lnk"
+    },
+    {
+      "name": "Anki",
+      "target": "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Anki.lnk"
+    },
+    {
+      "name": "Calculadora",
+      "target": "%WINDIR%\\System32\\calc.exe"
+    },
+    {
+      "name": "Bloco de notas",
+      "target": "%WINDIR%\\System32\\notepad.exe"
+    }
+  ]
 }

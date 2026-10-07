@@ -11,7 +11,7 @@ public sealed class TaskbarService
     static readonly string[] BinaryValues = ["Favorites", "FavoritesResolve"];
     static readonly string[] NumberValues = ["FavoritesChanges", "FavoritesRemovedChanges", "FavoritesVersion"];
 
-    static readonly string LinksDir = Path.Combine(
+    public static readonly string LinksDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "Microsoft", "Internet Explorer", "Quick Launch", "User Pinned", "TaskBar");
 

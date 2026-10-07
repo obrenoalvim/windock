@@ -28,25 +28,28 @@ Inspirado no [PrimoDock](https://dock.oprimo.dev/) para macOS.
 
 ## Como funciona
 
-O Windows guarda os apps fixados na chave de registro `Taskband` e os atalhos em `%APPDATA%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar`. Um preset é um snapshot dos dois. Aplicar um preset encerra o shell, restaura o snapshot e inicia o `explorer.exe` de novo, o que leva alguns segundos.
+O Windows guarda os apps fixados na chave de registro `Taskband` e os atalhos em `%APPDATA%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar`. Um preset é uma lista de programas. Aplicar um preset grava esses dois lugares com exatamente aquela lista e reinicia o `explorer.exe` para o Windows ler, o que leva alguns segundos.
 
-1. Arrume a taskbar do jeito normal do Windows (fixar, desafixar, arrastar para ordenar).
-2. No WinDock, clique em **Capturar taskbar atual** em um preset.
-3. Defina os dias e horários em que ele deve ficar ativo.
+1. Abra o WinDock e escolha os programas de cada preset (**+ Programa**). Cada programa aparece com o ícone real.
+2. Defina os dias e horários em que cada preset deve ficar ativo.
+3. Clique em **Aplicar**, ou deixe a agenda fazer isso.
 
 A partir daí o WinDock troca a taskbar real sozinho. Nada é instalado no Windows e nada roda em segundo plano além do ícone na bandeja.
 
 ## Uso
 
-- **Janela** (ícone na bandeja, ou `Ctrl+Alt+W`): um cartão por preset com nome, os atalhos fixados que ele guarda e a agenda. Em cada cartão: **Aplicar**, **Capturar taskbar atual**, **Excluir**.
+- **Janela** (ícone na bandeja, ou `Ctrl+Alt+W`): um cartão por preset com nome, os ícones de cada programa fixado e a agenda.
+- **+ Programa**: escolha entre os apps do Menu Iniciar (digite para buscar, selecione vários) ou procure qualquer `.exe` ou `.lnk`.
+- **Botão direito num ícone**: mover para a esquerda, mover para a direita, remover. A ordem dos ícones é a ordem na taskbar.
+- **Usar taskbar atual**: troca os programas do preset pelo que está fixado agora, inclusive apps da Store.
 - **Agenda**: ligue os dias da semana, digite o horário de início e fim. Adicione quantos horários quiser.
-- **+ Novo preset** cria um preset a partir da taskbar que você tem agora.
+- **+ Novo preset** cria um preset vazio.
 - **Troca automática** liga ou desliga a agenda. **Avisar trocas** mostra uma notificação na bandeja quando troca.
 - **Restaurar original** devolve a taskbar que você tinha antes do WinDock mexer em qualquer coisa (salva no primeiro aplicar).
 
 ## Presets
 
-Presets iniciais são instalados na primeira execução: **Trabalho** (seg-sex 09:00-18:00), **Jogos** (seg-sex 18:00-09:00), **Estudos** (manual) e **Fim de semana** (sáb-dom). Na primeira execução sua taskbar atual é salva no preset que combina com o horário, então nada muda até você capturar os outros.
+Presets iniciais são instalados na primeira execução: **Trabalho** (seg-sex 09:00-18:00), **Jogos** (seg-sex 18:00-09:00), **Estudos** (manual) e **Fim de semana** (sáb-dom). Programas que não estão instalados na sua máquina ficam de fora. A primeira execução também copia a sua taskbar atual para o preset que combina com o horário, então nada muda até você aplicar outro.
 
 Os presets ficam em `%APPDATA%\WinDock\presets` como JSON, e a janela edita por você:
 
@@ -59,11 +62,15 @@ Os presets ficam em `%APPDATA%\WinDock\presets` como JSON, e a janela edita por 
   "schedule": [
     { "days": "Mon-Fri", "start": "18:00", "end": "24:00" },
     { "days": "Mon-Fri", "start": "00:00", "end": "09:00" }
+  ],
+  "items": [
+    { "name": "Steam", "target": "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\Steam\\Steam.lnk" },
+    { "name": "Spotify", "target": "%APPDATA%\\Spotify\\Spotify.exe" }
   ]
 }
 ```
 
-`days` aceita `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. O `end` é exclusivo e `24:00` é meia-noite, então 18:00 até 09:00 são dois blocos. Vale o primeiro preset (pelo nome do arquivo) que combinar com o horário. Um preset capturado também guarda um bloco `snapshot`.
+`days` aceita `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. O `end` é exclusivo e `24:00` é meia-noite, então 18:00 até 09:00 são dois blocos. Vale o primeiro preset (pelo nome do arquivo) que combinar com o horário. `target` é um `.exe` ou `.lnk` (variáveis de ambiente funcionam). Apps da Store importados com **Usar taskbar atual** ficam como entradas opacas.
 
 ## Atalhos
 
@@ -92,9 +99,9 @@ Estrutura: `Models/` (presets, agenda, snapshot), `Services/` (taskbar, resolved
 
 **Pode quebrar minha taskbar?** O estado original é salvo antes da primeira mudança e **Restaurar original** traz de volta. Os snapshots são cópias do que o próprio Windows gravou.
 
-**Quais apps um preset guarda?** Tudo que está fixado: atalhos clássicos e apps da Store. O cartão lista os atalhos clássicos pelo nome.
+**Quais programas um preset pode ter?** Qualquer `.exe` ou `.lnk`, mais apps da Store importados da taskbar atual.
 
-**Funciona no Windows 10?** As mesmas chaves existem, então deveria, mas só foi testado no Windows 11.
+**Funciona no Windows 10?** Usa a mesma chave de registro e pasta de atalhos do Windows 10, sem nenhuma API exclusiva do Windows 11, mas só foi testado no Windows 11. Relatos do Windows 10 são bem-vindos.
 
 ## Licença
 

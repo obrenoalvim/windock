@@ -60,6 +60,13 @@ public partial class ConfigWindow : Window
 
     void OnHeaderDrag(object sender, MouseButtonEventArgs e) => DragMove();
 
+    void OnAddProgram(object sender, RoutedEventArgs e)
+    {
+        if (((FrameworkElement)sender).DataContext is not PresetViewModel preset) return;
+        var picker = new ProgramPicker { Owner = this };
+        if (picker.ShowDialog() == true) vm.AddPrograms(preset, picker.Chosen);
+    }
+
     void OnClose(object sender, RoutedEventArgs e) => Hide();
 
     nint WndProc(nint hwnd, int msg, nint wParam, nint lParam, ref bool handled)

@@ -9,5 +9,35 @@
       "start": "09:00",
       "end": "18:00"
     }
+  ],
+  "items": [
+    {
+      "name": "VS Code",
+      "target": "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Visual Studio Code\\Visual Studio Code.lnk"
+    },
+    {
+      "name": "Terminal",
+      "target": "%LOCALAPPDATA%\\Microsoft\\WindowsApps\\wt.exe"
+    },
+    {
+      "name": "Brave",
+      "target": "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\Brave.lnk"
+    },
+    {
+      "name": "Chrome",
+      "target": "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\Google Chrome.lnk"
+    },
+    {
+      "name": "Obsidian",
+      "target": "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Obsidian.lnk"
+    },
+    {
+      "name": "Notion",
+      "target": "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Notion.lnk"
+    },
+    {
+      "name": "Slack",
+      "target": "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Slack Technologies Inc\\Slack.lnk"
+    }
   ]
 }

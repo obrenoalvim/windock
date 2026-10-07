@@ -14,5 +14,31 @@
       "start": "00:00",
       "end": "09:00"
     }
+  ],
+  "items": [
+    {
+      "name": "Steam",
+      "target": "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\Steam\\Steam.lnk"
+    },
+    {
+      "name": "Epic Games",
+      "target": "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\Epic Games Launcher.lnk"
+    },
+    {
+      "name": "Discord",
+      "target": "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Discord Inc\\Discord.lnk"
+    },
+    {
+      "name": "Spotify",
+      "target": "%APPDATA%\\Spotify\\Spotify.exe"
+    },
+    {
+      "name": "OBS Studio",
+      "target": "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\OBS Studio\\OBS Studio (64bit).lnk"
+    },
+    {
+      "name": "Battle.net",
+      "target": "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\Battle.net\\Battle.net.lnk"
+    }
   ]
 }

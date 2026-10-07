@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -9,7 +10,7 @@ namespace WinDock.ViewModels;
 
 public sealed partial class MainViewModel : ObservableObject
 {
-    static readonly System.Globalization.CultureInfo Pt = new("pt-BR");
+    static readonly CultureInfo Pt = new("pt-BR");
     static readonly string[] Palette = ["#FFB547", "#7C5CFF", "#3DDC97", "#FF6B8A", "#3B9EFF", "#FF8A3D"];
 
     readonly PresetStore store;
@@ -61,7 +62,7 @@ public sealed partial class MainViewModel : ObservableObject
         Presets.Clear();
         var loaded = store.Load();
         for (var i = 0; i < loaded.Count; i++) Presets.Add(new PresetViewModel(loaded[i], i + 1, Save));
-        if (Settings.ActiveId is null && Presets.All(p => !p.HasSnapshot)) AdoptCurrentTaskbar();
+        if (store.Seeded) AdoptCurrentTaskbar();
         MarkActive();
         scheduleStarted = false;
         lastMinute = -1;
@@ -72,9 +73,7 @@ public sealed partial class MainViewModel : ObservableObject
         var scheduled = ScheduleResolver.At(Presets.Select(p => p.Model), DateTime.Now);
         var target = Presets.FirstOrDefault(p => p.Model == scheduled) ?? Presets.FirstOrDefault();
         if (target is null) return;
-        target.Model.Snapshot = taskbar.Capture();
-        store.Save(target.Model);
-        target.RefreshSnapshot();
+        target.ReplaceItems(PinBuilder.Import(taskbar.Capture()));
         SetActive(target.Id);
     }
 
@@ -102,9 +101,9 @@ public sealed partial class MainViewModel : ObservableObject
     public async Task ApplyAsync(PresetViewModel preset, bool auto)
     {
         if (IsBusy) return;
-        if (preset.Model.Snapshot is not { } snapshot)
+        if (!preset.HasItems)
         {
-            Notice?.Invoke($"{preset.Model.Name}: sem snapshot, capture a taskbar primeiro");
+            Notice?.Invoke($"{preset.Model.Name}: nenhum programa, adicione alguns primeiro");
             return;
         }
 
@@ -113,7 +112,7 @@ public sealed partial class MainViewModel : ObservableObject
         try
         {
             taskbar.BackupOnce();
-            await Task.Run(() => taskbar.Apply(snapshot));
+            await Task.Run(() => taskbar.Apply(PinBuilder.Build(preset.Model, taskbar.Capture())));
             SetActive(preset.Id);
             Status = $"Taskbar: {preset.Model.Name}";
             if (!auto || Settings.Notify) Notice?.Invoke($"{preset.Glyph}  {preset.Model.Name}");
@@ -125,12 +124,6 @@ public sealed partial class MainViewModel : ObservableObject
         }
         finally { IsBusy = false; }
     }
-
-    [RelayCommand]
-    async Task RestoreOriginal() => await RestoreOriginalAsync();
-
-    [RelayCommand]
-    void OpenFolder() => System.Diagnostics.Process.Start("explorer.exe", store.Dir);
 
     public async Task ApplyIndexAsync(int index)
     {
@@ -157,13 +150,22 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    void Capture(PresetViewModel preset)
+    async Task RestoreOriginal() => await RestoreOriginalAsync();
+
+    [RelayCommand]
+    void OpenFolder() => System.Diagnostics.Process.Start("explorer.exe", store.Dir);
+
+    [RelayCommand]
+    void UseCurrent(PresetViewModel preset)
     {
-        preset.Model.Snapshot = taskbar.Capture();
-        store.Save(preset.Model);
-        preset.RefreshSnapshot();
+        preset.ReplaceItems(PinBuilder.Import(taskbar.Capture()));
         SetActive(preset.Id);
-        Status = $"Taskbar atual salva em {preset.Model.Name}";
+        Status = $"Programas fixados agora copiados para {preset.Model.Name}";
+    }
+
+    public void AddPrograms(PresetViewModel preset, IEnumerable<string> paths)
+    {
+        preset.AddItems(paths.Select(p => new PinItem { Name = Path.GetFileNameWithoutExtension(p), Target = p }));
     }
 
     [RelayCommand]
@@ -177,14 +179,11 @@ public sealed partial class MainViewModel : ObservableObject
             Name = $"Preset {n}",
             Glyph = "⭐",
             Accent = Palette[(n - 1) % Palette.Length],
-            Snapshot = taskbar.Capture(),
             FilePath = store.NewPath(id)
         };
         store.Save(model);
-        var vm = new PresetViewModel(model, n, Save);
-        Presets.Add(vm);
-        SetActive(id);
-        Status = $"Preset criado com a taskbar atual";
+        Presets.Add(new PresetViewModel(model, n, Save));
+        Status = "Preset criado. Adicione programas nele.";
     }
 
     [RelayCommand]
@@ -210,7 +209,7 @@ public sealed partial class MainViewModel : ObservableObject
         lastScheduledId = scheduled?.Id;
         if (!Settings.AutoSwitch || scheduled is null) return;
         var target = Presets.First(p => p.Model == scheduled);
-        if (target.Id != Settings.ActiveId && target.HasSnapshot) _ = ApplyAsync(target, auto: true);
+        if (target.Id != Settings.ActiveId && target.HasItems) _ = ApplyAsync(target, auto: true);
     }
 
     void RefreshNext(DateTime now)
@@ -221,3 +220,4 @@ public sealed partial class MainViewModel : ObservableObject
             : "Sem agenda";
     }
 }
+

@@ -19,6 +19,7 @@ public sealed partial class PresetViewModel : ObservableObject
         Accent = new SolidColorBrush((Color)ColorConverter.ConvertFromString(model.Accent));
         Accent.Freeze();
         Slots = new ObservableCollection<SlotViewModel>(model.Schedule.Select(Wrap));
+        Pins = new ObservableCollection<PinViewModel>(model.Items.Select(WrapPin));
         AddSlotCommand = new RelayCommand(AddSlot);
     }
 
@@ -28,8 +29,10 @@ public sealed partial class PresetViewModel : ObservableObject
     public string Glyph => Model.Glyph;
     public SolidColorBrush Accent { get; }
     public ObservableCollection<SlotViewModel> Slots { get; }
+    public ObservableCollection<PinViewModel> Pins { get; }
     public ICommand AddSlotCommand { get; }
-    public bool HasSnapshot => Model.Snapshot is not null;
+    public bool HasItems => Model.Items.Count > 0;
+    public string Count => Model.Items.Count == 1 ? "1 programa" : $"{Model.Items.Count} programas";
 
     public string Name
     {
@@ -43,23 +46,50 @@ public sealed partial class PresetViewModel : ObservableObject
         }
     }
 
-    public string Summary
-    {
-        get
-        {
-            if (Model.Snapshot is not { } s) return "Sem snapshot. Arrume a taskbar do jeito que quer e clique em Capturar.";
-            var names = s.LinkNames.ToList();
-            var shown = string.Join(", ", names.Take(5)) + (names.Count > 5 ? $" +{names.Count - 5}" : "");
-            return $"Capturado em {s.CapturedAt:dd/MM HH:mm}" + (names.Count > 0 ? $"  ·  {shown}" : "");
-        }
-    }
-
     [ObservableProperty] bool isActive;
 
-    public void RefreshSnapshot()
+    public void AddItems(IEnumerable<PinItem> items)
     {
-        OnPropertyChanged(nameof(Summary));
-        OnPropertyChanged(nameof(HasSnapshot));
+        foreach (var item in items)
+        {
+            Model.Items.Add(item);
+            Pins.Add(WrapPin(item));
+        }
+        ItemsChanged();
+    }
+
+    public void ReplaceItems(IEnumerable<PinItem> items)
+    {
+        Model.Items.Clear();
+        Pins.Clear();
+        AddItems(items);
+    }
+
+    PinViewModel WrapPin(PinItem item) => new(item, RemovePin, MovePin);
+
+    void RemovePin(PinViewModel pin)
+    {
+        Model.Items.Remove(pin.Model);
+        Pins.Remove(pin);
+        ItemsChanged();
+    }
+
+    void MovePin(PinViewModel pin, int delta)
+    {
+        var from = Pins.IndexOf(pin);
+        var to = from + delta;
+        if (from < 0 || to < 0 || to >= Pins.Count) return;
+        Pins.Move(from, to);
+        Model.Items.RemoveAt(from);
+        Model.Items.Insert(to, pin.Model);
+        ItemsChanged();
+    }
+
+    void ItemsChanged()
+    {
+        OnPropertyChanged(nameof(HasItems));
+        OnPropertyChanged(nameof(Count));
+        changed(this);
     }
 
     SlotViewModel Wrap(Slot slot) =>

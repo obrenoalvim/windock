@@ -154,4 +154,53 @@
         </Setter>
     </Style>
 
+    <Style TargetType="ListBoxItem">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="Row" CornerRadius="12" Padding="8,6" Margin="0,1" Background="Transparent">
+                        <ContentPresenter/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Row" Property="Background" Value="{StaticResource Plate}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Row" Property="Background" Value="#33FFB547"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="ContextMenu">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContextMenu">
+                    <Border Background="#F2171921" BorderBrush="{StaticResource Hairline}" BorderThickness="1" CornerRadius="12" Padding="5">
+                        <StackPanel IsItemsHost="True"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="MenuItem">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border x:Name="Row" CornerRadius="8" Padding="12,7" Background="Transparent">
+                        <TextBlock Text="{TemplateBinding Header}" FontFamily="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Row" Property="Background" Value="{StaticResource PlateHover}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

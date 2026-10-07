@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using WinDock.Models;
 
 namespace WinDock.Services;
@@ -6,6 +6,7 @@ namespace WinDock.Services;
 public sealed class PresetStore
 {
     public string Dir { get; } = Path.Combine(Settings.Dir, "presets");
+    public bool Seeded { get; private set; }
 
     public List<Preset> Load()
     {
@@ -46,9 +47,16 @@ public sealed class PresetStore
     {
         if (Directory.Exists(Dir) && Directory.EnumerateFiles(Dir, "*.json").Any()) return;
         Directory.CreateDirectory(Dir);
+        Seeded = true;
         var bundled = Path.Combine(AppContext.BaseDirectory, "Presets");
         if (!Directory.Exists(bundled)) return;
         foreach (var f in Directory.GetFiles(bundled, "*.json"))
-            File.Copy(f, Path.Combine(Dir, Path.GetFileName(f)), overwrite: false);
+        {
+            var preset = JsonSerializer.Deserialize<Preset>(File.ReadAllText(f), Json.Options);
+            if (preset is null) continue;
+            preset.Items = preset.Items.Where(i => i.Exists).ToList();
+            File.WriteAllText(Path.Combine(Dir, Path.GetFileName(f)), JsonSerializer.Serialize(preset, Json.Options));
+        }
     }
 }
+

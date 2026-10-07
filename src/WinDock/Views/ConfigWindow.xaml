@@ -53,8 +53,8 @@
                                                         Background="{Binding Accent}" Foreground="#101114" Margin="0,0,8,0"
                                                         Command="{Binding DataContext.ApplyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                         CommandParameter="{Binding}"/>
-                                                <Button Content="Capturar taskbar atual" Style="{StaticResource ActionButton}" Margin="0,0,8,0"
-                                                        Command="{Binding DataContext.CaptureCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                <Button Content="Usar taskbar atual" Style="{StaticResource ActionButton}" Margin="0,0,8,0"
+                                                        Command="{Binding DataContext.UseCurrentCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                         CommandParameter="{Binding}"/>
                                                 <Button Content="Excluir" Style="{StaticResource GhostButton}"
                                                         Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -69,8 +69,58 @@
                                             </Border>
                                         </DockPanel>
 
-                                        <TextBlock Text="{Binding Summary}" FontFamily="{StaticResource Mono}" FontSize="11"
-                                                   Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="2,12,0,0"/>
+                                        <TextBlock Text="{Binding Count}" FontFamily="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Muted}"
+                                                   Margin="2,16,0,10"/>
+
+                                        <ItemsControl ItemsSource="{Binding Pins}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Width="52" Height="52" CornerRadius="15" Margin="0,0,8,8" Background="{StaticResource Plate}"
+                                                            BorderBrush="{StaticResource Hairline}" BorderThickness="1" ToolTip="{Binding Tip}"
+                                                            Opacity="{Binding Fade}">
+                                                        <Border.ContextMenu>
+                                                            <ContextMenu>
+                                                                <MenuItem Header="Mover para a esquerda" Command="{Binding MoveLeftCommand}"/>
+                                                                <MenuItem Header="Mover para a direita" Command="{Binding MoveRightCommand}"/>
+                                                                <MenuItem Header="Remover do preset" Command="{Binding RemoveCommand}"/>
+                                                            </ContextMenu>
+                                                        </Border.ContextMenu>
+                                                        <Grid>
+                                                            <Image Source="{Binding Icon}" Width="32" Height="32" RenderOptions.BitmapScalingMode="HighQuality">
+                                                                <Image.Style>
+                                                                    <Style TargetType="Image">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding HasIcon}" Value="False">
+                                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Image.Style>
+                                                            </Image>
+                                                            <TextBlock Text="{Binding Initial}" FontFamily="{StaticResource Display}" FontSize="16"
+                                                                       Foreground="{StaticResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding HasIcon}" Value="False">
+                                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <Button Content="+ Programa" Style="{StaticResource ActionButton}" HorizontalAlignment="Left"
+                                                Margin="0,2,0,0" Click="OnAddProgram"/>
 
                                         <TextBlock Text="AGENDA" FontFamily="{StaticResource Mono}" FontSize="9" Foreground="{StaticResource Muted}"
                                                    Margin="2,16,0,8"/>
