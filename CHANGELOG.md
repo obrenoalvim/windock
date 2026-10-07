@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-07
+
 ### Added
 - The window, picker and tray menu are available in English and Portuguese. English is the default; EN/PT buttons at the top of the window and a tray submenu switch it on the fly and the choice is remembered. Starter presets are named in English.
 - One-file, self-contained `WinDock.exe` for each release (no .NET install needed), with install steps, shortcuts and usage in both READMEs.
