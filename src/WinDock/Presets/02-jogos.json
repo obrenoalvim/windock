@@ -1,0 +1,20 @@
+{
+  "id": "jogos",
+  "name": "Jogos",
+  "glyph": "🎮",
+  "accent": "#7C5CFF",
+  "launchOnActivate": false,
+  "schedule": [
+    { "days": "Mon-Fri", "start": "18:00", "end": "24:00" },
+    { "days": "Mon-Fri", "start": "00:00", "end": "09:00" }
+  ],
+  "widgets": ["next", "cpu", "ram", "clock"],
+  "items": [
+    { "name": "Steam", "target": "steam://open/main", "icon": "C:\\Program Files (x86)\\Steam\\steam.exe", "process": "steam" },
+    { "name": "Epic", "target": "com.epicgames.launcher://apps", "icon": "C:\\Program Files (x86)\\Epic Games\\Launcher\\Portal\\Binaries\\Win64\\EpicGamesLauncher.exe", "process": "EpicGamesLauncher" },
+    { "name": "Discord", "target": "%LOCALAPPDATA%\\Discord\\Update.exe", "args": "--processStart Discord.exe", "process": "Discord" },
+    { "name": "Spotify", "target": "%APPDATA%\\Spotify\\Spotify.exe" },
+    { "name": "OBS", "target": "C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe" },
+    { "name": "Battle.net", "target": "C:\\Program Files (x86)\\Battle.net\\Battle.net Launcher.exe" }
+  ]
+}

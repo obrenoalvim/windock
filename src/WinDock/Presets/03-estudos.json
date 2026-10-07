@@ -1,0 +1,17 @@
+{
+  "id": "estudos",
+  "name": "Estudos",
+  "glyph": "📚",
+  "accent": "#3DDC97",
+  "launchOnActivate": false,
+  "schedule": [],
+  "widgets": ["clock"],
+  "items": [
+    { "name": "Obsidian", "target": "%LOCALAPPDATA%\\Programs\\Obsidian\\Obsidian.exe" },
+    { "name": "Notion", "target": "%LOCALAPPDATA%\\Programs\\Notion\\Notion.exe" },
+    { "name": "Chrome", "target": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" },
+    { "name": "Anki", "target": "%LOCALAPPDATA%\\Programs\\Anki\\anki.exe" },
+    { "name": "Calculadora", "target": "calc.exe" },
+    { "name": "Bloco de notas", "target": "notepad.exe" }
+  ]
+}

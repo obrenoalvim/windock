@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet test tests/WinDock.Tests -c Release
+      - if: startsWith(github.ref, 'refs/tags/v')
+        run: dotnet publish src/WinDock -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o publish
+      - if: startsWith(github.ref, 'refs/tags/v')
+        run: Compress-Archive -Path publish/* -DestinationPath WinDock-win-x64.zip
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: WinDock-win-x64.zip
