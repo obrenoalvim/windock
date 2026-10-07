@@ -19,6 +19,14 @@ public sealed class PinItem
     public bool IsLauncher => !IsRaw && Args is not null && AppId is not null;
 
     [JsonIgnore]
+    public bool IsUriLauncher =>
+        IsLauncher
+        && !Args!.StartsWith("shell:", StringComparison.OrdinalIgnoreCase)
+        && Uri.TryCreate(Args, UriKind.Absolute, out var uri)
+        && !uri.IsFile
+        && uri.Scheme.Length > 1;
+
+    [JsonIgnore]
     public string? ResolvedTarget =>
         string.IsNullOrWhiteSpace(Target) ? null : Environment.ExpandEnvironmentVariables(Target);
 

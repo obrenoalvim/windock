@@ -97,8 +97,8 @@ public class LibraryTests
             Convert.FromBase64String(snapshot.Binary["FavoritesResolve"])));
 
         Assert.Equal("My Game.lnk", pin.LinkName);
-        Assert.Equal("WinDock.Steam.42", pin.AppId);
-        Assert.Equal("WinDock.Steam.42", ShellLinks.ReadAppId(WriteTemp(snapshot.Links["My Game.lnk"])));
+        Assert.Equal("WinDock.Steam.42.open", pin.AppId);
+        Assert.Equal("WinDock.Steam.42.open", ShellLinks.ReadAppId(WriteTemp(snapshot.Links["My Game.lnk"])));
     }
 
     static string WriteTemp(string base64)

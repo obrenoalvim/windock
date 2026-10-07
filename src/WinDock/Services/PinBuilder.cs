@@ -6,6 +6,9 @@ public static class PinBuilder
 {
     public static readonly string LibraryDir = Path.Combine(Settings.Dir, "links");
 
+    static readonly string UriHandler = Path.Combine(Environment.SystemDirectory, "rundll32.exe");
+    const string UriHandlerSuffix = ".open";
+
     public static bool TryAdd(HashSet<string> seen, PinItem item)
     {
         var keys = Keys(item);
@@ -51,12 +54,14 @@ public static class PinBuilder
 
             var isLink = target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase);
             var icon = item.ResolvedIcon is { } i && File.Exists(i) ? i : null;
-            var bytes = item.IsLauncher
-                ? ShellLinks.CreateLauncher(target, item.Args!, icon, item.AppId!)
-                : isLink ? File.ReadAllBytes(target) : ShellLinks.CreateForExe(target);
+            var bytes = item.IsUriLauncher
+                ? ShellLinks.CreateLauncher(UriHandler, $"url.dll,FileProtocolHandler {item.Args}", icon, item.AppId + UriHandlerSuffix)
+                : item.IsLauncher
+                    ? ShellLinks.CreateLauncher(target, item.Args!, icon, item.AppId!)
+                    : isLink ? File.ReadAllBytes(target) : ShellLinks.CreateForExe(target);
             var linkName = UniqueName(item.Name, usedNames);
             var linkPath = Path.Combine(TaskbarService.LinksDir, linkName);
-            var appId = item.AppId
+            var appId = (item.IsUriLauncher ? item.AppId + UriHandlerSuffix : item.AppId)
                 ?? (isLink ? ShellLinks.ReadAppId(target) : null)
                 ?? TaskbarBlob.AppIdForTarget(LinkTarget(target));
 

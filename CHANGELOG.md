@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Opening a pinned Epic Games or Steam game could open a File Explorer window ("Documents") instead of the game, mostly when the launcher was not running yet. Game shortcuts now open their link through `rundll32 url.dll,FileProtocolHandler`, which hands it straight to the launcher. Microsoft Store apps keep using the shell namespace. Presets pinned with the old shortcuts refresh themselves the next time they are applied.
+
 ## [0.2.0] - 2026-10-07
 
 ### Added
