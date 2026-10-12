@@ -28,6 +28,36 @@ public static partial class GameLibraries
     [GeneratedRegex("^[0-9a-f]{40}\\.jpg$")]
     private static partial Regex IconHash();
 
+    [GeneratedRegex("\"installdir\"\\s+\"([^\"]+)\"")]
+    private static partial Regex InstallDir();
+
+    public static string? ParseSteamInstallDir(string acf) =>
+        InstallDir().Match(acf) is { Success: true } m ? m.Groups[1].Value.Replace(@"\\", @"\") : null;
+
+    public static string? SteamInstallPath(string id)
+    {
+        if (SteamRoot() is not { } root) return null;
+        var libraries = new List<string> { root };
+        var vdf = Path.Combine(root, "steamapps", "libraryfolders.vdf");
+        try
+        {
+            if (File.Exists(vdf)) libraries.AddRange(ParseSteamLibraries(File.ReadAllText(vdf)));
+            foreach (var library in libraries.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                var manifest = Path.Combine(library, "steamapps", $"appmanifest_{id}.acf");
+                if (File.Exists(manifest) && ParseSteamInstallDir(File.ReadAllText(manifest)) is { } dir)
+                    return Path.Combine(library, "steamapps", "common", dir);
+            }
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        return null;
+    }
+
+    public static string? EpicInstallPath(string appName) =>
+        Epic().FirstOrDefault(g => g.AppName.Equals(appName, StringComparison.OrdinalIgnoreCase))?.Executable is { } exe
+            ? Path.GetDirectoryName(exe)
+            : null;
+
     public static IEnumerable<string> ParseSteamLibraries(string vdf) =>
         LibraryPath().Matches(vdf).Select(m => m.Groups[1].Value.Replace(@"\\", @"\"));
 

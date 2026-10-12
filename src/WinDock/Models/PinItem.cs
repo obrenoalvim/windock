@@ -35,5 +35,8 @@ public sealed class PinItem
         string.IsNullOrWhiteSpace(Icon) ? null : Environment.ExpandEnvironmentVariables(Icon);
 
     [JsonIgnore]
-    public bool Exists => IsRaw || (ResolvedTarget is { } t && File.Exists(t));
+    public bool IsFolder => !IsRaw && !IsLauncher && ResolvedTarget is { } t && Directory.Exists(t);
+
+    [JsonIgnore]
+    public bool Exists => IsRaw || (ResolvedTarget is { } t && (File.Exists(t) || Directory.Exists(t)));
 }

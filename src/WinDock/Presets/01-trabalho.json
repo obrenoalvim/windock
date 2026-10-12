@@ -38,6 +38,15 @@
     {
       "name": "Slack",
       "target": "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Slack Technologies Inc\\Slack.lnk"
+    },
+    {
+      "name": "Downloads",
+      "target": "%USERPROFILE%\\Downloads"
     }
+  ],
+  "widgets": [
+    { "kind": "clock" },
+    { "kind": "pomodoro" },
+    { "kind": "progress" }
   ]
 }

@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Threading;
 using WinDock.Models;
 using WinDock.Services;
 using WinDock.ViewModels;
@@ -9,14 +10,28 @@ namespace WinDock;
 public partial class App : System.Windows.Application
 {
     const string ShowSignal = "WinDock.Show";
+    const string ExitSignal = "WinDock.Exit";
 
     Mutex? instance;
     EventWaitHandle? showEvent;
+    EventWaitHandle? exitEvent;
     TrayService? tray;
     ConfigWindow? window;
+    ShellGuard? shell;
+    DockViewModel? dock;
+    DockWindow? dockWindow;
+    MainViewModel? main;
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        exitEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ExitSignal);
+        if (e.Args.Contains("--exit"))
+        {
+            exitEvent.Set();
+            Shutdown();
+            return;
+        }
+
         instance = new Mutex(true, "WinDock.SingleInstance", out var first);
         showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowSignal);
         if (!first)
@@ -27,23 +42,50 @@ public partial class App : System.Windows.Application
         }
 
         base.OnStartup(e);
+        DispatcherUnhandledException += OnCrash;
+        ShellGuard.RecoverStale();
 
         var settings = Settings.Load();
         Loc.Instance.Set(settings.Language);
-        var vm = new MainViewModel(new PresetStore(), new TaskbarService(), settings);
-        window = new ConfigWindow(vm);
-        tray = new TrayService(vm, window);
-        vm.Start();
+        main = new MainViewModel(new PresetStore(), new TaskbarService(), settings);
+        window = new ConfigWindow(main);
+        main.Start();
+
+        shell = new ShellGuard();
+        dock = new DockViewModel(main, shell);
+        dockWindow = new DockWindow(dock, () => window.Open());
+        if (main.Dock.Enabled) dockWindow.Show();
+
+        tray = new TrayService(main, window, dock);
         if (!e.Args.Contains("--tray")) window.Open();
 
         new Thread(() =>
         {
             while (showEvent.WaitOne()) Dispatcher.BeginInvoke(() => window.Open());
         }) { IsBackground = true }.Start();
+        new Thread(() =>
+        {
+            if (exitEvent.WaitOne()) Dispatcher.BeginInvoke(Shutdown);
+        }) { IsBackground = true }.Start();
+    }
+
+    void OnCrash(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        try
+        {
+            Directory.CreateDirectory(Settings.Dir);
+            File.AppendAllText(Path.Combine(Settings.Dir, "error.log"), $"{DateTime.Now:O}  {e.Exception}{Environment.NewLine}{Environment.NewLine}");
+        }
+        catch (Exception log) when (log is IOException or UnauthorizedAccessException) { }
+        e.Handled = true;
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        main?.Dock.Flush();
+        dockWindow?.Close();
+        dock?.Dispose();
+        shell?.Dispose();
         window?.Release();
         tray?.Dispose();
         instance?.Dispose();

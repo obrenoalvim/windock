@@ -88,4 +88,17 @@ public partial class ProgramPicker : Window
         Chosen.AddRange(dialog.FileNames.Select(f => new PinItem { Name = Path.GetFileNameWithoutExtension(f), Target = f }));
         DialogResult = true;
     }
+
+    void OnBrowseFolder(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFolderDialog
+        {
+            Title = Loc.T("browseFolderTitle"),
+            Multiselect = true,
+            InitialDirectory = Launcher.Downloads()
+        };
+        if (dialog.ShowDialog(this) != true) return;
+        Chosen.AddRange(dialog.FolderNames.Select(f => new PinItem { Name = new DirectoryInfo(f).Name, Target = f }));
+        DialogResult = true;
+    }
 }

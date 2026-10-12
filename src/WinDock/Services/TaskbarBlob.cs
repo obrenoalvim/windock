@@ -55,6 +55,17 @@ public static partial class TaskbarBlob
         return exePath;
     }
 
+    public static string ExpandAppId(string appId)
+    {
+        foreach (var (id, _) in KnownFolders)
+        {
+            var prefix = "{" + id.ToString() + "}";
+            if (appId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && KnownFolderPath(id) is { Length: > 0 } root)
+                return root + appId[prefix.Length..];
+        }
+        return appId;
+    }
+
     static string KnownFolderPath(Guid id)
     {
         try

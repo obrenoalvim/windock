@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-12
+
+### Added
+- WinDock draws its own dock: a glass bar with your apps, folders and widgets, and a Mac-style magnifying lens that grows the icon under the pointer from its base and pushes its neighbors. The effect (none, scale, magnify), the magnification, the lens width and the icon size are adjustable.
+- Presets are now environments of the dock. Switching is instant: by schedule, with the mouse wheel over the dock, with the dots at its right end, or with `Ctrl+Alt+1..9`. The dock takes the color of the environment and shows its name for a moment.
+- Open apps show a dot under their icon and a colored bar for the window in front; open apps that are not pinned show after a divider. Clicking opens, brings to front or minimizes; `Shift` or middle click opens a new window; `Ctrl` click shows the program in File Explorer. Running Steam and Epic games light up their pinned icon.
+- Live window previews when the pointer rests on an open app, with a close button.
+- Widgets per environment: clock, Pomodoro, stopwatch, timer, countdown, progress of the day, week, month or year, processor and memory activity, and battery. They keep running across environments and notify when a Pomodoro or timer ends.
+- Folder stacks: a pinned folder opens as a grid of its newest files, Downloads shows a badge with the new ones, and files can be dragged out. The program picker has a **Folder...** button.
+- Optional: replace the Windows taskbar. The taskbar hides and the dock gains Start, the clock and quick settings; the `^` button shows the taskbar for its tray icons.
+- Optional: windows follow the environment. The windows of the previous environment are hidden on a switch and come back when you return.
+- A watchdog process restores the taskbar and every hidden window if WinDock ends unexpectedly, and the next start cleans up if both were killed.
+- Reserve screen space or hide the dock automatically; the dock steps aside for full screen games and videos; dark and light glass; choice of monitor; icons shrink to fit when there are too many.
+- Right-click menus on the dock and on each app; files and programs dropped on the dock are pinned to the current environment.
+- A **Dock** tab in the settings window, widget choices on each environment card, and `WinDock.exe --exit` to close a running instance cleanly.
+
+### Changed
+- Switching environments no longer rewrites the Windows taskbar or restarts Explorer. The old behavior is still available with **Also swap the Windows taskbar pins**.
+
 ## [0.2.1] - 2026-10-07
 
 ### Fixed

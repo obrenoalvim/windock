@@ -58,7 +58,10 @@
                         <Button Content="{Binding [add], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource ActionButton}" Background="#FFB547" Foreground="#101114"
                                 FontWeight="Bold" Click="OnConfirm"/>
                     </StackPanel>
-                    <Button Content="{Binding [browse], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource ActionButton}" HorizontalAlignment="Left" Click="OnBrowse"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="{Binding [browse], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource ActionButton}" Click="OnBrowse"/>
+                        <Button Content="{Binding [browseFolder], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource ActionButton}" Margin="8,0,0,0" Click="OnBrowseFolder"/>
+                    </StackPanel>
                 </DockPanel>
             </Grid>
         </Border>

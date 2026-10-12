@@ -42,11 +42,22 @@ public static class ShellIcons
     [DllImport("gdi32.dll")]
     static extern bool DeleteObject(IntPtr handle);
 
-    public static ImageSource? ForPath(string path) => Get(path, 96);
+    public static ImageSource? ForPath(string path, int size = 96) => Get(path, size);
 
-    public static ImageSource? ForAppId(string appId) => Get(@"shell:AppsFolder\" + appId, 96);
+    public static ImageSource? ForAppId(string appId, int size = 96) => Get(@"shell:AppsFolder\" + appId, size);
 
     public static BitmapSource? Render(string parsingName, int size) => Get(parsingName, size) as BitmapSource;
+
+    public static ImageSource? Thumbnail(string path, int size) => Get(path, size, ThumbnailFlags);
+
+    public static ImageSource? ForPin(Models.PinItem pin, int size = 96)
+    {
+        if (pin.IsRaw) return pin.AppId is { Length: > 0 } id ? ForAppId(id, size) : null;
+        if (pin.ResolvedIcon is { } icon && File.Exists(icon)) return ForPath(icon, size);
+        if (pin.IsLauncher && pin.Args!.StartsWith(@"shell:AppsFolder\", StringComparison.OrdinalIgnoreCase))
+            return ForPath(pin.Args, size);
+        return pin.ResolvedTarget is { } path ? ForPath(path, size) : null;
+    }
 
     public static string? NameForAppId(string appId)
     {
@@ -64,11 +75,14 @@ public static class ShellIcons
         catch (Exception e) when (e is COMException or ArgumentException or IOException) { return Names[key] = null; }
     }
 
-    static ImageSource? Get(string parsingName, int size)
+    const int IconFlags = 0x4 | 0x100;
+    const int ThumbnailFlags = 0x0;
+
+    static ImageSource? Get(string parsingName, int size, int flags = IconFlags)
     {
-        var key = $"{size}|{parsingName}";
+        var key = $"{size}|{flags}|{parsingName}";
         if (Cache.TryGetValue(key, out var hit)) return hit;
-        return Cache[key] = Load(parsingName, size);
+        return Cache[key] = Load(parsingName, size, flags);
     }
 
     static ImageSource? LoadImage(string path, int size)
@@ -87,16 +101,16 @@ public static class ShellIcons
         catch (Exception e) when (e is IOException or NotSupportedException or UriFormatException) { return null; }
     }
 
-    static ImageSource? Load(string parsingName, int size)
+    static ImageSource? Load(string parsingName, int size, int flags)
     {
-        if (Path.GetExtension(parsingName).ToLowerInvariant() is ".jpg" or ".jpeg" or ".png" or ".bmp" && File.Exists(parsingName))
+        if (flags == IconFlags && Path.GetExtension(parsingName).ToLowerInvariant() is ".jpg" or ".jpeg" or ".png" or ".bmp" && File.Exists(parsingName))
             return LoadImage(parsingName, size);
 
         try
         {
             var iid = ImageFactoryId;
             SHCreateItemFromParsingName(parsingName, IntPtr.Zero, ref iid, out var obj);
-            ((IShellItemImageFactory)obj).GetImage(new Size { Width = size, Height = size }, 0x4 | 0x100, out var bitmap);
+            ((IShellItemImageFactory)obj).GetImage(new Size { Width = size, Height = size }, flags, out var bitmap);
             try
             {
                 var source = Imaging.CreateBitmapSourceFromHBitmap(bitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());

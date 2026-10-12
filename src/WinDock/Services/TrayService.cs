@@ -13,12 +13,14 @@ public sealed class TrayService : IDisposable
 
     readonly MainViewModel vm;
     readonly ConfigWindow window;
+    readonly DockViewModel dock;
     readonly Forms.NotifyIcon icon;
 
-    public TrayService(MainViewModel vm, ConfigWindow window)
+    public TrayService(MainViewModel vm, ConfigWindow window, DockViewModel dock)
     {
         this.vm = vm;
         this.window = window;
+        this.dock = dock;
 
         using var stream = Application.GetResourceStream(new Uri("pack://application:,,,/Assets/app.ico")).Stream;
         icon = new Forms.NotifyIcon
@@ -50,6 +52,19 @@ public sealed class TrayService : IDisposable
             });
         }
 
+        menu.Add(new Forms.ToolStripSeparator());
+        menu.Add(new Forms.ToolStripMenuItem(Loc.T("showDock"), null, (_, _) => vm.Dock.Enabled = !vm.Dock.Enabled) { Checked = vm.Dock.Enabled });
+        menu.Add(new Forms.ToolStripMenuItem(Loc.T("replaceTaskbar"), null, (_, _) => vm.Dock.ReplaceTaskbar = !vm.Dock.ReplaceTaskbar)
+        {
+            Checked = vm.Dock.ReplaceTaskbar,
+            Enabled = vm.Dock.Enabled
+        });
+        if (dock.Tracker.HiddenHandles.Any())
+            menu.Add(Loc.T("showAllWindows"), null, (_, _) =>
+            {
+                dock.Tracker.ShowAll();
+                dock.Shell.SetHiddenWindows([]);
+            });
         menu.Add(new Forms.ToolStripSeparator());
         menu.Add(new Forms.ToolStripMenuItem(Loc.T("trayAuto"), null, (_, _) => vm.AutoSwitch = !vm.AutoSwitch) { Checked = vm.AutoSwitch });
         menu.Add(new Forms.ToolStripMenuItem(Loc.T("trayNotify"), null, (_, _) => vm.NotifySwitch = !vm.NotifySwitch) { Checked = vm.NotifySwitch });

@@ -27,5 +27,9 @@
       "name": "Chrome",
       "target": "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\Google Chrome.lnk"
     }
+  ],
+  "widgets": [
+    { "kind": "clock" },
+    { "kind": "countdown" }
   ]
 }

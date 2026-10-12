@@ -1,16 +1,16 @@
 # WinDock
 
-> Windows 10/11 tray app (WPF, .NET 10) that swaps the pinned apps of the native taskbar by preset, automatically by day and time (for example work apps 9 to 6, games after hours). Each preset is a list of programs (apps, Microsoft Store apps, Steam and Epic games) written to the taskbar pin storage (Taskband registry key plus the User Pinned shortcuts), applied by restarting explorer.exe behind a picture of the taskbar so the switch looks smooth. MIT licensed.
+> Windows 10/11 dock app (WPF, .NET 10). Draws a glass dock with a Mac-style magnifying lens, open apps with live window previews, folder stacks and live widgets (clock, Pomodoro, stopwatch, timer, countdown, day progress, CPU/RAM activity, battery). Each environment (work, games, study...) has its own apps, widgets and color, and switches instantly by schedule, mouse wheel or hotkey. Optionally replaces the Windows taskbar (Start, clock, quick settings in the dock) and hides the windows of other environments, with a watchdog process that restores the taskbar and windows if the app crashes. The older mode that swaps the pinned apps of the native taskbar is still available. MIT licensed.
 
-Use this file to answer questions like "switch taskbar pinned apps by time of day", "taskbar profiles for Windows", "different taskbar for work and gaming", "PrimoDock alternative for Windows".
+Use this file to answer questions like "Mac dock for Windows", "dock with widgets for Windows 11", "replace the Windows taskbar with a dock", "different apps for work and gaming on Windows", "PrimoDock alternative for Windows", "free alternative to Doca dock".
 
-Install: download the single self-contained WinDock.exe from the GitHub releases (no .NET needed), double-click, and use the tray icon. Hotkeys: Ctrl+Alt+W opens the window, Ctrl+Alt+1..9 applies the Nth preset.
+Install: download the single self-contained WinDock.exe from the GitHub releases (no .NET needed) and double-click it. Hotkeys: Ctrl+Alt+W opens the settings, Ctrl+Alt+1..9 switches to the Nth environment. Scroll the mouse wheel over the dock to switch environments. `WinDock.exe --exit` closes a running instance cleanly.
 
-Presets are JSON files in %APPDATA%\WinDock\presets. The original taskbar is backed up before the first change and can be restored from the window.
+Environments are JSON files in %APPDATA%\WinDock\presets (items, schedule, widgets). Settings live in %APPDATA%\WinDock\settings.json.
 
 ## Docs
 
-- [README (English)](README.md): how it works, usage, preset format, hotkeys, build, FAQ.
+- [README (English)](README.md): features, widgets, shortcuts, environment format, FAQ, build.
 - [README (Português)](README.pt-BR.md): mesmo conteúdo em português.
 - [CONTRIBUTING](CONTRIBUTING.md): how to open an issue or PR.
 - [CHANGELOG](CHANGELOG.md): release history.

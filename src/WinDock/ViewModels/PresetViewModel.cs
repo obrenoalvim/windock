@@ -8,6 +8,18 @@ using WinDock.Services;
 
 namespace WinDock.ViewModels;
 
+public sealed partial class WidgetChoice(string kind, bool isOn, Action<WidgetChoice> toggled) : ObservableObject
+{
+    public string Kind { get; } = kind;
+    public string Label => Loc.T("widget_" + Kind);
+
+    [ObservableProperty] bool isOn = isOn;
+
+    partial void OnIsOnChanged(bool value) => toggled(this);
+
+    public void RefreshText() => OnPropertyChanged(nameof(Label));
+}
+
 public sealed partial class PresetViewModel : ObservableObject
 {
     readonly Action<PresetViewModel> changed;
@@ -21,6 +33,8 @@ public sealed partial class PresetViewModel : ObservableObject
         Accent.Freeze();
         Slots = new ObservableCollection<SlotViewModel>(model.Schedule.Select(Wrap));
         Pins = new ObservableCollection<PinViewModel>(model.Items.Select(WrapPin));
+        var shown = model.ShownWidgets.Select(w => w.Kind).ToHashSet();
+        Widgets = new ObservableCollection<WidgetChoice>(WidgetSpec.Kinds.Select(k => new WidgetChoice(k, shown.Contains(k), ToggleWidget)));
         AddSlotCommand = new RelayCommand(AddSlot);
     }
 
@@ -31,9 +45,50 @@ public sealed partial class PresetViewModel : ObservableObject
     public SolidColorBrush Accent { get; }
     public ObservableCollection<SlotViewModel> Slots { get; }
     public ObservableCollection<PinViewModel> Pins { get; }
+    public ObservableCollection<WidgetChoice> Widgets { get; }
     public ICommand AddSlotCommand { get; }
     public bool HasItems => Model.Items.Count > 0;
     public string Count => Model.Items.Count == 1 ? Loc.T("countOne") : Loc.F("countMany", Model.Items.Count);
+
+    WidgetSpec? CountdownSpec => Model.Widgets?.FirstOrDefault(w => w.Kind == WidgetSpec.Countdown);
+
+    public bool HasCountdown => CountdownSpec is not null;
+
+    public string CountdownDate
+    {
+        get => CountdownSpec?.Date ?? "";
+        set
+        {
+            if (CountdownSpec is not { } spec) return;
+            spec.Date = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+            OnPropertyChanged();
+            changed(this);
+        }
+    }
+
+    public string CountdownLabel
+    {
+        get => CountdownSpec?.Label ?? "";
+        set
+        {
+            if (CountdownSpec is not { } spec) return;
+            spec.Label = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+            OnPropertyChanged();
+            changed(this);
+        }
+    }
+
+    void ToggleWidget(WidgetChoice choice)
+    {
+        var current = Model.ShownWidgets.ToDictionary(w => w.Kind);
+        Model.Widgets = Widgets.Where(w => w.IsOn)
+            .Select(w => current.TryGetValue(w.Kind, out var spec) ? spec : new WidgetSpec { Kind = w.Kind })
+            .ToList();
+        OnPropertyChanged(nameof(HasCountdown));
+        OnPropertyChanged(nameof(CountdownDate));
+        OnPropertyChanged(nameof(CountdownLabel));
+        changed(this);
+    }
 
     public string Name
     {
@@ -71,6 +126,7 @@ public sealed partial class PresetViewModel : ObservableObject
         OnPropertyChanged(nameof(Count));
         foreach (var pin in Pins) pin.RefreshText();
         foreach (var slot in Slots) slot.RefreshText();
+        foreach (var widget in Widgets) widget.RefreshText();
     }
 
     public void RemoveDuplicates()

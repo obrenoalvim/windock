@@ -1,0 +1,412 @@
+<Window x:Class="WinDock.Views.DockWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+        xmlns:v="clr-namespace:WinDock.Views"
+        xmlns:vm="clr-namespace:WinDock.ViewModels"
+        Title="WinDock Dock"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize" ShowActivated="False"
+        Width="900" Height="170" Left="-32000" Top="-32000" AllowDrop="True" Focusable="False"
+        UseLayoutRounding="True" TextOptions.TextFormattingMode="Ideal"
+        FontFamily="{StaticResource Mono}">
+
+    <Window.Resources>
+        <sys:Double x:Key="IconSize">46</sys:Double>
+        <sys:Double x:Key="WideSize">100</sys:Double>
+        <SolidColorBrush x:Key="DockLine" Color="#33FFFFFF"/>
+        <SolidColorBrush x:Key="DotIdle" Color="#59FFFFFF"/>
+        <SolidColorBrush x:Key="TileFace" Color="#1FFFFFFF"/>
+        <SolidColorBrush x:Key="DockInk" Color="#F4EFE7"/>
+        <SolidColorBrush x:Key="DockMuted" Color="#B3F4EFE7"/>
+        <FontFamily x:Key="Glyphs">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+        <LinearGradientBrush x:Key="WClock" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#4F8CFF" Offset="0"/>
+            <GradientStop Color="#2F5FE0" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WPomodoro" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FF6F5B" Offset="0"/>
+            <GradientStop Color="#E0453A" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WBreak" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#34D399" Offset="0"/>
+            <GradientStop Color="#0E9F6E" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WStopwatch" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FFB547" Offset="0"/>
+            <GradientStop Color="#E8890C" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WTimer" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#A07CFF" Offset="0"/>
+            <GradientStop Color="#7044F0" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WCountdown" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#3DDC97" Offset="0"/>
+            <GradientStop Color="#13A86B" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WProgress" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#22C3E6" Offset="0"/>
+            <GradientStop Color="#0A8FB8" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WActivity" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FF8A3D" Offset="0"/>
+            <GradientStop Color="#E3601A" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WBattery" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#5BD46B" Offset="0"/>
+            <GradientStop Color="#2EA043" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WindowsBlue" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#7FD3FF" Offset="0"/>
+            <GradientStop Color="#1E88E5" Offset="1"/>
+        </LinearGradientBrush>
+
+        <SolidColorBrush x:Key="WInk" Color="White"/>
+        <SolidColorBrush x:Key="WSoft" Color="#E0FFFFFF"/>
+        <SolidColorBrush x:Key="WTrack" Color="#40FFFFFF"/>
+
+        <Style x:Key="TileRoot" TargetType="Grid">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Height" Value="{DynamicResource IconSize}"/>
+            <EventSetter Event="MouseEnter" Handler="OnTileEnter"/>
+            <EventSetter Event="MouseLeave" Handler="OnTileLeave"/>
+            <EventSetter Event="MouseDown" Handler="OnTileDown"/>
+            <EventSetter Event="MouseUp" Handler="OnTileUp"/>
+            <EventSetter Event="MouseWheel" Handler="OnTileWheel"/>
+            <EventSetter Event="Loaded" Handler="OnTileLoaded"/>
+        </Style>
+
+        <Style x:Key="Caption" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource Mono}"/>
+            <Setter Property="FontSize" Value="7.5"/>
+            <Setter Property="Foreground" Value="{StaticResource WSoft}"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+
+        <Style x:Key="Big" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource Mono}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="{StaticResource WInk}"/>
+        </Style>
+
+        <Style x:Key="WidgetFace" TargetType="Border">
+            <Setter Property="Width" Value="100"/>
+            <Setter Property="Height" Value="46"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="BorderBrush" Value="#33FFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+
+        <DataTemplate DataType="{x:Type vm:AppTile}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource IconSize}">
+                <Image Source="{Binding Icon}" RenderOptions.BitmapScalingMode="HighQuality"
+                       Visibility="{Binding HasIcon, Converter={StaticResource Show}}"/>
+                <Border CornerRadius="12" Background="{DynamicResource TileFace}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasIcon}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="{Binding Initial}" FontFamily="{StaticResource Display}" FontSize="16"
+                               Foreground="{DynamicResource DockInk}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-3,-3,0" MinWidth="17" Height="17"
+                        CornerRadius="8.5" Background="#FF453A" Padding="4,0" BorderBrush="#40000000" BorderThickness="1"
+                        Visibility="{Binding HasBadge, Converter={StaticResource Show}}">
+                    <TextBlock Text="{Binding BadgeText}" FontSize="9.5" FontWeight="Bold" Foreground="White"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:SeparatorTile}">
+            <Grid Width="11" Height="{DynamicResource IconSize}">
+                <Rectangle Width="1" Margin="0,7" Fill="{DynamicResource DockLine}" HorizontalAlignment="Center"/>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:StartTile}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource IconSize}">
+                <Border CornerRadius="13" Background="{DynamicResource TileFace}"/>
+                <Viewbox Margin="12">
+                    <Canvas Width="20" Height="20">
+                        <Rectangle Width="9.4" Height="9.4" RadiusX="1" RadiusY="1" Fill="{StaticResource WindowsBlue}"/>
+                        <Rectangle Canvas.Left="10.6" Width="9.4" Height="9.4" RadiusX="1" RadiusY="1" Fill="{StaticResource WindowsBlue}"/>
+                        <Rectangle Canvas.Top="10.6" Width="9.4" Height="9.4" RadiusX="1" RadiusY="1" Fill="{StaticResource WindowsBlue}"/>
+                        <Rectangle Canvas.Left="10.6" Canvas.Top="10.6" Width="9.4" Height="9.4" RadiusX="1" RadiusY="1" Fill="{StaticResource WindowsBlue}"/>
+                    </Canvas>
+                </Viewbox>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:SystemTile}">
+            <StackPanel Orientation="Horizontal" Height="{DynamicResource IconSize}">
+                <Border Background="Transparent" Padding="6,0" Cursor="Hand" ToolTip="{Binding TrayTip}" MouseLeftButtonUp="OnTrayClick">
+                    <TextBlock Text="&#xE70E;" FontFamily="{StaticResource Glyphs}" FontSize="12" Foreground="{DynamicResource DockInk}" VerticalAlignment="Center"/>
+                </Border>
+                <Border Background="Transparent" Padding="8,0" CornerRadius="10" Cursor="Hand" ToolTip="{Binding StatusTip}" MouseLeftButtonUp="OnStatusClick">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding NetworkGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{DynamicResource DockInk}"/>
+                        <TextBlock Text="{Binding VolumeGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{DynamicResource DockInk}" Margin="9,0,0,0"/>
+                        <TextBlock Text="{Binding BatteryGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{DynamicResource DockInk}" Margin="9,0,0,0"
+                                   Visibility="{Binding HasBattery, Converter={StaticResource Show}}"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="Transparent" Padding="8,0,6,0" Cursor="Hand" ToolTip="{Binding ClockTip}" MouseLeftButtonUp="OnClockClick">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Time}" FontSize="12" Foreground="{DynamicResource DockInk}" HorizontalAlignment="Right"/>
+                        <TextBlock Text="{Binding Date}" FontSize="10" Foreground="{DynamicResource DockMuted}" HorizontalAlignment="Right" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:EnvTile}">
+            <Grid Height="{DynamicResource IconSize}" Background="Transparent">
+                <ItemsControl ItemsSource="{Binding Dots}" VerticalAlignment="Center" Margin="2,0">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="4,14" Background="Transparent" Cursor="Hand" ToolTip="{Binding Tip}" MouseLeftButtonUp="OnDotClick">
+                                <Border x:Name="Pill" Width="8" Height="8" CornerRadius="4" Background="{DynamicResource DotIdle}"/>
+                            </Border>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                    <Setter TargetName="Pill" Property="Width" Value="22"/>
+                                    <Setter TargetName="Pill" Property="Background" Value="{Binding Accent}"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:ClockWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
+                <Viewbox>
+                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WClock}">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding Time}" FontFamily="{StaticResource Display}" FontSize="16.5" Foreground="{StaticResource WInk}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding Date}" Style="{StaticResource Caption}" FontSize="8" HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Viewbox>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:PomodoroWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
+                <Viewbox>
+                    <Border x:Name="Face" Style="{StaticResource WidgetFace}" Background="{StaticResource WPomodoro}">
+                        <Grid Margin="9,0,6,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="28"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid Width="26" Height="26" VerticalAlignment="Center">
+                                <Ellipse Stroke="{StaticResource WTrack}" StrokeThickness="3"/>
+                                <v:RingArc Progress="{Binding Progress}" Stroke="{StaticResource WInk}" StrokeThickness="3"
+                                           StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                            </Grid>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="7,0,0,0">
+                                <TextBlock Text="{Binding Text}" Style="{StaticResource Big}"/>
+                                <TextBlock Text="{Binding Label}" Style="{StaticResource Caption}" Margin="0,1,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Viewbox>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsBreak}" Value="True">
+                    <Setter TargetName="Face" Property="Background" Value="{StaticResource WBreak}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:StopwatchWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
+                <Viewbox>
+                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WStopwatch}">
+                        <Grid Margin="10,0,6,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE916;" FontFamily="{StaticResource Glyphs}" FontSize="19" Foreground="{StaticResource WInk}" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
+                                <TextBlock Text="{Binding Text}" Style="{StaticResource Big}" FontSize="13"/>
+                                <TextBlock Text="{Binding Label}" Style="{StaticResource Caption}" Margin="0,1,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Viewbox>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:TimerWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
+                <Viewbox>
+                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WTimer}">
+                        <Grid Margin="9,0,6,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="28"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid Width="26" Height="26" VerticalAlignment="Center">
+                                <Ellipse Stroke="{StaticResource WTrack}" StrokeThickness="3"/>
+                                <v:RingArc Progress="{Binding Progress}" Stroke="{StaticResource WInk}" StrokeThickness="3"
+                                           StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                <TextBlock Text="&#xE823;" FontFamily="{StaticResource Glyphs}" FontSize="10" Foreground="{StaticResource WInk}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="7,0,0,0">
+                                <TextBlock Text="{Binding Text}" Style="{StaticResource Big}"/>
+                                <TextBlock Text="{Binding Label}" Style="{StaticResource Caption}" Margin="0,1,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Viewbox>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:CountdownWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
+                <Viewbox>
+                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WCountdown}">
+                        <Grid Margin="8,0,6,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Text}" FontFamily="{StaticResource Display}" FontSize="16" Foreground="{StaticResource WInk}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Label}" Style="{StaticResource Caption}" FontSize="7" LineHeight="8.5" TextWrapping="Wrap"
+                                       TextTrimming="CharacterEllipsis" MaxHeight="27" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                        </Grid>
+                    </Border>
+                </Viewbox>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:ProgressWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
+                <Viewbox>
+                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WProgress}">
+                        <Grid Margin="10,7,10,8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Text}" Style="{StaticResource Big}" FontSize="15"/>
+                                <TextBlock Text="{Binding Label}" Style="{StaticResource Caption}" VerticalAlignment="Bottom" Margin="6,0,0,2"/>
+                            </StackPanel>
+                            <Grid Grid.Row="1" Height="4">
+                                <Border CornerRadius="2" Background="{StaticResource WTrack}"/>
+                                <Border CornerRadius="2" Background="{StaticResource WInk}" RenderTransformOrigin="0,0.5">
+                                    <Border.RenderTransform>
+                                        <ScaleTransform ScaleX="{Binding Value}"/>
+                                    </Border.RenderTransform>
+                                </Border>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Viewbox>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:ActivityWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
+                <Viewbox>
+                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WActivity}">
+                        <Grid Margin="9,8,9,8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="22"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="27"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="CPU" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
+                            <Grid Grid.Column="1" Height="4" Margin="2,0,4,0">
+                                <Border CornerRadius="2" Background="{StaticResource WTrack}"/>
+                                <Border CornerRadius="2" Background="{StaticResource WInk}" RenderTransformOrigin="0,0.5">
+                                    <Border.RenderTransform>
+                                        <ScaleTransform ScaleX="{Binding Cpu}"/>
+                                    </Border.RenderTransform>
+                                </Border>
+                            </Grid>
+                            <TextBlock Grid.Column="2" Text="{Binding CpuText}" Style="{StaticResource Caption}" Foreground="{StaticResource WInk}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="1" Text="RAM" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
+                            <Grid Grid.Row="1" Grid.Column="1" Height="4" Margin="2,0,4,0">
+                                <Border CornerRadius="2" Background="{StaticResource WTrack}"/>
+                                <Border CornerRadius="2" Background="{StaticResource WInk}" RenderTransformOrigin="0,0.5">
+                                    <Border.RenderTransform>
+                                        <ScaleTransform ScaleX="{Binding Ram}"/>
+                                    </Border.RenderTransform>
+                                </Border>
+                            </Grid>
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding RamText}" Style="{StaticResource Caption}" Foreground="{StaticResource WInk}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+                </Viewbox>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:BatteryWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource IconSize}">
+                <Viewbox>
+                    <Border Style="{StaticResource WidgetFace}" Width="46" Background="{StaticResource WBattery}">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding Glyph}" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{StaticResource WInk}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding Text}" Style="{StaticResource Caption}" FontSize="8.5" Foreground="{StaticResource WInk}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Viewbox>
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid x:Name="Root">
+        <Grid.RenderTransform>
+            <TranslateTransform x:Name="Slide"/>
+        </Grid.RenderTransform>
+
+        <ItemsControl x:Name="Strip" ItemsSource="{Binding Tiles}" Margin="0,0,0,6" Focusable="False">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <v:LensPanel Loaded="OnPanelLoaded" MouseMove="OnPanelMove" MouseEnter="OnPanelEnter" MouseLeave="OnPanelLeave"
+                                 MouseRightButtonUp="OnPanelMenu" MouseWheel="OnPanelWheel"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemContainerStyle>
+                <Style TargetType="ContentPresenter">
+                    <Setter Property="v:LensPanel.Lens" Value="{Binding Lens}"/>
+                    <Setter Property="v:LensPanel.Indicator" Value="{Binding Indicator}"/>
+                </Style>
+            </ItemsControl.ItemContainerStyle>
+        </ItemsControl>
+
+        <Canvas IsHitTestVisible="False">
+            <Border x:Name="NameTag" CornerRadius="9" Padding="10,5" Opacity="0" Background="#EB1E2029"
+                    BorderBrush="#26FFFFFF" BorderThickness="1">
+                <TextBlock x:Name="NameText" FontSize="11.5" Foreground="#F4EFE7"/>
+            </Border>
+            <Border x:Name="Banner" CornerRadius="14" Padding="14,7" Opacity="0" BorderBrush="#40FFFFFF" BorderThickness="1">
+                <TextBlock x:Name="BannerText" FontSize="12" FontWeight="Bold" Foreground="#101114"/>
+            </Border>
+        </Canvas>
+    </Grid>
+</Window>

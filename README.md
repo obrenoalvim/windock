@@ -4,8 +4,8 @@
 
 # WinDock
 
-**One Windows PC. Several taskbars.**<br>
-Swap the pinned apps on your real Windows taskbar by preset and by schedule: work apps from 9 to 6, games after hours. One click or one hotkey.
+**One Windows PC. A dock for every moment.**<br>
+A glass dock for Windows with environments, live widgets and a Mac-style magnifying lens. Work apps from 9 to 6, games after hours, each with its own dock. It can even replace the taskbar.
 
 [![Download WinDock.exe](https://img.shields.io/badge/Download-WinDock.exe-FFB547?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/obrenoalvim/windock/releases/latest/download/WinDock.exe)
 
@@ -16,71 +16,89 @@ Swap the pinned apps on your real Windows taskbar by preset and by schedule: wor
 
 **English** · [Português](README.pt-BR.md)
 
-[Install](#install) · [Quick start](#quick-start) · [Shortcuts](#keyboard-shortcuts) · [How it works](#how-it-works) · [Presets](#presets) · [FAQ](#faq) · [Build](#build)
+[Install](#install) · [Quick start](#quick-start) · [The dock](#the-dock) · [Widgets](#widgets) · [Shortcuts](#shortcuts) · [Environments](#environments) · [FAQ](#faq) · [Build](#build)
 
 </div>
 
 ---
 
-WinDock does not draw a second dock. The icons stay exactly where Windows puts them. WinDock is the orchestrator behind them: it keeps one **preset** per context (work, games, study...), each one a list of programs shown with their real icons, and swaps the taskbar on a schedule or with one click.
+WinDock draws its own dock at the bottom of the screen: your apps, folders and widgets on a glass bar, with the icon under the pointer growing like on a Mac. Each **environment** (Work, Games, Study, Weekend...) has its own apps, widgets and color, and switches on a schedule, with the mouse wheel or with a hotkey. Switching is instant.
 
-Inspired by [PrimoDock](https://dock.oprimo.dev/) for macOS.
+Inspired by [PrimoDock](https://dock.oprimo.dev/) for macOS. Free and open source.
 
 ## Install
 
 You do not need to install .NET or anything else. It is a single file.
 
 1. **Download** [`WinDock.exe`](https://github.com/obrenoalvim/windock/releases/latest/download/WinDock.exe) (about 65 MB, everything included).
-2. **Double-click it.** If Windows shows a blue "Windows protected your PC" screen, click **More info**, then **Run anyway**. That screen appears because the file is not code-signed yet, and every new app gets it.
-3. **WinDock opens** and puts an icon in the system tray, next to the clock (click the small arrow if you do not see it). Closing the window does not quit the app, it keeps running there.
-4. Optional: right-click the tray icon and turn on **Start with Windows** so it starts with your PC.
+2. **Double-click it.** If Windows shows a blue "Windows protected your PC" screen, click **More info**, then **Run anyway**. That screen appears because the file is not code-signed yet.
+3. **The dock appears** above the taskbar, and the settings window opens. WinDock also puts an icon in the system tray.
+4. Optional: right-click the tray icon and turn on **Start with Windows**.
 
-To remove it: right-click the tray icon, pick **Restore original** in the window if you want your old taskbar back, then **Exit** and delete `WinDock.exe` and the folder `%APPDATA%\WinDock`.
+To remove it: right-click the dock and pick **Exit**, then delete `WinDock.exe` and the folder `%APPDATA%\WinDock`.
 
 ## Quick start
 
-1. Open the window (tray icon, or `Ctrl+Alt+W`). You see one card per preset: **Work**, **Games**, **Study** and **Weekend**. Your current taskbar was copied into the one that matches the current time.
-2. Click **+ Program** on a card and pick what should be pinned. The picker has tabs for your programs, Microsoft Store apps (WhatsApp, Calculator...), and the Steam and Epic Games you have installed.
-3. Under **Schedule**, pick the days and hours the preset should be active. Or skip it and switch by hand.
-4. Click **Apply**, or just wait for the schedule. The taskbar changes in about half a second for a preset you have used before.
+1. Open the settings (right-click the dock, the tray icon, or `Ctrl+Alt+W`). The **Environments** tab has one card per environment.
+2. Click **+ Program** on a card and pick apps, Microsoft Store apps, Steam and Epic games, or a **Folder...** to stack in the dock (Downloads is a good one).
+3. Turn on the **widgets** you want for that environment: clock, Pomodoro, stopwatch, timer, countdown, progress, activity, battery.
+4. Under **Schedule**, pick the days and hours the environment is active. Or skip it and switch by hand: scroll the mouse wheel over the dock, click the dots at its right end, or press `Ctrl+Alt+1..9`.
 
-Programs in the **Always pinned** card at the top (say Brave, File Explorer, Spotify) go first in every preset, so each preset only needs the extra ones.
+Programs in the **Always pinned** card show in every environment, before the others.
 
-## Keyboard shortcuts
+## The dock
+
+- **Magnifying lens.** The icon under the pointer grows from its base, past the edge of the glass, and pushes its neighbors. Pick the effect (none, scale, magnify), the magnification, the lens width and the icon size in the **Dock** tab.
+- **Open apps.** A dot under an icon means the app is open; the colored bar marks the window in front. Apps you have open but did not pin show after a divider, so the dock also works as a taskbar.
+- **Live previews.** Rest the pointer on an open app to see each of its windows live, with a close button.
+- **Folder stacks.** A pinned folder opens as a grid of its newest files. Downloads shows a badge with how many new files arrived. Drag a file out of the stack into any app.
+- **Environments.** Each one has its apps, widgets and accent color. The dock changes color when you switch, and a label shows the new environment.
+- **Windows follow the environment** (optional). When you switch, the windows of the previous environment step aside and come back when you return. Programs that are always pinned stay visible everywhere.
+- **Replace the taskbar** (optional). The Windows taskbar hides and the dock gains Start, the clock and quick settings (network, sound, battery). The `^` button shows the taskbar for a moment, with its tray icons.
+- **Safe by design.** The taskbar, the reserved screen space and any hidden window come back when WinDock closes. If WinDock crashes, a small watchdog process puts everything back.
+- **Reserve screen space** so maximized windows stop above the dock, or **hide automatically** so it slides away until the pointer touches the bottom edge.
+- **Full screen aware.** The dock steps aside while a game or video runs in full screen.
+- Dark and light glass, any monitor, drag files or programs onto the dock to pin them, and too many icons shrink to fit.
+
+## Widgets
+
+| Widget | What it shows | Click | Other |
+|---|---|---|---|
+| Clock | Time and date | Opens the calendar and notifications | |
+| Pomodoro | 25 min focus, 5 min break, 15 min every fourth | Start or pause | Right-click to reset; notifies at the end |
+| Stopwatch | Elapsed time | Start or pause | Right-click to reset |
+| Timer | Countdown with a ring | Start or pause | Scroll to set the minutes; notifies at the end |
+| Countdown | Days left to a date | | Set the date and name on the environment card; Christmas by default |
+| Progress | How much of the day has passed | Cycles day, week, month, year | |
+| Activity | Processor and memory use | | |
+| Battery | Charge, or plugged in | | |
+
+Widgets keep running when you switch environments, so a Pomodoro started at work still finishes on time.
+
+## Shortcuts
 
 | Keys | What it does |
 |---|---|
-| `Ctrl+Alt+W` | Open or hide the WinDock window |
-| `Ctrl+Alt+1` ... `9` | Apply the 1st ... 9th preset (the order of the cards) |
-| `Esc` | Close the window (the app keeps running in the tray) |
+| `Ctrl+Alt+W` | Open or hide the settings window |
+| `Ctrl+Alt+1` ... `9` | Switch to the 1st ... 9th environment |
+| `Esc` | Close the settings window (the app keeps running) |
 
-| Mouse | What it does |
+| Mouse on the dock | What it does |
 |---|---|
-| Tray icon, left click | Open or hide the window |
-| Tray icon, right click | Preset list, switches, language and exit |
-| Right-click an app icon on a card | Move left, move right, remove |
-| **Apply** on a card | Put that preset on the taskbar |
-| **Use current taskbar** on a card | Replace the card's programs with what is pinned right now |
-| **+ New preset** | Create an empty preset |
-| **EN** / **PT** (top right of the window) | Switch the app language. English is the default; it is remembered |
-| **Restore original** | Bring back the taskbar you had before WinDock touched it |
+| Click an app | Open it, bring its window to the front, or minimize it if it is already in front. Several windows: shows them to pick one |
+| `Shift`+click or middle click | Open a new window |
+| `Ctrl`+click | Show the program in File Explorer |
+| Right-click an app | New window, pin or unpin (this environment or all), show in Explorer, close windows |
+| Rest on an open app | Live preview of its windows |
+| Scroll the wheel | Switch to the previous or next environment |
+| Right-click the glass | Environments, replace taskbar, hide automatically, windows follow, settings, exit |
+| Drop files or programs | Pin them to the current environment |
 
-The tray menu also has **Auto-switch on schedule**, **Notify on switch**, **Language** and **Start with Windows**. Opening WinDock a second time just brings the window forward.
+## Environments
 
-## How it works
+Starter environments are installed on first run: **Work** (Mon-Fri 09:00-18:00), **Games** (Mon-Fri 18:00-09:00), **Study** (manual) and **Weekend** (Sat-Sun). Programs that are not installed on your machine are left out.
 
-Windows stores taskbar pins in the `Taskband` registry key plus the shortcuts in `%APPDATA%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar`. A preset is a list of programs. Applying one writes those two places for exactly that list, then restarts `explorer.exe` so Windows reads them. WinDock covers that restart with a picture of the taskbar so it does not look like a flicker.
-
-- Switching never closes your programs. Only the Windows shell restarts.
-- The original taskbar is saved before the first change, so **Restore original** always works.
-- If the pins are already the ones you asked for, nothing restarts.
-- If you ask for another preset in the middle of a switch, the latest one wins.
-
-## Presets
-
-Starter presets are installed on first run: **Work** (Mon-Fri 09:00-18:00), **Games** (Mon-Fri 18:00-09:00), **Study** (manual) and **Weekend** (Sat-Sun). Programs that are not installed on your machine are left out.
-
-Presets live in `%APPDATA%\WinDock\presets` as JSON, and the window edits them for you:
+Environments live in `%APPDATA%\WinDock\presets` as JSON, and the settings window edits them for you:
 
 ```json
 {
@@ -94,12 +112,39 @@ Presets live in `%APPDATA%\WinDock\presets` as JSON, and the window edits them f
   ],
   "items": [
     { "name": "Steam", "target": "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\Steam\\Steam.lnk" },
-    { "name": "Spotify", "target": "%APPDATA%\\Spotify\\Spotify.exe" }
+    { "name": "Downloads", "target": "%USERPROFILE%\\Downloads" }
+  ],
+  "widgets": [
+    { "kind": "clock" },
+    { "kind": "timer", "minutes": 10 },
+    { "kind": "countdown", "date": "12-25", "label": "Christmas" }
   ]
 }
 ```
 
-`days` accepts `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. `end` is exclusive and `24:00` means midnight, so 18:00 to 09:00 is two slots. The first preset (by file name) that matches the current time wins. `target` is an `.exe` or `.lnk` (environment variables work). Store apps and games are saved as a launcher (`target` plus `args`, `icon` and an `appId`), for example `steam://rungameid/1243130`.
+`days` accepts `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. `end` is exclusive and `24:00` means midnight. The first environment (by file name) that matches the current time wins. `target` is an `.exe`, `.lnk` or folder (environment variables work). Store apps and games are saved as a launcher (`target` plus `args`, `icon` and an `appId`), for example `steam://rungameid/1243130`. Widget kinds: `clock`, `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `battery`. A countdown `date` is `yyyy-MM-dd` for a fixed day or `MM-dd` to repeat every year.
+
+### The old taskbar mode
+
+Before the dock, WinDock swapped the pinned apps of the real Windows taskbar. That still works: turn on **Also swap the Windows taskbar pins** in the **Dock** tab. Each switch then rewrites the taskbar pin storage (the `Taskband` registry key and the `User Pinned\TaskBar` shortcuts) and restarts `explorer.exe` behind a picture of the taskbar. **Restore original taskbar** brings back the pins you had before WinDock touched them.
+
+## FAQ
+
+**Does it replace the taskbar?** Only if you turn it on. By default the dock sits above the taskbar. With **Replace the Windows taskbar** on, the taskbar hides, and the dock brings Start, the clock and quick settings. The `^` button shows the real taskbar for its tray icons. Close WinDock and the taskbar is back exactly as it was, even after a crash.
+
+**What does the watchdog do?** When WinDock hides the taskbar or a window, it starts a tiny copy of itself (`WinDock.exe --watchdog`) that only waits. If WinDock ends for any reason, the watchdog shows the taskbar and every hidden window again. If both are killed, the next start of WinDock cleans up.
+
+**Are environments virtual desktops?** No, they work on the desktop you are on. With **Windows follow the environment** on, the windows of other environments are hidden instead, and they return when you switch back. Windows that run as administrator (like Task Manager) cannot be hidden by a normal app and stay where they are.
+
+**Why did the dock hide while I play?** WinDock steps aside when the window in front covers the whole screen, like a game or a video in full screen.
+
+**Does it slow the PC down?** At rest it uses under 1% of one processor core and around 170 MB of memory, most of it the .NET runtime packed inside the single exe. It listens to Windows window events instead of polling.
+
+**Which programs can it pin?** Any `.exe`, `.lnk` or folder, Microsoft Store apps, and installed Steam and Epic Games games. A running game lights up its pinned icon.
+
+**Does it work on Windows 10?** It uses no Windows 11 only API, but it has only been tested on Windows 11. Reports from Windows 10 are welcome.
+
+**Is it safe? Why does Windows warn me?** The code is all in this repository. The warning is Windows being cautious with an unsigned file. WinDock changes only your own user's settings: the taskbar visibility and auto-hide while replacing it, and, in the old taskbar mode, the taskbar pins.
 
 ## Build
 
@@ -111,23 +156,7 @@ dotnet test
 dotnet publish src/WinDock -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
 ```
 
-The last command produces the single `publish/WinDock.exe` that is attached to each release. Layout: `Models/` (presets, schedule, snapshot), `Services/` (taskbar, blob builder, catalog, tray), `ViewModels/` (MVVM Toolkit), `Views/` and `Themes/` (XAML).
-
-## FAQ
-
-**Why is there a pause when it switches?** Windows only reads taskbar pins when the shell starts, so WinDock restarts `explorer.exe`, which takes about two seconds. To keep it subtle, WinDock covers the restart with pictures of the taskbar: it remembers how each preset looked, so a preset you have used before appears in about half a second while Windows catches up behind it, and then fades into the real one. The first switch to a preset never seen before holds the old picture instead. You can pick another preset right away: the latest choice wins. Open File Explorer windows are still closed by the restart, and desktop icons blink. Turn off **Auto-switch** if you do not want it to happen on its own. Windows 11 24H2 and later block pinning from other programs, so there is no restart-free way to add pins.
-
-**Does it close my apps?** No. Only the shell restarts. Running programs keep running.
-
-**Can it break my taskbar?** The original state is saved before the first change and **Restore original** brings it back. If writing the new taskbar fails, the previous one is put back.
-
-**Why did an icon show up blank?** Windows keeps one entry per program. The same program listed twice, even through different shortcuts, used to produce a blank icon. WinDock now removes duplicates for you.
-
-**Which programs can a preset hold?** Any `.exe` or `.lnk`, Microsoft Store apps, and installed Steam and Epic Games games.
-
-**Does it work on Windows 10?** It is built on the same registry key and shortcut folder that Windows 10 uses, with no Windows 11 only API, but it has only been tested on Windows 11. Reports from Windows 10 are welcome.
-
-**Is it safe? Why does Windows warn me?** The code is all in this repository. The warning is Windows being cautious with an unsigned file. WinDock writes only the taskbar pin storage of your own user and restarts the shell, nothing else.
+`WinDock.exe --exit` closes a running WinDock cleanly, which is handy before rebuilding. Layout: `Models/` (environments, schedule, settings), `Services/` (window tracking, taskbar and watchdog, launchers, taskbar pins, tray), `ViewModels/` (dock tiles, widgets, MVVM Toolkit), `Views/` (dock window, lens panel, previews, folder stacks, settings) and `Themes/` (XAML).
 
 ## License
 

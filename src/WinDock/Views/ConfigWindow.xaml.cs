@@ -42,10 +42,48 @@ public partial class ConfigWindow : Window
 
     public void Open()
     {
+        FillScreens();
         Show();
         Topmost = true;
         Activate();
         Topmost = false;
+    }
+
+    void OnEnvironmentsTab(object sender, RoutedEventArgs e) => ShowTab(dock: false);
+
+    void OnDockTab(object sender, RoutedEventArgs e) => ShowTab(dock: true);
+
+    void ShowTab(bool dock)
+    {
+        EnvTab.IsChecked = !dock;
+        DockTab.IsChecked = dock;
+        EnvironmentsPage.Visibility = dock ? Visibility.Collapsed : Visibility.Visible;
+        DockPage.Visibility = dock ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    void FillScreens()
+    {
+        var screens = System.Windows.Forms.Screen.AllScreens;
+        ScreenRow.Visibility = screens.Length > 1 ? Visibility.Visible : Visibility.Collapsed;
+        Screens.Children.Clear();
+        if (screens.Length < 2) return;
+        var current = screens.FirstOrDefault(s => s.DeviceName == vm.Dock.Screen) ?? System.Windows.Forms.Screen.PrimaryScreen;
+        for (var i = 0; i < screens.Length; i++)
+        {
+            var screen = screens[i];
+            var chip = new System.Windows.Controls.Primitives.ToggleButton
+            {
+                Content = $"{i + 1}  {screen.Bounds.Width}×{screen.Bounds.Height}",
+                Style = (Style)FindResource("ChipToggle"),
+                IsChecked = screen.DeviceName == current?.DeviceName
+            };
+            chip.Click += (_, _) =>
+            {
+                vm.Dock.Screen = screen.DeviceName;
+                FillScreens();
+            };
+            Screens.Children.Add(chip);
+        }
     }
 
     public void Release()

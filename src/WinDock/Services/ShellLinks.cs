@@ -56,6 +56,9 @@ public static class ShellLinks
     static extern void SHGetPropertyStoreFromParsingName(string path, IntPtr bindContext, int flags, ref Guid iid,
         [MarshalAs(UnmanagedType.Interface)] out IPropertyStore store);
 
+    [DllImport("shell32.dll")]
+    static extern int SHGetPropertyStoreForWindow(IntPtr hwnd, ref Guid iid, [MarshalAs(UnmanagedType.Interface)] out IPropertyStore store);
+
     [DllImport("ole32.dll")]
     static extern int PropVariantClear(IntPtr value);
 
@@ -123,22 +126,42 @@ public static class ShellLinks
 
     public static string? ReadAppId(string path)
     {
+        try
+        {
+            var iid = PropertyStoreId;
+            SHGetPropertyStoreFromParsingName(path, IntPtr.Zero, 0, ref iid, out var store);
+            return AppIdFrom(store);
+        }
+        catch (Exception e) when (e is COMException or FileNotFoundException) { return null; }
+    }
+
+    public static string? WindowAppId(IntPtr hwnd)
+    {
+        try
+        {
+            var iid = PropertyStoreId;
+            return SHGetPropertyStoreForWindow(hwnd, ref iid, out var store) == 0 ? AppIdFrom(store) : null;
+        }
+        catch (Exception e) when (e is COMException or InvalidCastException) { return null; }
+    }
+
+    static string? AppIdFrom(IPropertyStore store)
+    {
         var value = Marshal.AllocCoTaskMem(24);
         try
         {
             for (var i = 0; i < 24; i++) Marshal.WriteByte(value, i, 0);
-            var iid = PropertyStoreId;
-            SHGetPropertyStoreFromParsingName(path, IntPtr.Zero, 0, ref iid, out var store);
             var key = new PropertyKey { Format = AppUserModelFormat, Id = 5 };
             store.GetValue(ref key, value);
             var vt = Marshal.ReadInt16(value);
-            return vt == 31 ? Marshal.PtrToStringUni(Marshal.ReadIntPtr(value, 8)) : null;
+            var id = vt == 31 ? Marshal.PtrToStringUni(Marshal.ReadIntPtr(value, 8)) : null;
+            return string.IsNullOrWhiteSpace(id) ? null : id;
         }
-        catch (Exception e) when (e is COMException or FileNotFoundException) { return null; }
         finally
         {
             PropVariantClear(value);
             Marshal.FreeCoTaskMem(value);
+            Marshal.FinalReleaseComObject(store);
         }
     }
 }

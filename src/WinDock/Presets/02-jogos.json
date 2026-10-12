@@ -40,5 +40,9 @@
       "name": "Battle.net",
       "target": "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\Battle.net\\Battle.net.lnk"
     }
+  ],
+  "widgets": [
+    { "kind": "clock" },
+    { "kind": "activity" }
   ]
 }

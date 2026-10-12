@@ -28,6 +28,15 @@
     {
       "name": "Bloco de notas",
       "target": "%WINDIR%\\System32\\notepad.exe"
+    },
+    {
+      "name": "Downloads",
+      "target": "%USERPROFILE%\\Downloads"
     }
+  ],
+  "widgets": [
+    { "kind": "pomodoro" },
+    { "kind": "timer", "minutes": 10 },
+    { "kind": "progress" }
   ]
 }
