@@ -11,7 +11,7 @@
     <RootNamespace>WinDock</RootNamespace>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <StartupObject>WinDock.Program</StartupObject>
-    <Version>0.3.0</Version>
+    <Version>0.4.0</Version>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <Product>WinDock</Product>

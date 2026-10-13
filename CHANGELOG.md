@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-13
+
 ### Added
 - The dock shows on every screen by default, or on the one you pick in the **Dock** tab, and follows monitors as they are plugged in or out.
 - When the Windows taskbar is out of sight (replaced, or set to hide automatically) the dock shows the Windows basics: Start, the internet status (Wi-Fi name and signal, Ethernet, no internet, offline), the volume, the battery with time left, the clock and calendar, the tray icons and show desktop.

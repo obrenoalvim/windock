@@ -41,7 +41,7 @@ Para remover: clique com o botão direito no dock, escolha **Sair** e apague o `
 
 1. Abra as configurações (botão direito no dock, ícone da bandeja ou `Ctrl+Alt+W`). O app abre em inglês: clique em **PT** no canto superior direito. A aba **Ambientes** tem um cartão por ambiente.
 2. Clique em **+ Programa** em um cartão e escolha apps, apps da Microsoft Store, jogos da Steam e da Epic, ou uma **Pasta...** para empilhar no dock (a de Downloads é uma boa).
-3. Ligue os **widgets** que quiser naquele ambiente: relógio, clima, música, uso do Claude, Pomodoro, cronômetro, timer, contagem regressiva, progresso, atividade, velocidade da rede, bateria, nota.
+3. Ligue os **widgets** que quiser naquele ambiente: relógio, clima, música, uso do Claude, Pomodoro, cronômetro, timer, contagem regressiva, progresso, atividade, velocidade da rede, bateria, microfone, nota.
 4. Em **Agenda**, escolha os dias e horários em que o ambiente fica ativo. Ou pule isso e troque na mão: role a roda do mouse sobre o dock, use `Ctrl+Alt+1..9` ou escolha no menu do dock (botão direito no vidro).
 
 Os programas do cartão **Sempre fixos** aparecem em todos os ambientes, antes dos outros.
@@ -134,7 +134,7 @@ Os ambientes ficam em `%APPDATA%\WinDock\presets` como JSON, e as configuraçõe
 }
 ```
 
-`days` aceita `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. O `end` é exclusivo e `24:00` é meia-noite. Vale o primeiro ambiente (pelo nome do arquivo) que combinar com o horário. `target` é um `.exe`, `.lnk` ou pasta (variáveis de ambiente funcionam). Apps da Loja e jogos são salvos como um launcher (`target` mais `args`, `icon` e um `appId`), por exemplo `steam://rungameid/1243130`. Tipos de widget: `clock`, `weather` (`label` é a cidade), `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `battery`. A `date` da contagem é `yyyy-MM-dd` para um dia fixo ou `MM-dd` para repetir todo ano.
+`days` aceita `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. O `end` é exclusivo e `24:00` é meia-noite. Vale o primeiro ambiente (pelo nome do arquivo) que combinar com o horário. `target` é um `.exe`, `.lnk` ou pasta (variáveis de ambiente funcionam). Apps da Loja e jogos são salvos como um launcher (`target` mais `args`, `icon` e um `appId`), por exemplo `steam://rungameid/1243130`. Tipos de widget: `clock`, `weather` (`label` é a cidade), `music`, `claude`, `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `network`, `battery`, `mic`, `note` (`text` é a nota). A `date` da contagem é `yyyy-MM-dd` para um dia fixo ou `MM-dd` para repetir todo ano.
 
 ### O modo antigo da taskbar
 

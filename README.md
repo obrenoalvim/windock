@@ -41,7 +41,7 @@ To remove it: right-click the dock and pick **Exit**, then delete `WinDock.exe` 
 
 1. Open the settings (right-click the dock, the tray icon, or `Ctrl+Alt+W`). The **Environments** tab has one card per environment.
 2. Click **+ Program** on a card and pick apps, Microsoft Store apps, Steam and Epic games, or a **Folder...** to stack in the dock (Downloads is a good one).
-3. Turn on the **widgets** you want for that environment: clock, weather, music, Claude usage, Pomodoro, stopwatch, timer, countdown, progress, activity, network speed, battery, note.
+3. Turn on the **widgets** you want for that environment: clock, weather, music, Claude usage, Pomodoro, stopwatch, timer, countdown, progress, activity, network speed, battery, microphone, note.
 4. Under **Schedule**, pick the days and hours the environment is active. Or skip it and switch by hand: scroll the mouse wheel over the dock, press `Ctrl+Alt+1..9`, or pick one in the menu of the dock (right-click the glass).
 
 Programs in the **Always pinned** card show in every environment, before the others.
@@ -134,7 +134,7 @@ Environments live in `%APPDATA%\WinDock\presets` as JSON, and the settings windo
 }
 ```
 
-`days` accepts `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. `end` is exclusive and `24:00` means midnight. The first environment (by file name) that matches the current time wins. `target` is an `.exe`, `.lnk` or folder (environment variables work). Store apps and games are saved as a launcher (`target` plus `args`, `icon` and an `appId`), for example `steam://rungameid/1243130`. Widget kinds: `clock`, `weather` (`label` is the city), `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `battery`. A countdown `date` is `yyyy-MM-dd` for a fixed day or `MM-dd` to repeat every year.
+`days` accepts `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. `end` is exclusive and `24:00` means midnight. The first environment (by file name) that matches the current time wins. `target` is an `.exe`, `.lnk` or folder (environment variables work). Store apps and games are saved as a launcher (`target` plus `args`, `icon` and an `appId`), for example `steam://rungameid/1243130`. Widget kinds: `clock`, `weather` (`label` is the city), `music`, `claude`, `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `network`, `battery`, `mic`, `note` (`text` is the note). A countdown `date` is `yyyy-MM-dd` for a fixed day or `MM-dd` to repeat every year.
 
 ### The old taskbar mode
 
