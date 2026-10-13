@@ -7,7 +7,7 @@ namespace WinDock.Services;
 public static class ShellLinks
 {
     static readonly Guid AppUserModelFormat = new("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3");
-    static readonly Guid PropertyStoreId = new("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99");
+    const uint AppUserModelId = 5;
 
     [ComImport, Guid("00021401-0000-0000-C000-000000000046")]
     class ShellLinkCoClass;
@@ -35,32 +35,12 @@ public static class ShellLinks
         void SetPath([MarshalAs(UnmanagedType.LPWStr)] string path);
     }
 
-    [ComImport, Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    interface IPropertyStore
-    {
-        void GetCount(out uint count);
-        void GetAt(uint index, out PropertyKey key);
-        void GetValue(ref PropertyKey key, IntPtr value);
-        void SetValue(ref PropertyKey key, IntPtr value);
-        void Commit();
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    struct PropertyKey
-    {
-        public Guid Format;
-        public uint Id;
-    }
-
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
     static extern void SHGetPropertyStoreFromParsingName(string path, IntPtr bindContext, int flags, ref Guid iid,
         [MarshalAs(UnmanagedType.Interface)] out IPropertyStore store);
 
     [DllImport("shell32.dll")]
     static extern int SHGetPropertyStoreForWindow(IntPtr hwnd, ref Guid iid, [MarshalAs(UnmanagedType.Interface)] out IPropertyStore store);
-
-    [DllImport("ole32.dll")]
-    static extern int PropVariantClear(IntPtr value);
 
     public static byte[] CreateLauncher(string target, string args, string? iconPath, string appId)
     {
@@ -69,23 +49,7 @@ public static class ShellLinks
         link.SetArguments(args);
         link.SetWorkingDirectory(Path.GetDirectoryName(target) ?? "");
         if (iconPath is not null) link.SetIconLocation(iconPath, 0);
-
-        var value = Marshal.AllocCoTaskMem(24);
-        try
-        {
-            for (var i = 0; i < 24; i++) Marshal.WriteByte(value, i, 0);
-            Marshal.WriteInt16(value, 31);
-            Marshal.WriteIntPtr(value, 8, Marshal.StringToCoTaskMemUni(appId));
-            var store = (IPropertyStore)link;
-            var key = new PropertyKey { Format = AppUserModelFormat, Id = 5 };
-            store.SetValue(ref key, value);
-            store.Commit();
-        }
-        finally
-        {
-            PropVariantClear(value);
-            Marshal.FreeCoTaskMem(value);
-        }
+        PropertyStores.WriteString((IPropertyStore)link, AppUserModelFormat, AppUserModelId, appId);
 
         var temp = Path.Combine(Path.GetTempPath(), $"windock-{Guid.NewGuid():N}.lnk");
         try
@@ -124,11 +88,24 @@ public static class ShellLinks
         catch (Exception e) when (e is COMException or IOException) { return null; }
     }
 
+    public static string? ReadArguments(string lnkPath)
+    {
+        try
+        {
+            var link = (IShellLinkW)new ShellLinkCoClass();
+            ((IPersistFile)link).Load(lnkPath, 0);
+            var sb = new StringBuilder(1024);
+            link.GetArguments(sb, sb.Capacity);
+            return sb.Length > 0 ? sb.ToString() : null;
+        }
+        catch (Exception e) when (e is COMException or IOException) { return null; }
+    }
+
     public static string? ReadAppId(string path)
     {
         try
         {
-            var iid = PropertyStoreId;
+            var iid = PropertyStores.Iid;
             SHGetPropertyStoreFromParsingName(path, IntPtr.Zero, 0, ref iid, out var store);
             return AppIdFrom(store);
         }
@@ -139,7 +116,7 @@ public static class ShellLinks
     {
         try
         {
-            var iid = PropertyStoreId;
+            var iid = PropertyStores.Iid;
             return SHGetPropertyStoreForWindow(hwnd, ref iid, out var store) == 0 ? AppIdFrom(store) : null;
         }
         catch (Exception e) when (e is COMException or InvalidCastException) { return null; }
@@ -147,21 +124,7 @@ public static class ShellLinks
 
     static string? AppIdFrom(IPropertyStore store)
     {
-        var value = Marshal.AllocCoTaskMem(24);
-        try
-        {
-            for (var i = 0; i < 24; i++) Marshal.WriteByte(value, i, 0);
-            var key = new PropertyKey { Format = AppUserModelFormat, Id = 5 };
-            store.GetValue(ref key, value);
-            var vt = Marshal.ReadInt16(value);
-            var id = vt == 31 ? Marshal.PtrToStringUni(Marshal.ReadIntPtr(value, 8)) : null;
-            return string.IsNullOrWhiteSpace(id) ? null : id;
-        }
-        finally
-        {
-            PropVariantClear(value);
-            Marshal.FreeCoTaskMem(value);
-            Marshal.FinalReleaseComObject(store);
-        }
+        try { return PropertyStores.ReadString(store, AppUserModelFormat, AppUserModelId); }
+        finally { Marshal.FinalReleaseComObject(store); }
     }
 }

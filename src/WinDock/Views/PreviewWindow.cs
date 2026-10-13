@@ -102,7 +102,7 @@ public sealed class PreviewWindow : Window
             Cursor = Cursors.Hand,
             Child = new TextBlock
             {
-                Text = "",
+                Text = "\uE8BB",
                 FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
                 FontSize = 9,
                 Foreground = Ink,

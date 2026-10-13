@@ -16,6 +16,7 @@ public sealed class LensPanel : Panel
     public static readonly DependencyProperty RadiusProperty = Value(nameof(Radius), 130.0, FrameworkPropertyMetadataOptions.AffectsArrange);
     public static readonly DependencyProperty GapProperty = Value(nameof(Gap), 8.0, FrameworkPropertyMetadataOptions.AffectsMeasure);
     public static readonly DependencyProperty CornerProperty = Value(nameof(Corner), 22.0, FrameworkPropertyMetadataOptions.AffectsRender);
+    public static readonly DependencyProperty StrokeWidthProperty = Value(nameof(StrokeWidth), 1.0, FrameworkPropertyMetadataOptions.AffectsRender);
 
     public static readonly DependencyProperty ModeProperty = DependencyProperty.Register(nameof(Mode), typeof(LensMode), typeof(LensPanel),
         new FrameworkPropertyMetadata(LensMode.Magnify, FrameworkPropertyMetadataOptions.AffectsArrange));
@@ -47,6 +48,7 @@ public sealed class LensPanel : Panel
     public double Radius { get => (double)GetValue(RadiusProperty); set => SetValue(RadiusProperty, value); }
     public double Gap { get => (double)GetValue(GapProperty); set => SetValue(GapProperty, value); }
     public double Corner { get => (double)GetValue(CornerProperty); set => SetValue(CornerProperty, value); }
+    public double StrokeWidth { get => (double)GetValue(StrokeWidthProperty); set => SetValue(StrokeWidthProperty, value); }
     public LensMode Mode { get => (LensMode)GetValue(ModeProperty); set => SetValue(ModeProperty, value); }
     public Thickness Inset { get => (Thickness)GetValue(InsetProperty); set => SetValue(InsetProperty, value); }
     public Brush? BarBrush { get => (Brush?)GetValue(BarBrushProperty); set => SetValue(BarBrushProperty, value); }
@@ -170,9 +172,9 @@ public sealed class LensPanel : Panel
                 dc.DrawRoundedRectangle(shadow, null, r, corner + k * 1.5, corner + k * 1.5);
             }
 
-        var pen = BarStroke is { } stroke ? new Pen(stroke, 1) : null;
+        var pen = BarStroke is { } stroke ? new Pen(stroke, StrokeWidth) : null;
         var inner = bar;
-        inner.Inflate(-0.5, -0.5);
+        inner.Inflate(-StrokeWidth / 2, -StrokeWidth / 2);
         dc.DrawRoundedRectangle(BarBrush, pen, inner, corner, corner);
         if (GlowBrush is { } glow) dc.DrawRoundedRectangle(glow, null, inner, corner, corner);
 

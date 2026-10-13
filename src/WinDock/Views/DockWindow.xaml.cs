@@ -25,6 +25,7 @@ public partial class DockWindow : Window
 
     readonly DockViewModel vm;
     readonly Action openSettings;
+    readonly string screenName;
     readonly DispatcherTimer poll = new() { Interval = TimeSpan.FromMilliseconds(100) };
     readonly DispatcherTimer hover = new() { Interval = TimeSpan.FromMilliseconds(450) };
     readonly DispatcherTimer closePreview = new() { Interval = TimeSpan.FromMilliseconds(350) };
@@ -43,13 +44,17 @@ public partial class DockWindow : Window
     DateTime revealBurst, lastWheel;
     FrameworkElement? hovered;
     PreviewWindow? preview;
-    StackWindow? stack;
+    Flyout? flyout;
+    (object Item, Type Kind)? flyoutKey, closedKey;
+    DateTime closedAt;
 
-    public DockWindow(DockViewModel vm, Action openSettings)
+    public DockWindow(DockViewModel vm, Action openSettings, string screenName)
     {
         this.vm = vm;
         this.openSettings = openSettings;
+        this.screenName = screenName;
         InitializeComponent();
+        ((FaceSelector)Resources["Faces"]).On = vm.Options.CompactWidgets;
         DataContext = vm;
 
         glow = new RadialGradientBrush
@@ -61,10 +66,12 @@ public partial class DockWindow : Window
             GradientStops = [glowStop, new GradientStop(Colors.Transparent, 1)]
         };
 
-        vm.Layout += () => Dispatcher.BeginInvoke(Resize, DispatcherPriority.Loaded);
+        vm.Layout += OnLayout;
         vm.Switched += OnSwitched;
         vm.Options.Changed += OnOption;
         vm.Tracker.Changed += CheckFullscreen;
+        vm.Tracker.Reshaped += CheckFullscreen;
+        SystemParameters.StaticPropertyChanged += OnSystemParameter;
         poll.Tick += (_, _) => Poll();
         hover.Tick += (_, _) =>
         {
@@ -79,12 +86,15 @@ public partial class DockWindow : Window
         DragOver += OnDragOver;
         Drop += OnDrop;
         DpiChanged += (_, _) => Dispatcher.BeginInvoke(Resize, DispatcherPriority.Loaded);
-        SystemParameters.StaticPropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == nameof(SystemParameters.WorkArea)) Dispatcher.BeginInvoke(Place, DispatcherPriority.Background);
-        };
         ApplyAccent(false);
         poll.Start();
+    }
+
+    void OnLayout() => Dispatcher.BeginInvoke(Resize, DispatcherPriority.Loaded);
+
+    void OnSystemParameter(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SystemParameters.WorkArea)) Dispatcher.BeginInvoke(Place, DispatcherPriority.Background);
     }
 
     double IconSize => Math.Round(vm.Options.IconSize * fit);
@@ -115,9 +125,10 @@ public partial class DockWindow : Window
         if (panel is null) return;
         Resources["IconSize"] = IconSize;
         Resources["WideSize"] = IconSize * 2 + Gap;
+        Resources["WiderSize"] = IconSize * 3 + Gap * 2;
         panel.Gap = Gap;
         panel.Inset = Inset;
-        panel.Corner = Math.Round(BarHeight * 0.34);
+        panel.Corner = Math.Round(BarHeight * Theme.Corner);
         panel.Radius = vm.Options.LensWidth * (IconSize + Gap);
     }
 
@@ -149,18 +160,20 @@ public partial class DockWindow : Window
     void ApplyTheme()
     {
         if (panel is null) return;
-        var dark = vm.Options.Theme != DockSettings.ThemeLight;
-        panel.BarBrush = Gradient(dark ? "#E0292C37" : "#EBF8F8FB", dark ? "#E0111318" : "#EBE1E4EB");
-        panel.BarStroke = Brush(dark ? "#47FFFFFF" : "#1F000000");
-        panel.ShadowBrush = Brush(dark ? "#1A000000" : "#12000000");
-        panel.IndicatorBrush = Brush(dark ? "#E6FFFFFF" : "#B3000000");
+        var theme = Theme;
+        var dark = theme.Dark;
+        panel.BarBrush = Gradient(theme.BarTop, theme.BarBottom);
+        panel.BarStroke = theme.Stroke is { } stroke ? Brush(stroke) : null;
+        panel.StrokeWidth = theme.StrokeWidth;
+        panel.ShadowBrush = theme.Shadow is { } shadow ? Brush(shadow) : null;
+        panel.IndicatorBrush = Brush(theme.Indicator ?? (dark ? "#E6FFFFFF" : "#B3000000"));
         panel.FocusBrush = accent;
         panel.GlowBrush = glow;
-        Resources["DockLine"] = Brush(dark ? "#38FFFFFF" : "#26000000");
-        Resources["DotIdle"] = Brush(dark ? "#66FFFFFF" : "#4D000000");
-        Resources["TileFace"] = Brush(dark ? "#24FFFFFF" : "#14000000");
-        Resources["DockInk"] = Brush(dark ? "#F4EFE7" : "#1B1D24");
-        Resources["DockMuted"] = Brush(dark ? "#B3F4EFE7" : "#991B1D24");
+        Resources["DockLine"] = Brush(theme.Line);
+        Resources["DotIdle"] = Brush(theme.DotIdle);
+        Resources["TileFace"] = Brush(theme.TileFace);
+        Resources["DockInk"] = Brush(theme.Ink);
+        Resources["DockMuted"] = Brush(theme.Muted);
         NameTag.Background = Brush(dark ? "#EB1E2029" : "#F5FFFFFF");
         NameTag.BorderBrush = Brush(dark ? "#26FFFFFF" : "#1F000000");
         NameText.Foreground = Brush(dark ? "#F4EFE7" : "#1B1D24");
@@ -183,28 +196,19 @@ public partial class DockWindow : Window
 
     void OnOption(string name)
     {
-        if (name == nameof(DockOptions.Enabled))
+        if (name == nameof(DockOptions.CompactWidgets))
         {
-            SetEnabled(vm.Options.Enabled);
+            // A new selector makes the strip pick the templates again.
+            var faces = (FaceSelector)Resources["Faces"];
+            faces.On = vm.Options.CompactWidgets;
+            Strip.ItemTemplateSelector = null;
+            Strip.ItemTemplateSelector = faces;
+            Dispatcher.BeginInvoke(Resize, DispatcherPriority.Loaded);
             return;
         }
-        if (name is nameof(DockOptions.FollowWindows) or nameof(DockOptions.SyncTaskbar)) return;
+        if (name is nameof(DockOptions.Enabled) or nameof(DockOptions.AllScreens) or nameof(DockOptions.Screen)
+            or nameof(DockOptions.FollowWindows) or nameof(DockOptions.SyncTaskbar)) return;
         ApplyOptions();
-    }
-
-    public void SetEnabled(bool on)
-    {
-        if (on)
-        {
-            Show();
-            ApplyOptions();
-            return;
-        }
-        Reserve(false);
-        vm.Shell.ShowTaskbar();
-        preview?.Hide();
-        stack?.Close();
-        Hide();
     }
 
     void Resize()
@@ -230,7 +234,7 @@ public partial class DockWindow : Window
     }
 
     Forms.Screen TargetScreen() =>
-        Forms.Screen.AllScreens.FirstOrDefault(s => s.DeviceName == vm.Options.Screen) ?? Forms.Screen.PrimaryScreen ?? Forms.Screen.AllScreens[0];
+        Forms.Screen.AllScreens.FirstOrDefault(s => s.DeviceName == screenName) ?? Forms.Screen.PrimaryScreen ?? Forms.Screen.AllScreens[0];
 
     static double ScaleOf(Forms.Screen screen) =>
         Native.DpiScale(Native.MonitorFromPoint(new Native.Point { X = screen.Bounds.Left + screen.Bounds.Width / 2, Y = screen.Bounds.Top + screen.Bounds.Height / 2 }, 2));
@@ -331,7 +335,7 @@ public partial class DockWindow : Window
         e.Handled = true;
         if (DateTime.Now - lastWheel < TimeSpan.FromMilliseconds(220)) return;
         lastWheel = DateTime.Now;
-        _ = vm.Main.SwitchByAsync(e.Delta > 0 ? -1 : 1);
+        _ = vm.SwitchByAsync(e.Delta > 0 ? -1 : 1);
     }
 
     void OnTileWheel(object sender, MouseWheelEventArgs e)
@@ -442,7 +446,8 @@ public partial class DockWindow : Window
                 else if (e.ChangedButton == MouseButton.Right) ShellGuard.PowerMenu();
                 break;
             case WidgetTile widget:
-                if (e.ChangedButton == MouseButton.Left) widget.Click(DateTime.Now);
+                if (e.ChangedButton == MouseButton.Left && widget.HasPanel) OpenPanel(widget, element);
+                else if (e.ChangedButton == MouseButton.Left) widget.Click(DateTime.Now);
                 else if (e.ChangedButton == MouseButton.Right) WidgetMenu(widget);
                 break;
         }
@@ -536,31 +541,78 @@ public partial class DockWindow : Window
         var bottomRight = element.PointToScreen(new Point(element.ActualWidth, element.ActualHeight));
         var anchorTop = Math.Min(topLeft.Y, bottomRight.Y);
         var barTop = panel is null ? anchorTop : panel.PointToScreen(new Point(0, panel.Bar.Top)).Y;
-        preview.ShowFor(app, (topLeft.X + bottomRight.X) / 2, Math.Min(anchorTop, barTop), TargetScreen(), vm.Options.Theme != DockSettings.ThemeLight);
+        preview.ShowFor(app, (topLeft.X + bottomRight.X) / 2, Math.Min(anchorTop, barTop), TargetScreen(), Dark);
     }
+
+    DockTheme Theme => DockTheme.Find(vm.Options.Theme);
+
+    bool Dark => Theme.Dark;
 
     void OpenStack(AppTile app, FrameworkElement element)
     {
         if (app.Folder is not { } folder) return;
-        stack?.Close();
-        var topLeft = element.PointToScreen(new Point(0, 0));
-        var bottomRight = element.PointToScreen(new Point(element.ActualWidth, element.ActualHeight));
-        var barTop = panel is null ? topLeft.Y : panel.PointToScreen(new Point(0, panel.Bar.Top)).Y;
-        stack = new StackWindow(folder, vm.Options.Theme != DockSettings.ThemeLight);
-        stack.Closed += (_, _) => stack = null;
-        stack.ShowAt((topLeft.X + bottomRight.X) / 2, barTop, TargetScreen());
+        ShowFlyout(new StackWindow(folder, Dark), element);
         folder.MarkSeen();
     }
 
-    void OnDotClick(object sender, MouseButtonEventArgs e)
+    void OpenPanel(WidgetTile widget, FrameworkElement element)
+    {
+        Flyout? next = widget switch
+        {
+            ClaudeWidget => new ClaudePanel(ClaudeUsage.Shared, Dark),
+            MusicWidget => new MusicPanel(MediaSessions.Shared, Dark),
+            WeatherWidget weather => new WeatherPanel(weather.Service, Dark),
+            NoteWidget note => new NotePanel(note, Dark),
+            _ => null
+        };
+        if (next is not null) ShowFlyout(next, element);
+    }
+
+    void OnMediaToggle(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
-        if (((FrameworkElement)sender).DataContext is EnvDot dot) _ = vm.Main.ApplyAsync(dot.Preset, auto: false);
+        if (e.ChangedButton == MouseButton.Left) _ = MediaSessions.Shared.Toggle();
+    }
+
+    void ShowFlyout(Flyout next, FrameworkElement element)
+    {
+        var key = (element.DataContext ?? element, next.GetType());
+        // A second click on what opened the panel closes it. The panel may already be gone by then: the press took its
+        // focus and it closed itself a moment before the click ends.
+        if ((flyout is not null && flyoutKey == key) || (closedKey == key && DateTime.Now - closedAt < TimeSpan.FromMilliseconds(400)))
+        {
+            closedKey = null;
+            flyout?.Close();
+            next.Close();
+            return;
+        }
+        HideName();
+        preview?.Hide();
+        flyout?.Close();
+        flyout = next;
+        flyoutKey = key;
+        next.Closed += (_, _) =>
+        {
+            if (flyout != next) return;
+            flyout = null;
+            closedKey = key;
+            closedAt = DateTime.Now;
+        };
+        var topLeft = element.PointToScreen(new Point(0, 0));
+        var bottomRight = element.PointToScreen(new Point(element.ActualWidth, element.ActualHeight));
+        var barTop = panel is null ? topLeft.Y : panel.PointToScreen(new Point(0, panel.Bar.Top)).Y;
+        next.ShowAt((topLeft.X + bottomRight.X) / 2, barTop, TargetScreen());
     }
 
     void OnTrayClick(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
+        if (vm.Shell.Peeking) PeekTaskbar();
+        else ShowFlyout(new TrayPanel(Dark, PeekTaskbar), (FrameworkElement)sender);
+    }
+
+    void PeekTaskbar()
+    {
         var show = !vm.Shell.Peeking;
         vm.Shell.Peek(show);
         peekAway = 0;
@@ -573,16 +625,49 @@ public partial class DockWindow : Window
         ShellGuard.QuickSettings();
     }
 
+    void OnVolumeClick(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        if (e.ChangedButton == MouseButton.Middle)
+        {
+            if (Audio.Read() is { } now) Audio.SetMute(!now.Muted);
+            vm.System.RefreshVolume();
+            return;
+        }
+        ShowFlyout(new SoundPanel(Dark), (FrameworkElement)sender);
+    }
+
+    void OnVolumeWheel(object sender, MouseWheelEventArgs e)
+    {
+        e.Handled = true;
+        Audio.Nudge(e.Delta > 0 ? 1 : -1);
+        vm.System.RefreshVolume();
+    }
+
+    void OnMicClick(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        Audio.ToggleMic();
+        vm.System.RefreshVolume();
+        vm.RefreshMic();
+    }
+
     void OnClockClick(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
         ShellGuard.Notifications();
     }
 
+    void OnDesktopClick(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        ShellGuard.ShowDesktop();
+    }
+
     void OnSwitched()
     {
         ApplyAccent(true);
-        stack?.Close();
+        flyout?.Close();
         preview?.Hide();
         if (vm.Active is not { } env || panel is null) return;
         BannerText.Text = $"{env.Glyph}  {env.Name}";
@@ -623,7 +708,7 @@ public partial class DockWindow : Window
             if (edge) Reveal();
             return;
         }
-        var busy = menuOpen || (panel?.IsMouseOver ?? false) || preview is { IsVisible: true } || stack is not null;
+        var busy = menuOpen || (panel?.IsMouseOver ?? false) || preview is { IsVisible: true } || flyout is not null;
         away = busy || edge ? Math.Min(away, 0) : away + 1;
         if (away > 7) Conceal();
     }
@@ -668,14 +753,16 @@ public partial class DockWindow : Window
         if (window == 0 || hwnd == 0) return false;
         if (Native.ClassOf(window) is "Progman" or "WorkerW" or "Shell_TrayWnd" or "Shell_SecondaryTrayWnd") return false;
         Native.GetWindowThreadProcessId(window, out var pid);
-        if (pid == Environment.ProcessId || IsZoomed(window)) return false;
+        if (pid == Environment.ProcessId) return false;
         var info = new Native.MonitorInfo { Size = Marshal.SizeOf<Native.MonitorInfo>() };
         var monitor = Native.MonitorFromWindow(window, 2);
         if (!Native.GetMonitorInfo(monitor, ref info) || !Native.GetWindowRect(window, out var r)) return false;
         var screen = TargetScreen().Bounds;
         var m = info.Monitor;
         var ours = m.Left == screen.Left && m.Top == screen.Top;
-        return ours && r.Left <= m.Left && r.Top <= m.Top && r.Right >= m.Right && r.Bottom >= m.Bottom;
+        if (!ours || r.Left > m.Left || r.Top > m.Top || r.Right < m.Right || r.Bottom < m.Bottom) return false;
+        // A maximized window overhangs the screen by its hidden borders; a full screen one (game, player) sits exactly on it.
+        return !IsZoomed(window) || (r.Left == m.Left && r.Top == m.Top && r.Right == m.Right && r.Bottom == m.Bottom);
     }
 
     [DllImport("user32.dll")]
@@ -689,12 +776,16 @@ public partial class DockWindow : Window
         foreach (var p in vm.Main.Presets)
         {
             var preset = p;
-            menu.Items.Add(Item($"{p.Glyph}  {p.Name}", () => _ = vm.Main.ApplyAsync(preset, auto: false), p == vm.Active));
+            menu.Items.Add(Item($"{p.Glyph}  {p.Name}", () => vm.Pick(preset), p == vm.Active));
         }
         if (menu.Items.Count > 0) menu.Items.Add(new Separator());
         menu.Items.Add(Item(Loc.T("replaceTaskbar"), () => vm.Options.ReplaceTaskbar = !vm.Options.ReplaceTaskbar, vm.Options.ReplaceTaskbar));
         menu.Items.Add(Item(Loc.T("autoHide"), () => vm.Options.AutoHide = !vm.Options.AutoHide, vm.Options.AutoHide));
         menu.Items.Add(Item(Loc.T("followWindows"), () => vm.Options.FollowWindows = !vm.Options.FollowWindows, vm.Options.FollowWindows));
+        menu.Items.Add(Item(Loc.T("trayStartup"), () => vm.Options.StartWithWindows = !vm.Options.StartWithWindows, vm.Options.StartWithWindows));
+        menu.Items.Add(Item(Loc.T("compactWidgets"), () => vm.Options.CompactWidgets = !vm.Options.CompactWidgets, vm.Options.CompactWidgets));
+        if (global::System.Windows.Forms.Screen.AllScreens.Length > 1)
+            menu.Items.Add(Item(Loc.T("perScreen"), () => vm.Options.PerScreen = !vm.Options.PerScreen, vm.Options.PerScreen));
         menu.Items.Add(new Separator());
         menu.Items.Add(Item(Loc.T("dockSettings"), openSettings));
         menu.Items.Add(Item(Loc.T("trayExit"), () => Application.Current.Shutdown()));
@@ -788,8 +879,16 @@ public partial class DockWindow : Window
     {
         Reserve(false);
         poll.Stop();
+        hover.Stop();
+        closePreview.Stop();
         preview?.Close();
-        stack?.Close();
+        flyout?.Close();
+        vm.Layout -= OnLayout;
+        vm.Switched -= OnSwitched;
+        vm.Options.Changed -= OnOption;
+        vm.Tracker.Changed -= CheckFullscreen;
+        vm.Tracker.Reshaped -= CheckFullscreen;
+        SystemParameters.StaticPropertyChanged -= OnSystemParameter;
         base.OnClosing(e);
     }
 }

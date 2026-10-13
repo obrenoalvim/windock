@@ -5,6 +5,8 @@
 
     <FontFamily x:Key="Display">pack://application:,,,/Assets/Fonts/#Michroma</FontFamily>
     <FontFamily x:Key="Mono">pack://application:,,,/Assets/Fonts/#Space Mono</FontFamily>
+    <!-- The dock reads at a glance in the Windows font; the settings keep Space Mono. -->
+    <FontFamily x:Key="DockFont">Segoe UI Variable Text, Segoe UI</FontFamily>
 
     <SolidColorBrush x:Key="Ink" Color="#F4EFE7"/>
     <SolidColorBrush x:Key="Muted" Color="#8A8E99"/>
@@ -271,6 +273,72 @@
         <Setter Property="Foreground" Value="{StaticResource Muted}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
         <Setter Property="Margin" Value="43,3,0,12"/>
+    </Style>
+
+    <Style x:Key="FlatCombo" TargetType="ComboBox">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+        <Setter Property="FontFamily" Value="{StaticResource Mono}"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                        <ToggleButton Focusable="False" ClickMode="Press"
+                                      IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border x:Name="Face" CornerRadius="12" Background="{StaticResource Plate}" BorderBrush="{StaticResource Hairline}" BorderThickness="1"/>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Face" Property="Background" Value="{StaticResource PlateHover}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+                        <ContentPresenter Margin="12,8,34,8" IsHitTestVisible="False" VerticalAlignment="Center"
+                                          Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"/>
+                        <TextBlock Text="&#xE70D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="9" Foreground="{StaticResource Muted}"
+                                   HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,13,0" IsHitTestVisible="False"/>
+                        <Popup IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
+                            <Border Margin="0,4,0,0" Padding="4" CornerRadius="12" Background="#FA1B1D26" BorderBrush="#26FFFFFF" BorderThickness="1"
+                                    MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ScrollViewer MaxHeight="340" VerticalScrollBarVisibility="Auto">
+                                    <ItemsPresenter/>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ItemContainerStyle">
+            <Setter.Value>
+                <Style TargetType="ComboBoxItem">
+                    <Setter Property="Cursor" Value="Hand"/>
+                    <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ComboBoxItem">
+                                <Border x:Name="Row" CornerRadius="8" Padding="10,7" Background="Transparent">
+                                    <ContentPresenter/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsHighlighted" Value="True">
+                                        <Setter TargetName="Row" Property="Background" Value="{StaticResource PlateHover}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Row" Property="Background" Value="#33FFB547"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="ChipToggle" TargetType="ToggleButton">

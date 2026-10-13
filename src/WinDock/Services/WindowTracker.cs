@@ -10,7 +10,7 @@ public sealed class WindowTracker : IDisposable
     public const string ExplorerId = "Microsoft.Windows.Explorer";
 
     const uint ProcessQueryLimited = 0x1000;
-    const uint EventForeground = 0x0003, EventNameChange = 0x800C;
+    const uint EventForeground = 0x0003, EventNameChange = 0x800C, EventLocationChange = 0x800B;
     const int DwmCloaked = 14;
     const string FrameHost = "applicationframehost.exe";
 
@@ -24,13 +24,14 @@ public sealed class WindowTracker : IDisposable
 
     static readonly (uint Min, uint Max)[] Events =
     [
-        (EventForeground, EventForeground), (0x0016, 0x0017), (0x8000, 0x8003), (EventNameChange, EventNameChange), (0x8017, 0x8018)
+        (EventForeground, EventForeground), (0x0016, 0x0017), (0x8000, 0x8003), (EventNameChange, EventNameChange), (0x8017, 0x8018), (EventLocationChange, EventLocationChange)
     ];
 
     readonly Native.WinEventProc proc;
     readonly List<nint> hooks = [];
     readonly DispatcherTimer debounce = new() { Interval = TimeSpan.FromMilliseconds(70) };
     readonly DispatcherTimer safety = new() { Interval = TimeSpan.FromSeconds(5) };
+    readonly DispatcherTimer reshape = new() { Interval = TimeSpan.FromMilliseconds(120) };
     readonly Dictionary<int, string?> exeByPid = [];
     readonly Dictionary<nint, string?> appIdByWindow = [];
     readonly Dictionary<nint, string> envByWindow = [];
@@ -46,7 +47,16 @@ public sealed class WindowTracker : IDisposable
             debounce.Stop();
             Refresh();
         };
-        safety.Tick += (_, _) => Refresh();
+        safety.Tick += (_, _) =>
+        {
+            Refresh();
+            Reshaped?.Invoke();
+        };
+        reshape.Tick += (_, _) =>
+        {
+            reshape.Stop();
+            Reshaped?.Invoke();
+        };
         foreach (var (min, max) in Events) hooks.Add(Native.SetWinEventHook(min, max, 0, proc, 0, 0, 0x2));
         safety.Start();
         Refresh();
@@ -59,9 +69,17 @@ public sealed class WindowTracker : IDisposable
 
     public event Action? Changed;
 
+    // The window in front moved or changed size, like a video or a browser going full screen with F11.
+    public event Action? Reshaped;
+
     void OnEvent(nint hook, uint ev, nint hwnd, int idObject, int idChild, uint thread, uint time)
     {
         if (idObject != 0 || idChild != 0) return;
+        if (ev == EventLocationChange)
+        {
+            if (hwnd == Native.GetForegroundWindow() && !reshape.IsEnabled) reshape.Start();
+            return;
+        }
         if (ev == EventNameChange && Windows.Any(w => w.Handle == hwnd)) return;
         if (ev != EventForeground)
         {
@@ -220,6 +238,7 @@ public sealed class WindowTracker : IDisposable
         hooks.Clear();
         debounce.Stop();
         safety.Stop();
+        reshape.Stop();
         ShowAll();
     }
 }

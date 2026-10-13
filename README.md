@@ -22,7 +22,7 @@ A glass dock for Windows with environments, live widgets and a Mac-style magnify
 
 ---
 
-WinDock draws its own dock at the bottom of the screen: your apps, folders and widgets on a glass bar, with the icon under the pointer growing like on a Mac. Each **environment** (Work, Games, Study, Weekend...) has its own apps, widgets and color, and switches on a schedule, with the mouse wheel or with a hotkey. Switching is instant.
+WinDock draws its own dock at the bottom of every screen: your apps, folders and widgets on a glass bar, with the icon under the pointer growing like on a Mac. Each **environment** (Work, Games, Study, Weekend...) has its own apps, widgets and color, and switches on a schedule, with the mouse wheel or with a hotkey. Switching is instant.
 
 Inspired by [PrimoDock](https://dock.oprimo.dev/) for macOS. Free and open source.
 
@@ -30,10 +30,10 @@ Inspired by [PrimoDock](https://dock.oprimo.dev/) for macOS. Free and open sourc
 
 You do not need to install .NET or anything else. It is a single file.
 
-1. **Download** [`WinDock.exe`](https://github.com/obrenoalvim/windock/releases/latest/download/WinDock.exe) (about 65 MB, everything included).
+1. **Download** [`WinDock.exe`](https://github.com/obrenoalvim/windock/releases/latest/download/WinDock.exe) (about 75 MB, everything included). It needs Windows 10 version 2004 or newer.
 2. **Double-click it.** If Windows shows a blue "Windows protected your PC" screen, click **More info**, then **Run anyway**. That screen appears because the file is not code-signed yet.
-3. **The dock appears** above the taskbar, and the settings window opens. WinDock also puts an icon in the system tray.
-4. Optional: right-click the tray icon and turn on **Start with Windows**.
+3. **The dock appears** on every screen, and the settings window opens. WinDock also puts an icon in the system tray.
+4. It starts with Windows from then on. Turn that off in the **Dock** tab, the dock menu or the tray menu if you prefer.
 
 To remove it: right-click the dock and pick **Exit**, then delete `WinDock.exe` and the folder `%APPDATA%\WinDock`.
 
@@ -41,37 +41,49 @@ To remove it: right-click the dock and pick **Exit**, then delete `WinDock.exe` 
 
 1. Open the settings (right-click the dock, the tray icon, or `Ctrl+Alt+W`). The **Environments** tab has one card per environment.
 2. Click **+ Program** on a card and pick apps, Microsoft Store apps, Steam and Epic games, or a **Folder...** to stack in the dock (Downloads is a good one).
-3. Turn on the **widgets** you want for that environment: clock, Pomodoro, stopwatch, timer, countdown, progress, activity, battery.
-4. Under **Schedule**, pick the days and hours the environment is active. Or skip it and switch by hand: scroll the mouse wheel over the dock, click the dots at its right end, or press `Ctrl+Alt+1..9`.
+3. Turn on the **widgets** you want for that environment: clock, weather, music, Claude usage, Pomodoro, stopwatch, timer, countdown, progress, activity, network speed, battery, note.
+4. Under **Schedule**, pick the days and hours the environment is active. Or skip it and switch by hand: scroll the mouse wheel over the dock, press `Ctrl+Alt+1..9`, or pick one in the menu of the dock (right-click the glass).
 
 Programs in the **Always pinned** card show in every environment, before the others.
 
 ## The dock
 
 - **Magnifying lens.** The icon under the pointer grows from its base, past the edge of the glass, and pushes its neighbors. Pick the effect (none, scale, magnify), the magnification, the lens width and the icon size in the **Dock** tab.
-- **Open apps.** A dot under an icon means the app is open; the colored bar marks the window in front. Apps you have open but did not pin show after a divider, so the dock also works as a taskbar.
+- **Open apps.** A dot under an icon means the app is open; the colored bar marks the window in front. Apps you have open but did not pin show after a divider, so the dock also works as a taskbar. A program split over several exes with the same icon (Google Play Games) takes one slot, and shortcuts like Discord's light up the icon you pinned.
+- **Unread badges.** A red count on the icon of WhatsApp, Teams, Mail and any app that puts a badge on the Windows taskbar, and on windows whose title starts with a count, like "(3) WhatsApp" in the browser.
 - **Live previews.** Rest the pointer on an open app to see each of its windows live, with a close button.
 - **Folder stacks.** A pinned folder opens as a grid of its newest files. Downloads shows a badge with how many new files arrived. Drag a file out of the stack into any app.
 - **Environments.** Each one has its apps, widgets and accent color. The dock changes color when you switch, and a label shows the new environment.
 - **Windows follow the environment** (optional). When you switch, the windows of the previous environment step aside and come back when you return. Programs that are always pinned stay visible everywhere.
-- **Replace the taskbar** (optional). The Windows taskbar hides and the dock gains Start, the clock and quick settings (network, sound, battery). The `^` button shows the taskbar for a moment, with its tray icons.
+- **Every screen.** The dock shows on each monitor by default, or on the one you pick, and follows monitors as they come and go. With **Each screen has its own dock**, every screen lists the windows open on it and can sit on an environment of its own (scroll or right-click the dock of that screen).
+- **The Windows basics stay.** When the Windows taskbar is out of sight (replaced, or set to hide automatically), the dock brings Start, the internet status (Wi-Fi name and signal, Ethernet, no internet), the volume, the battery with time left, the clock and calendar, the tray icons and show desktop. Start sits at the left end, like on Windows, and the rest together at the right. Network, sound, microphone and battery share one pill like on Windows 11; click the microphone to mute it. The `^` button lists the apps of the tray, to open or quit them without the Windows taskbar.
+- **Sound.** Scroll on the speaker to change the volume, middle-click to mute, click for a panel with a volume slider, every output device to switch to with one click (speakers, headphones, monitor), the mixer and the sound settings.
+- **Replace the taskbar** (optional). The Windows taskbar hides for good while WinDock runs. The `^` button shows it for a moment, with its tray icons.
 - **Safe by design.** The taskbar, the reserved screen space and any hidden window come back when WinDock closes. If WinDock crashes, a small watchdog process puts everything back.
 - **Reserve screen space** so maximized windows stop above the dock, or **hide automatically** so it slides away until the pointer touches the bottom edge.
 - **Full screen aware.** The dock steps aside while a game or video runs in full screen.
-- Dark and light glass, any monitor, drag files or programs onto the dock to pin them, and too many icons shrink to fit.
+- Nine themes in the **Dock** tab: Dark, Light, Midnight, Neon, Canarinho, Aqua, Sunset, Paper and Floating (no bar, icons over the desktop). Any monitor, drag files or programs onto the dock to pin them, and too many icons shrink to fit.
 
 ## Widgets
 
 | Widget | What it shows | Click | Other |
 |---|---|---|---|
-| Clock | Time and date | Opens the calendar and notifications | |
-| Pomodoro | 25 min focus, 5 min break, 15 min every fourth | Start or pause | Right-click to reset; notifies at the end |
+| Clock | Time and date | Opens the calendar and notifications | Steps aside when the dock already shows the Windows clock |
+| Weather | Temperature and condition, blue by day and indigo at night | Panel with feels like, high and low, and the next hours | Type the city on the environment card, or leave it empty to use the Windows location; data from Open-Meteo |
+| Music | What plays in Spotify, the browser or any player, with the cover | Panel with every player that has media, side by side, each with previous, play and next | Play and pause right on the tile; hides while nothing plays |
+| Claude usage | The 5-hour session and 7-day week of your Claude plan | Panel with the reset times, the weekly pace and a refresh | Turns red at 90%; notifies at 80% and 95%; needs Claude Code signed in on the PC |
+| Pomodoro | 25 min focus, 5 min break, 15 min every fourth | Start or pause | Counts the cycles done today; right-click to reset; notifies at the end |
 | Stopwatch | Elapsed time | Start or pause | Right-click to reset |
-| Timer | Countdown with a ring | Start or pause | Scroll to set the minutes; notifies at the end |
+| Timer | Countdown with a ring | Start or pause | Scroll to set the minutes, which are remembered; notifies at the end |
 | Countdown | Days left to a date | | Set the date and name on the environment card; Christmas by default |
 | Progress | How much of the day has passed | Cycles day, week, month, year | |
 | Activity | Processor and memory use | | |
-| Battery | Charge, or plugged in | | |
+| Network speed | Download and upload right now | | |
+| Battery | Charge, or plugged in | | Time left in the tooltip |
+| Note | A short note that stays in the dock | Opens an editor | Saved with the environment |
+| Microphone | Whether the microphone is on | Mutes or unmutes it | Red while muted |
+
+**Compact widgets** (on by default, in the **Dock** tab or the dock menu) show every widget as a square the size of an icon: the main value, a ring for progress and timers, two rings for Claude (the 5-hour session outside, the week inside), the cover for music. The note keeps its wide tile so it stays readable. Turn it off for the wide tiles with more detail.
 
 Widgets keep running when you switch environments, so a Pomodoro started at work still finishes on time.
 
@@ -91,7 +103,7 @@ Widgets keep running when you switch environments, so a Pomodoro started at work
 | Right-click an app | New window, pin or unpin (this environment or all), show in Explorer, close windows |
 | Rest on an open app | Live preview of its windows |
 | Scroll the wheel | Switch to the previous or next environment |
-| Right-click the glass | Environments, replace taskbar, hide automatically, windows follow, settings, exit |
+| Right-click the glass | Environments, replace taskbar, hide automatically, windows follow, start with Windows, settings, exit |
 | Drop files or programs | Pin them to the current environment |
 
 ## Environments
@@ -122,7 +134,7 @@ Environments live in `%APPDATA%\WinDock\presets` as JSON, and the settings windo
 }
 ```
 
-`days` accepts `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. `end` is exclusive and `24:00` means midnight. The first environment (by file name) that matches the current time wins. `target` is an `.exe`, `.lnk` or folder (environment variables work). Store apps and games are saved as a launcher (`target` plus `args`, `icon` and an `appId`), for example `steam://rungameid/1243130`. Widget kinds: `clock`, `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `battery`. A countdown `date` is `yyyy-MM-dd` for a fixed day or `MM-dd` to repeat every year.
+`days` accepts `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. `end` is exclusive and `24:00` means midnight. The first environment (by file name) that matches the current time wins. `target` is an `.exe`, `.lnk` or folder (environment variables work). Store apps and games are saved as a launcher (`target` plus `args`, `icon` and an `appId`), for example `steam://rungameid/1243130`. Widget kinds: `clock`, `weather` (`label` is the city), `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `battery`. A countdown `date` is `yyyy-MM-dd` for a fixed day or `MM-dd` to repeat every year.
 
 ### The old taskbar mode
 
@@ -134,9 +146,15 @@ Before the dock, WinDock swapped the pinned apps of the real Windows taskbar. Th
 
 **What does the watchdog do?** When WinDock hides the taskbar or a window, it starts a tiny copy of itself (`WinDock.exe --watchdog`) that only waits. If WinDock ends for any reason, the watchdog shows the taskbar and every hidden window again. If both are killed, the next start of WinDock cleans up.
 
+**Does the Claude usage widget read my chats?** No. It reads only the two usage percentages and their reset times, from the same Anthropic endpoint Claude Code uses, with the sign-in Claude Code already keeps on this PC. WinDock asks every five minutes at most, never renews or stores that sign-in, and sends it nowhere but api.anthropic.com.
+
+**What does the weather widget send?** Only the city you typed, to Open-Meteo (free, no account), and then its coordinates to get the forecast, every 9 seconds while the widget is on the dock (just under the free limit of 10,000 calls a day). With the city empty it asks Windows for the location, which works only if desktop apps may use it in the Windows privacy settings.
+
 **Are environments virtual desktops?** No, they work on the desktop you are on. With **Windows follow the environment** on, the windows of other environments are hidden instead, and they return when you switch back. Windows that run as administrator (like Task Manager) cannot be hidden by a normal app and stay where they are.
 
 **Why did the dock hide while I play?** WinDock steps aside when the window in front covers the whole screen, like a game or a video in full screen.
+
+**Do the unread badges read my messages?** No. Windows keeps the number each app puts on its taskbar icon in its notification database; WinDock reads only those numbers, read only, and never the text of a notification.
 
 **Does it slow the PC down?** At rest it uses under 1% of one processor core and around 170 MB of memory, most of it the .NET runtime packed inside the single exe. It listens to Windows window events instead of polling.
 

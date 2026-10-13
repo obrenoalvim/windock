@@ -78,6 +78,22 @@ public sealed partial class PresetViewModel : ObservableObject
         }
     }
 
+    WidgetSpec? WeatherSpec => Model.Widgets?.FirstOrDefault(w => w.Kind == WidgetSpec.Weather);
+
+    public bool HasWeather => WeatherSpec is not null;
+
+    public string WeatherCity
+    {
+        get => WeatherSpec?.Label ?? "";
+        set
+        {
+            if (WeatherSpec is not { } spec) return;
+            spec.Label = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+            OnPropertyChanged();
+            changed(this);
+        }
+    }
+
     void ToggleWidget(WidgetChoice choice)
     {
         var current = Model.ShownWidgets.ToDictionary(w => w.Kind);
@@ -87,6 +103,8 @@ public sealed partial class PresetViewModel : ObservableObject
         OnPropertyChanged(nameof(HasCountdown));
         OnPropertyChanged(nameof(CountdownDate));
         OnPropertyChanged(nameof(CountdownLabel));
+        OnPropertyChanged(nameof(HasWeather));
+        OnPropertyChanged(nameof(WeatherCity));
         changed(this);
     }
 

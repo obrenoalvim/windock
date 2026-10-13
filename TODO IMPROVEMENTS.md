@@ -22,14 +22,15 @@
 - **Risk:** Undocumented API; must follow the bar width while the lens animates.
 - **Effort:** Medium
 
-### Now playing and weather widgets
+### More widgets from PrimoDock
 - **Category:** Feature
-- **Flagged by:** PO
-- **What:** Music controls need `GlobalSystemMediaTransportControlsSessionManager` (WinRT), which means targeting `net10.0-windows10.0.19041.0` and shipping the Windows SDK projection. Weather needs a location and a free API such as Open-Meteo.
-- **Where:** `src/WinDock/ViewModels/Widgets.cs`, `WinDock.csproj`
-- **Why:** PrimoDock lists both among its most visible widgets.
-- **Risk:** Larger single-file exe; network access for weather.
-- **Effort:** Medium
+- **Flagged by:** PO, UX
+- **Source:** https://dock.oprimo.dev/
+- **What:** Color picker (pick any pixel, copy the hex, keep the last colors), world clock (another city, analog face), calendar with the next events (needs Outlook or Google access), shelf (drop files mid-drag and pick them up later), favorite sites, stopwatch laps.
+- **Where:** `src/WinDock/ViewModels/Widgets.cs`, `Views/DockWindow.xaml`
+- **Why:** PrimoDock lists 31 widgets; WinDock has 12.
+- **Risk:** Calendar and color picker need extra permissions or a full-screen capture overlay.
+- **Effort:** Medium each
 
 ### Tray icons inside the dock
 - **Category:** Feature

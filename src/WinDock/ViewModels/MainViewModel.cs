@@ -50,6 +50,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     public void Notify(string text) => Notice?.Invoke(text);
 
+    public void SaveQuietly(PresetViewModel p) => store.Save(p.Model);
+
     public bool AutoSwitch
     {
         get => Settings.AutoSwitch;

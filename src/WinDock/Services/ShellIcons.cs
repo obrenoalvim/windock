@@ -59,6 +59,19 @@ public static class ShellIcons
         return pin.ResolvedTarget is { } path ? ForPath(path, size) : null;
     }
 
+    static readonly Dictionary<string, string?> Prints = new(StringComparer.OrdinalIgnoreCase);
+
+    // A hash of the small icon, to tell when two exes show the very same picture.
+    public static string? Fingerprint(string path)
+    {
+        if (Prints.TryGetValue(path, out var hit)) return hit;
+        if (ForPath(path, 32) is not BitmapSource icon) return Prints[path] = null;
+        var bgra = new FormatConvertedBitmap(icon, PixelFormats.Bgra32, null, 0);
+        var px = new byte[bgra.PixelWidth * bgra.PixelHeight * 4];
+        bgra.CopyPixels(px, bgra.PixelWidth * 4, 0);
+        return Prints[path] = Convert.ToHexString(System.Security.Cryptography.SHA1.HashData(px));
+    }
+
     public static string? NameForAppId(string appId)
     {
         var key = @"shell:AppsFolder\" + appId;
@@ -101,6 +114,37 @@ public static class ShellIcons
         catch (Exception e) when (e is IOException or NotSupportedException or UriFormatException) { return null; }
     }
 
+    // An icon without a large size comes back at its own size (32 or 48 px) in the middle of the canvas, inside a faint
+    // square frame. Crop to the real icon so the dock scales it up like the others, without the frame.
+    public static BitmapSource Trim(BitmapSource source)
+    {
+        var bgra = source.Format == PixelFormats.Bgra32 ? source : new FormatConvertedBitmap(source, PixelFormats.Bgra32, null, 0);
+        int w = bgra.PixelWidth, h = bgra.PixelHeight;
+        if (w < 64 || h < 64) return source;
+        var px = new byte[w * h * 4];
+        bgra.CopyPixels(px, w * 4, 0);
+        const int skip = 4;
+        int left = w, top = h, right = -1, bottom = -1;
+        for (var y = skip; y < h - skip; y++)
+            for (var x = skip; x < w - skip; x++)
+                if (px[(y * w + x) * 4 + 3] >= 0x60)
+                {
+                    left = Math.Min(left, x);
+                    right = Math.Max(right, x);
+                    top = Math.Min(top, y);
+                    bottom = Math.Max(bottom, y);
+                }
+        if (right < 0) return source;
+        var side = Math.Max(right - left + 1, bottom - top + 1);
+        if (side >= w * 0.6) return source;
+        side = Math.Min(w, (int)Math.Ceiling(side * 1.1));
+        var x0 = Math.Clamp((left + right + 1 - side) / 2, 0, w - side);
+        var y0 = Math.Clamp((top + bottom + 1 - side) / 2, 0, h - side);
+        var cropped = new CroppedBitmap(bgra, new Int32Rect(x0, y0, side, side));
+        cropped.Freeze();
+        return cropped;
+    }
+
     static ImageSource? Load(string parsingName, int size, int flags)
     {
         if (flags == IconFlags && Path.GetExtension(parsingName).ToLowerInvariant() is ".jpg" or ".jpeg" or ".png" or ".bmp" && File.Exists(parsingName))
@@ -115,7 +159,7 @@ public static class ShellIcons
             {
                 var source = Imaging.CreateBitmapSourceFromHBitmap(bitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
                 source.Freeze();
-                return source;
+                return flags == IconFlags ? Trim(source) : source;
             }
             finally { DeleteObject(bitmap); }
         }

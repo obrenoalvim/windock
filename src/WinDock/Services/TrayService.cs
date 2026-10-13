@@ -1,6 +1,5 @@
 using System.Drawing;
 using System.Windows;
-using Microsoft.Win32;
 using WinDock.ViewModels;
 using WinDock.Views;
 using Forms = System.Windows.Forms;
@@ -9,8 +8,6 @@ namespace WinDock.Services;
 
 public sealed class TrayService : IDisposable
 {
-    const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
-
     readonly MainViewModel vm;
     readonly ConfigWindow window;
     readonly DockViewModel dock;
@@ -68,27 +65,13 @@ public sealed class TrayService : IDisposable
         menu.Add(new Forms.ToolStripSeparator());
         menu.Add(new Forms.ToolStripMenuItem(Loc.T("trayAuto"), null, (_, _) => vm.AutoSwitch = !vm.AutoSwitch) { Checked = vm.AutoSwitch });
         menu.Add(new Forms.ToolStripMenuItem(Loc.T("trayNotify"), null, (_, _) => vm.NotifySwitch = !vm.NotifySwitch) { Checked = vm.NotifySwitch });
-        menu.Add(new Forms.ToolStripMenuItem(Loc.T("trayStartup"), null, (_, _) => SetAutostart(!IsAutostart())) { Checked = IsAutostart() });
+        menu.Add(new Forms.ToolStripMenuItem(Loc.T("trayStartup"), null, (_, _) => vm.Dock.StartWithWindows = !vm.Dock.StartWithWindows) { Checked = vm.Dock.StartWithWindows });
         var language = new Forms.ToolStripMenuItem(Loc.T("trayLanguage"));
         language.DropDownItems.Add(new Forms.ToolStripMenuItem("English", null, (_, _) => vm.SetLanguage(Loc.English)) { Checked = Loc.Instance.Language == Loc.English });
         language.DropDownItems.Add(new Forms.ToolStripMenuItem("Português", null, (_, _) => vm.SetLanguage(Loc.Portuguese)) { Checked = Loc.Instance.Language == Loc.Portuguese });
         menu.Add(language);
         menu.Add(new Forms.ToolStripSeparator());
         menu.Add(Loc.T("trayExit"), null, (_, _) => Application.Current.Shutdown());
-    }
-
-    static bool IsAutostart()
-    {
-        using var key = Registry.CurrentUser.OpenSubKey(RunKey);
-        return key?.GetValue("WinDock") is not null;
-    }
-
-    static void SetAutostart(bool on)
-    {
-        using var key = Registry.CurrentUser.OpenSubKey(RunKey, writable: true);
-        if (key is null) return;
-        if (on) key.SetValue("WinDock", $"\"{Environment.ProcessPath}\" --tray");
-        else key.DeleteValue("WinDock", throwOnMissingValue: false);
     }
 
     public void Dispose()

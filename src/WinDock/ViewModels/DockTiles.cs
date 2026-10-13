@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using WinDock.Models;
@@ -59,8 +58,11 @@ public sealed partial class AppTile : DockTile, IDisposable
     public bool IsFolder => Folder is not null;
     public string? Exe { get; init; }
     public string? AppId { get; init; }
-    public bool HasBadge => Badge > 0;
-    public string BadgeText => Badge > 9 ? "9+" : Badge.ToString();
+    public bool HasBadge => Badge != 0;
+    public string BadgeText => Badge < 0 ? "" : Badge > 99 ? "99+" : Badge.ToString();
+
+    // Every app id this tile stands for, to find its unread badge.
+    public IEnumerable<string?> BadgeIds => match.Ids.Append(AppId).Append(Pin?.AppId).Concat(Windows.Select(w => w.AppId));
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Indicator), nameof(IsRunning))]
@@ -125,9 +127,41 @@ public sealed record AppMatch(HashSet<string> Ids, HashSet<string> Exes, List<st
             var isLink = target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase);
             var exe = isLink ? ShellLinks.ReadTarget(target) : target;
             if (exe is not null) match.AddExe(exe);
+            if (exe is not null && UpdaterFolder(exe, isLink ? ShellLinks.ReadArguments(target) : pin.Args) is { } updater) match.Folders.Add(updater);
             if ((pin.AppId ?? (isLink ? ShellLinks.ReadAppId(target) : null)) is { } id) match.Ids.Add(id);
         }
         return match;
+    }
+
+    // Squirrel apps (Discord, Slack, Figma...) pin a stub with "--processStart X.exe" and run X from app-1.2.3\.
+    public static string? UpdaterFolder(string exe, string? args) =>
+        args?.Contains("--processStart", StringComparison.OrdinalIgnoreCase) == true && Path.GetDirectoryName(exe) is { Length: > 3 } dir
+            ? dir.TrimEnd('\\') + "\\"
+            : null;
+
+    static readonly string[] SharedRoots =
+    [
+        Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+        Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs"),
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "WindowsApps")
+    ];
+
+    // Two exes of one program live under a folder of their own (not Program Files or AppData itself).
+    public static bool SameProgramFolder(string a, string b)
+    {
+        var pa = Path.GetDirectoryName(a)?.Split('\\') ?? [];
+        var pb = Path.GetDirectoryName(b)?.Split('\\') ?? [];
+        var n = 0;
+        while (n < pa.Length && n < pb.Length && pa[n].Equals(pb[n], StringComparison.OrdinalIgnoreCase)) n++;
+        if (n < 2) return false;
+        var common = string.Join('\\', pa.Take(n));
+        return !SharedRoots.Any(r => r.Length > 0 && common.Equals(r.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase));
     }
 
     void AddExe(string exe)
@@ -146,75 +180,97 @@ public sealed record AppMatch(HashSet<string> Ids, HashSet<string> Exes, List<st
 
 public sealed partial class SystemTile : DockTile
 {
-    int lastSlow = -1;
+    int volumeTick;
+    DateTime nextNetwork, nextBattery;
+    volatile bool networkChanged = true;
+    NetworkKind kind;
+
+    public SystemTile()
+    {
+        System.Net.NetworkInformation.NetworkChange.NetworkAddressChanged += (_, _) => networkChanged = true;
+        System.Net.NetworkInformation.NetworkChange.NetworkAvailabilityChanged += (_, _) => networkChanged = true;
+    }
 
     public override string Key => "system";
 
     [ObservableProperty] string time = "";
     [ObservableProperty] string date = "";
-    [ObservableProperty] string networkGlyph = "";
+    [ObservableProperty] string clockTip = "";
+    [ObservableProperty] string networkGlyph = "\uE839";
+    [ObservableProperty] string networkTip = "";
+    [ObservableProperty] string volumeGlyph = "\uE767";
+    [ObservableProperty] string volumeTip = "";
     [ObservableProperty] string batteryGlyph = "";
+    [ObservableProperty] string batteryTip = "";
     [ObservableProperty] bool hasBattery;
+    [ObservableProperty] string micGlyph = "";
+    [ObservableProperty] string micTip = "";
+    [ObservableProperty] bool hasMic;
+    [ObservableProperty] bool micMuted;
 
     public string TrayTip => Loc.T("trayIcons");
-    public string StatusTip => Loc.T("quickSettings");
-    public string ClockTip => Loc.T("calendar");
-    public string VolumeGlyph => "";
+    public string DesktopTip => Loc.T("showDesktop");
 
     public void Tick(DateTime now)
     {
         var culture = Loc.Instance.Culture;
+        var pt = Loc.Instance.Language == Loc.Portuguese;
         Time = now.ToString("t", culture);
-        Date = now.ToString(Loc.Instance.Language == Loc.Portuguese ? "dd/MM/yyyy" : "M/d/yyyy", culture);
-        if (now.Second / 5 == lastSlow) return;
-        lastSlow = now.Second / 5;
+        Date = now.ToString(pt ? "dd/MM/yyyy" : "M/d/yyyy", culture);
+        ClockTip = $"{now.ToString(pt ? "dddd, d 'de' MMMM 'de' yyyy" : "dddd, MMMM d, yyyy", culture)} · {Loc.T("calendar")}";
 
-        NetworkGlyph = SystemStats.Network() switch
+        if (++volumeTick % 5 == 0) RefreshVolume();
+        if (networkChanged || now >= nextNetwork)
         {
-            NetworkKind.Wifi => "",
-            NetworkKind.Wired => "",
-            _ => ""
-        };
-        var (present, percent, charging) = SystemStats.Battery();
-        HasBattery = present;
-        BatteryGlyph = present ? BatteryGlyphFor(percent, charging) : "";
-        OnPropertyChanged(nameof(TrayTip));
-        OnPropertyChanged(nameof(StatusTip));
-        OnPropertyChanged(nameof(ClockTip));
+            networkChanged = false;
+            var net = NetworkStatus.Read();
+            kind = net.Kind;
+            nextNetwork = now.AddSeconds(kind == NetworkKind.Wifi ? 10 : 60);
+            NetworkGlyph = NetworkStatus.Glyph(net);
+            NetworkTip = NetworkText(net);
+            OnPropertyChanged(nameof(TrayTip));
+            OnPropertyChanged(nameof(DesktopTip));
+        }
+        if (now >= nextBattery)
+        {
+            nextBattery = now.AddSeconds(10);
+            var battery = SystemStats.Battery();
+            HasBattery = battery.Present;
+            BatteryGlyph = battery.Present ? BatteryGlyphFor(battery.Percent, battery.Charging) : "";
+            BatteryTip = DescribeBattery(battery);
+        }
+    }
+
+    public void RefreshVolume()
+    {
+        var audio = Audio.Read();
+        VolumeGlyph = Audio.Glyph(audio);
+        VolumeTip = audio is null ? Loc.T("noAudio")
+            : $"{audio.Device ?? Loc.T("sound")} · {(audio.Muted ? Loc.T("muted") : $"{Math.Round(audio.Volume * 100)}%")}";
+        var mic = Audio.ReadMic();
+        HasMic = mic is not null;
+        MicMuted = mic?.Muted ?? false;
+        MicGlyph = Audio.MicGlyph(mic);
+        MicTip = mic is null ? "" : $"{mic.Device ?? Loc.T("microphone")} · {Loc.T(mic.Muted ? "micMuted" : "micOn")}";
+    }
+
+    public static string NetworkText(NetworkState net) => net switch
+    {
+        { Kind: NetworkKind.None } => Loc.T("netNone"),
+        { Internet: false } => Loc.F("netNoInternet", net.Ssid ?? (net.Kind == NetworkKind.Wifi ? "Wi-Fi" : "Ethernet")),
+        { Kind: NetworkKind.Wifi } => Loc.F("netWifi", net.Ssid ?? "Wi-Fi", net.Signal),
+        _ => Loc.T("netWired")
+    };
+
+    public static string DescribeBattery(BatteryState battery)
+    {
+        if (!battery.Present) return Loc.T("plugged");
+        if (battery.Charging) return Loc.F("batteryCharging", battery.Percent);
+        return battery.Left is { } left
+            ? Loc.F("batteryLeft", battery.Percent, (int)left.TotalHours, left.Minutes)
+            : Loc.F("batteryLevel", battery.Percent);
     }
 
     public static string BatteryGlyphFor(int percent, bool charging) =>
         ((char)((charging ? 0xEBAB : 0xEBA0) + Math.Clamp((int)Math.Round(percent / 10.0), 0, 10))).ToString();
-}
-
-public sealed partial class EnvDot(PresetViewModel preset) : ObservableObject
-{
-    public PresetViewModel Preset { get; } = preset;
-    public Brush Accent => Preset.Accent;
-    public string Tip => $"{Preset.Glyph}  {Preset.Name}";
-
-    [ObservableProperty] bool isActive;
-
-    public void RefreshText() => OnPropertyChanged(nameof(Tip));
-}
-
-public sealed class EnvTile : DockTile
-{
-    public override string Key => "envs";
-    public ObservableCollection<EnvDot> Dots { get; } = [];
-
-    public void Sync(IEnumerable<PresetViewModel> presets, PresetViewModel? active)
-    {
-        var list = presets.ToList();
-        if (!Dots.Select(d => d.Preset).SequenceEqual(list))
-        {
-            Dots.Clear();
-            foreach (var p in list) Dots.Add(new EnvDot(p));
-        }
-        foreach (var d in Dots)
-        {
-            d.IsActive = d.Preset == active;
-            d.RefreshText();
-        }
-    }
 }

@@ -275,7 +275,7 @@ public class DockTests
     [Fact]
     public void Dock_settings_are_clamped_and_round_trip()
     {
-        var settings = Settings.Parse("""{ "dock": { "magnification": 9, "iconSize": 4, "lens": "warp", "theme": "neon" } }""");
+        var settings = Settings.Parse("""{ "dock": { "magnification": 9, "iconSize": 4, "lens": "warp", "theme": "plaid" } }""");
         Assert.Equal(2.4, settings.Dock.Magnification);
         Assert.Equal(32, settings.Dock.IconSize);
         Assert.Equal(DockSettings.LensMagnify, settings.Dock.Lens);
@@ -284,6 +284,22 @@ public class DockTests
         settings.Dock.ReplaceTaskbar = true;
         var back = Settings.Parse(JsonSerializer.Serialize(settings, Json.Options));
         Assert.True(back.Dock.ReplaceTaskbar);
+    }
+
+    [Fact]
+    public void Every_dock_theme_has_valid_colors_and_a_name()
+    {
+        var hex = new System.Text.RegularExpressions.Regex("^#([0-9A-F]{6}|[0-9A-F]{8})$");
+        Assert.Equal(DockTheme.All.Count, DockTheme.All.Select(t => t.Id).Distinct().Count());
+        foreach (var t in DockTheme.All)
+        {
+            foreach (var color in new[] { t.BarTop, t.BarBottom, t.Stroke, t.Ink, t.Muted, t.Shadow, t.Indicator }.OfType<string>())
+                Assert.Matches(hex, color);
+            var key = "theme" + char.ToUpperInvariant(t.Id[0]) + t.Id[1..];
+            Assert.NotEqual(key, Loc.T(key));
+            Assert.Equal(t.Id, Settings.Parse($$"""{ "dock": { "theme": "{{t.Id}}" } }""").Dock.Theme);
+        }
+        Assert.Same(DockTheme.All[0], DockTheme.Find("plaid"));
     }
 
     [Fact]

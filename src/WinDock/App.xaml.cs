@@ -19,7 +19,7 @@ public partial class App : System.Windows.Application
     ConfigWindow? window;
     ShellGuard? shell;
     DockViewModel? dock;
-    DockWindow? dockWindow;
+    DockHost? docks;
     MainViewModel? main;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -45,7 +45,9 @@ public partial class App : System.Windows.Application
         DispatcherUnhandledException += OnCrash;
         ShellGuard.RecoverStale();
 
+        var firstRun = !Settings.Exists;
         var settings = Settings.Load();
+        if (firstRun) Autostart.Enabled = true;
         Loc.Instance.Set(settings.Language);
         main = new MainViewModel(new PresetStore(), new TaskbarService(), settings);
         window = new ConfigWindow(main);
@@ -53,8 +55,7 @@ public partial class App : System.Windows.Application
 
         shell = new ShellGuard();
         dock = new DockViewModel(main, shell);
-        dockWindow = new DockWindow(dock, () => window.Open());
-        if (main.Dock.Enabled) dockWindow.Show();
+        docks = new DockHost(dock, () => window.Open());
 
         tray = new TrayService(main, window, dock);
         if (!e.Args.Contains("--tray")) window.Open();
@@ -83,7 +84,7 @@ public partial class App : System.Windows.Application
     protected override void OnExit(ExitEventArgs e)
     {
         main?.Dock.Flush();
-        dockWindow?.Close();
+        docks?.Dispose();
         dock?.Dispose();
         shell?.Dispose();
         window?.Release();

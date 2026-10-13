@@ -9,11 +9,12 @@
         ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize" ShowActivated="False"
         Width="900" Height="170" Left="-32000" Top="-32000" AllowDrop="True" Focusable="False"
         UseLayoutRounding="True" TextOptions.TextFormattingMode="Ideal"
-        FontFamily="{StaticResource Mono}">
+        FontFamily="{StaticResource DockFont}">
 
     <Window.Resources>
         <sys:Double x:Key="IconSize">46</sys:Double>
         <sys:Double x:Key="WideSize">100</sys:Double>
+        <sys:Double x:Key="WiderSize">154</sys:Double>
         <SolidColorBrush x:Key="DockLine" Color="#33FFFFFF"/>
         <SolidColorBrush x:Key="DotIdle" Color="#59FFFFFF"/>
         <SolidColorBrush x:Key="TileFace" Color="#1FFFFFFF"/>
@@ -57,6 +58,34 @@
             <GradientStop Color="#5BD46B" Offset="0"/>
             <GradientStop Color="#2EA043" Offset="1"/>
         </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WMusic" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#2D2F3A" Offset="0"/>
+            <GradientStop Color="#17181F" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WWeather" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#56B8FF" Offset="0"/>
+            <GradientStop Color="#2B7FE6" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WWeatherNight" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#3D4C8F" Offset="0"/>
+            <GradientStop Color="#1A2152" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WNetwork" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#5B6CFF" Offset="0"/>
+            <GradientStop Color="#3A43D6" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WNote" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FFE58A" Offset="0"/>
+            <GradientStop Color="#F6C945" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WClaude" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#E58A68" Offset="0"/>
+            <GradientStop Color="#C4603E" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WClaudeHot" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#F05A48" Offset="0"/>
+            <GradientStop Color="#B8261B" Offset="1"/>
+        </LinearGradientBrush>
         <LinearGradientBrush x:Key="WindowsBlue" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#7FD3FF" Offset="0"/>
             <GradientStop Color="#1E88E5" Offset="1"/>
@@ -77,15 +106,75 @@
             <EventSetter Event="Loaded" Handler="OnTileLoaded"/>
         </Style>
 
+        <Style x:Key="SystemSpot" TargetType="Border">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="7,0"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource TileFace}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Compact widgets: a square tile with one value, an optional ring, glyph or picture. -->
+        <DataTemplate x:Key="CompactWidget">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource IconSize}" ToolTip="{Binding Face.Tip}">
+                <Border x:Name="Plate" CornerRadius="13" Background="{DynamicResource TileFace}"/>
+                <Border CornerRadius="13" Visibility="{Binding Face.HasImage, Converter={StaticResource Show}}">
+                    <Border.Background>
+                        <ImageBrush ImageSource="{Binding Face.Image}" Stretch="UniformToFill"/>
+                    </Border.Background>
+                </Border>
+                <Ellipse Margin="4" Stroke="{DynamicResource DockLine}" StrokeThickness="2.4" Visibility="{Binding Face.HasRing, Converter={StaticResource Show}}"/>
+                <v:RingArc x:Name="Outer" Margin="4" Progress="{Binding Face.Ring}" Stroke="{DynamicResource DockInk}" StrokeThickness="2.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                           Visibility="{Binding Face.HasRing, Converter={StaticResource Show}}"/>
+                <Ellipse Margin="10" Stroke="{DynamicResource DockLine}" StrokeThickness="2.4" Visibility="{Binding Face.HasInnerRing, Converter={StaticResource Show}}"/>
+                <v:RingArc Margin="10" Progress="{Binding Face.InnerRing}" Stroke="{Binding Face.InnerTint}" StrokeThickness="2.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                           Visibility="{Binding Face.HasInnerRing, Converter={StaticResource Show}}"/>
+                <Viewbox x:Name="Content" Margin="8" StretchDirection="DownOnly">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Face.Glyph}" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{DynamicResource DockInk}" HorizontalAlignment="Center"
+                                   Visibility="{Binding Face.HasGlyph, Converter={StaticResource Show}}"/>
+                        <TextBlock Text="{Binding Face.Symbol}" FontFamily="Segoe UI Symbol" FontSize="14" Foreground="{DynamicResource DockInk}" HorizontalAlignment="Center"
+                                   Visibility="{Binding Face.HasSymbol, Converter={StaticResource Show}}"/>
+                        <TextBlock Text="{Binding Face.Value}" FontFamily="{StaticResource DockFont}" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource DockInk}" HorizontalAlignment="Center"
+                                   Visibility="{Binding Face.HasValue, Converter={StaticResource Show}}"/>
+                        <TextBlock Text="{Binding Face.Caption}" FontFamily="{StaticResource DockFont}" FontSize="8" Foreground="{DynamicResource DockMuted}" HorizontalAlignment="Center"
+                                   MaxWidth="44" TextTrimming="CharacterEllipsis" Margin="0,1,0,0" Visibility="{Binding Face.HasCaption, Converter={StaticResource Show}}"/>
+                    </StackPanel>
+                </Viewbox>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Face.HasRing}" Value="True">
+                    <Setter TargetName="Content" Property="Margin" Value="10"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Face.Alert}" Value="True">
+                    <Setter TargetName="Plate" Property="Background" Value="#E6E5483B"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Face.HasTint}" Value="True">
+                    <Setter TargetName="Outer" Property="Stroke" Value="{Binding Face.Tint}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+        <v:FaceSelector x:Key="Faces" Compact="{StaticResource CompactWidget}"/>
+
+        <Style x:Key="ClusterSpot" TargetType="Border" BasedOn="{StaticResource SystemSpot}">
+            <Setter Property="Padding" Value="6,0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Margin" Value="0,3"/>
+        </Style>
+
         <Style x:Key="Caption" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="{StaticResource Mono}"/>
-            <Setter Property="FontSize" Value="7.5"/>
+            <Setter Property="FontFamily" Value="{StaticResource DockFont}"/>
+            <Setter Property="FontSize" Value="8.5"/>
             <Setter Property="Foreground" Value="{StaticResource WSoft}"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         </Style>
 
         <Style x:Key="Big" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="{StaticResource Mono}"/>
+            <Setter Property="FontFamily" Value="{StaticResource DockFont}"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Foreground" Value="{StaticResource WInk}"/>
@@ -152,44 +241,40 @@
                 <Border Background="Transparent" Padding="6,0" Cursor="Hand" ToolTip="{Binding TrayTip}" MouseLeftButtonUp="OnTrayClick">
                     <TextBlock Text="&#xE70E;" FontFamily="{StaticResource Glyphs}" FontSize="12" Foreground="{DynamicResource DockInk}" VerticalAlignment="Center"/>
                 </Border>
-                <Border Background="Transparent" Padding="8,0" CornerRadius="10" Cursor="Hand" ToolTip="{Binding StatusTip}" MouseLeftButtonUp="OnStatusClick">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding NetworkGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{DynamicResource DockInk}"/>
-                        <TextBlock Text="{Binding VolumeGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{DynamicResource DockInk}" Margin="9,0,0,0"/>
-                        <TextBlock Text="{Binding BatteryGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{DynamicResource DockInk}" Margin="9,0,0,0"
-                                   Visibility="{Binding HasBattery, Converter={StaticResource Show}}"/>
+                <!-- Network, sound, microphone and battery share one pill, like the quick settings button of Windows 11. -->
+                <Border CornerRadius="11" Margin="2,8,2,8" Padding="3,0" Background="{DynamicResource TileFace}">
+                    <StackPanel Orientation="Horizontal">
+                        <Border Style="{StaticResource ClusterSpot}" ToolTip="{Binding NetworkTip}" MouseLeftButtonUp="OnStatusClick">
+                            <TextBlock Text="{Binding NetworkGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="14" Foreground="{DynamicResource DockInk}" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Style="{StaticResource ClusterSpot}" ToolTip="{Binding VolumeTip}" MouseUp="OnVolumeClick" MouseWheel="OnVolumeWheel">
+                            <TextBlock Text="{Binding VolumeGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="14" Foreground="{DynamicResource DockInk}" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Style="{StaticResource ClusterSpot}" ToolTip="{Binding MicTip}" MouseLeftButtonUp="OnMicClick"
+                                Visibility="{Binding HasMic, Converter={StaticResource Show}}">
+                            <TextBlock x:Name="MicIcon" Text="{Binding MicGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="14" Foreground="{DynamicResource DockInk}" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Style="{StaticResource ClusterSpot}" ToolTip="{Binding BatteryTip}" MouseLeftButtonUp="OnStatusClick"
+                                Visibility="{Binding HasBattery, Converter={StaticResource Show}}">
+                            <TextBlock Text="{Binding BatteryGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="14" Foreground="{DynamicResource DockInk}" VerticalAlignment="Center"/>
+                        </Border>
                     </StackPanel>
                 </Border>
-                <Border Background="Transparent" Padding="8,0,6,0" Cursor="Hand" ToolTip="{Binding ClockTip}" MouseLeftButtonUp="OnClockClick">
+                <Border Style="{StaticResource SystemSpot}" Padding="8,0,8,0" ToolTip="{Binding ClockTip}" MouseLeftButtonUp="OnClockClick">
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Time}" FontSize="12" Foreground="{DynamicResource DockInk}" HorizontalAlignment="Right"/>
-                        <TextBlock Text="{Binding Date}" FontSize="10" Foreground="{DynamicResource DockMuted}" HorizontalAlignment="Right" Margin="0,2,0,0"/>
+                        <TextBlock Text="{Binding Time}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource DockInk}" HorizontalAlignment="Right"/>
+                        <TextBlock Text="{Binding Date}" FontSize="11.5" Foreground="{DynamicResource DockMuted}" HorizontalAlignment="Right" Margin="0,1,0,0"/>
                     </StackPanel>
+                </Border>
+                <Border Width="9" Margin="3,7,0,7" Background="Transparent" Cursor="Hand" ToolTip="{Binding DesktopTip}" MouseLeftButtonUp="OnDesktopClick">
+                    <Rectangle Width="1" Fill="{DynamicResource DockLine}" HorizontalAlignment="Right"/>
                 </Border>
             </StackPanel>
-        </DataTemplate>
-
-        <DataTemplate DataType="{x:Type vm:EnvTile}">
-            <Grid Height="{DynamicResource IconSize}" Background="Transparent">
-                <ItemsControl ItemsSource="{Binding Dots}" VerticalAlignment="Center" Margin="2,0">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Padding="4,14" Background="Transparent" Cursor="Hand" ToolTip="{Binding Tip}" MouseLeftButtonUp="OnDotClick">
-                                <Border x:Name="Pill" Width="8" Height="8" CornerRadius="4" Background="{DynamicResource DotIdle}"/>
-                            </Border>
-                            <DataTemplate.Triggers>
-                                <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                    <Setter TargetName="Pill" Property="Width" Value="22"/>
-                                    <Setter TargetName="Pill" Property="Background" Value="{Binding Accent}"/>
-                                </DataTrigger>
-                            </DataTemplate.Triggers>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding MicMuted}" Value="True">
+                    <Setter TargetName="MicIcon" Property="Foreground" Value="#FF5A4E"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:ClockWidget}">
@@ -218,6 +303,8 @@
                                 <Ellipse Stroke="{StaticResource WTrack}" StrokeThickness="3"/>
                                 <v:RingArc Progress="{Binding Progress}" Stroke="{StaticResource WInk}" StrokeThickness="3"
                                            StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                <TextBlock Text="{Binding Done}" FontFamily="{StaticResource DockFont}" FontWeight="Bold" FontSize="9" Foreground="{StaticResource WInk}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="7,0,0,0">
                                 <TextBlock Text="{Binding Text}" Style="{StaticResource Big}"/>
@@ -365,8 +452,195 @@
             </Grid>
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:ClaudeWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
+                <Viewbox>
+                    <Border x:Name="Face" Style="{StaticResource WidgetFace}" Background="{StaticResource WClaude}">
+                        <Grid Margin="8,7,9,7">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="17"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Path Data="M 6.5,0.8 L 6.5,12.2 M 0.8,6.5 L 12.2,6.5 M 2.5,2.5 L 10.5,10.5 M 10.5,2.5 L 2.5,10.5"
+                                  Stroke="{StaticResource WInk}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Width="13" Height="13" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                            <Grid Grid.Column="1">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="15"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="25"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="5h" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
+                                <Grid Grid.Column="1" Height="4" Margin="1,0,4,0">
+                                    <Border CornerRadius="2" Background="{StaticResource WTrack}"/>
+                                    <Border CornerRadius="2" Background="{StaticResource WInk}" RenderTransformOrigin="0,0.5">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform ScaleX="{Binding Session}"/>
+                                        </Border.RenderTransform>
+                                    </Border>
+                                </Grid>
+                                <TextBlock Grid.Column="2" Text="{Binding SessionText}" Style="{StaticResource Caption}" Foreground="{StaticResource WInk}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="1" Text="7d" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
+                                <Grid Grid.Row="1" Grid.Column="1" Height="4" Margin="1,0,4,0">
+                                    <Border CornerRadius="2" Background="{StaticResource WTrack}"/>
+                                    <Border CornerRadius="2" Background="{StaticResource WInk}" RenderTransformOrigin="0,0.5">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform ScaleX="{Binding Week}"/>
+                                        </Border.RenderTransform>
+                                    </Border>
+                                </Grid>
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding WeekText}" Style="{StaticResource Caption}" Foreground="{StaticResource WInk}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Viewbox>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Hot}" Value="True">
+                    <Setter TargetName="Face" Property="Background" Value="{StaticResource WClaudeHot}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Stale}" Value="True">
+                    <Setter TargetName="Face" Property="Opacity" Value="0.72"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:MusicWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WiderSize}" ToolTip="{Binding Tip}">
+                <Viewbox>
+                    <Border Style="{StaticResource WidgetFace}" Width="154" Background="{StaticResource WMusic}">
+                        <Grid Margin="6,6,6,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="34"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="34" Height="34" CornerRadius="7" Background="{StaticResource WTrack}">
+                                <Grid>
+                                    <TextBlock Text="&#xE8D6;" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{StaticResource WInk}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <Border CornerRadius="7" Visibility="{Binding HasCover, Converter={StaticResource Show}}">
+                                        <Border.Background>
+                                            <ImageBrush ImageSource="{Binding Cover}" Stretch="UniformToFill"/>
+                                        </Border.Background>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="6,0,2,0">
+                                <TextBlock Text="{Binding Title}" Style="{StaticResource Caption}" FontSize="8" FontWeight="Bold" Foreground="{StaticResource WInk}"/>
+                                <TextBlock Text="{Binding Artist}" Style="{StaticResource Caption}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <Border Grid.Column="2" Width="18" Height="18" CornerRadius="9" Background="{StaticResource WTrack}" VerticalAlignment="Center"
+                                    Cursor="Hand" MouseUp="OnMediaToggle">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Idle}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding ToggleGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="8" Foreground="{StaticResource WInk}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </Viewbox>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:WeatherWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
+                <Viewbox>
+                    <Border x:Name="Face" Style="{StaticResource WidgetFace}" Background="{StaticResource WWeather}">
+                        <Grid Margin="9,6,9,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="26"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Glyph}" FontFamily="Segoe UI Symbol" FontSize="19" Foreground="{StaticResource WInk}"
+                                       VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Temp}" Style="{StaticResource Big}" FontSize="15"/>
+                                <TextBlock Text="{Binding Condition}" Style="{StaticResource Caption}" Margin="0,1,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Viewbox>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Day}" Value="False">
+                    <Setter TargetName="Face" Property="Background" Value="{StaticResource WWeatherNight}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Stale}" Value="True">
+                    <Setter TargetName="Face" Property="Opacity" Value="0.72"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:MicWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource IconSize}" ToolTip="{Binding Tip}">
+                <Border x:Name="Face" CornerRadius="13" Background="{DynamicResource TileFace}"/>
+                <TextBlock x:Name="Icon" Text="{Binding Glyph}" FontFamily="{StaticResource Glyphs}" FontSize="19" Foreground="{DynamicResource DockInk}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Muted}" Value="True">
+                    <Setter TargetName="Face" Property="Background" Value="#E6E5483B"/>
+                    <Setter TargetName="Icon" Property="Foreground" Value="White"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Present}" Value="False">
+                    <Setter TargetName="Icon" Property="Opacity" Value="0.4"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:NetworkWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
+                <Viewbox>
+                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WNetwork}">
+                        <Grid Margin="10,8,10,8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="14"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="↓" Style="{StaticResource Caption}" FontSize="9" Foreground="{StaticResource WInk}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Down}" Style="{StaticResource Big}" FontSize="10.5" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="1" Text="↑" Style="{StaticResource Caption}" FontSize="9" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Up}" Style="{StaticResource Caption}" FontSize="8.5" Foreground="{StaticResource WInk}" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+                </Viewbox>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:NoteWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Text}">
+                <Viewbox>
+                    <Border x:Name="Face" Style="{StaticResource WidgetFace}" Background="{StaticResource WNote}">
+                        <TextBlock Text="{Binding Text}" FontFamily="{StaticResource DockFont}" FontSize="9.5" FontWeight="SemiBold" Foreground="#3A2E12" Margin="9,5,9,5"
+                                   TextWrapping="Wrap" TextTrimming="CharacterEllipsis" LineHeight="11.5" VerticalAlignment="Center"/>
+                    </Border>
+                </Viewbox>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Empty}" Value="True">
+                    <Setter TargetName="Face" Property="Opacity" Value="0.8"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:BatteryWidget}">
-            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource IconSize}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource IconSize}" ToolTip="{Binding Tip}">
                 <Viewbox>
                     <Border Style="{StaticResource WidgetFace}" Width="46" Background="{StaticResource WBattery}">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -384,7 +658,7 @@
             <TranslateTransform x:Name="Slide"/>
         </Grid.RenderTransform>
 
-        <ItemsControl x:Name="Strip" ItemsSource="{Binding Tiles}" Margin="0,0,0,6" Focusable="False">
+        <ItemsControl x:Name="Strip" ItemsSource="{Binding Tiles}" Margin="0,0,0,6" Focusable="False" ItemTemplateSelector="{StaticResource Faces}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <v:LensPanel Loaded="OnPanelLoaded" MouseMove="OnPanelMove" MouseEnter="OnPanelEnter" MouseLeave="OnPanelLeave"

@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using WinDock.Models;
+using WinDock.Services;
 
 namespace WinDock.ViewModels;
 
@@ -34,16 +35,30 @@ public sealed class DockOptions : ObservableObject
     public double LensWidth { get => D.LensWidth; set => Set(() => D.LensWidth = Math.Round(value, 2)); }
     public double IconSize { get => D.IconSize; set => Set(() => D.IconSize = Math.Round(value)); }
     public string Lens { get => D.Lens; set => Set(() => D.Lens = value, nameof(LensNone), nameof(LensScale), nameof(LensMagnify)); }
-    public string Theme { get => D.Theme; set => Set(() => D.Theme = value, nameof(ThemeDark), nameof(ThemeLight)); }
+    public string Theme { get => D.Theme; set => Set(() => D.Theme = value); }
     public string? Screen { get => D.Screen; set => Set(() => D.Screen = value); }
+    public bool AllScreens { get => D.AllScreens; set => Set(() => D.AllScreens = value); }
+    public bool CompactWidgets { get => D.CompactWidgets; set => Set(() => D.CompactWidgets = value); }
+    public bool PerScreen { get => D.PerScreen; set => Set(() => D.PerScreen = value); }
+    public Dictionary<string, string> ScreenEnvironments => D.ScreenEnvironments;
+
+    public void SetScreenEnvironment(string screen, string id) => Set(() => D.ScreenEnvironments[screen] = id, name: nameof(ScreenEnvironments));
 
     public bool CanReserve => !AutoHide;
+
+    public bool StartWithWindows
+    {
+        get => Autostart.Enabled;
+        set
+        {
+            Autostart.Enabled = value;
+            OnPropertyChanged();
+        }
+    }
 
     public bool LensNone { get => Lens == DockSettings.LensNone; set { if (value) Lens = DockSettings.LensNone; else OnPropertyChanged(); } }
     public bool LensScale { get => Lens == DockSettings.LensScale; set { if (value) Lens = DockSettings.LensScale; else OnPropertyChanged(); } }
     public bool LensMagnify { get => Lens == DockSettings.LensMagnify; set { if (value) Lens = DockSettings.LensMagnify; else OnPropertyChanged(); } }
-    public bool ThemeDark { get => Theme == DockSettings.ThemeDark; set { if (value) Theme = DockSettings.ThemeDark; else OnPropertyChanged(); } }
-    public bool ThemeLight { get => Theme == DockSettings.ThemeLight; set { if (value) Theme = DockSettings.ThemeLight; else OnPropertyChanged(); } }
 
     void Set(Action apply, string also1 = "", string also2 = "", string also3 = "", [CallerMemberName] string name = "")
     {

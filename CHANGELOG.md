@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- The dock shows on every screen by default, or on the one you pick in the **Dock** tab, and follows monitors as they are plugged in or out.
+- When the Windows taskbar is out of sight (replaced, or set to hide automatically) the dock shows the Windows basics: Start, the internet status (Wi-Fi name and signal, Ethernet, no internet, offline), the volume, the battery with time left, the clock and calendar, the tray icons and show desktop.
+- Sound control: scroll on the speaker to change the volume, middle-click to mute, click for a panel with the output device, a slider, the volume mixer and the sound settings.
+- Claude usage widget: the 5-hour session and the 7-day week of your Claude plan, red from 90%, with a panel for the reset times, the weekly pace and a refresh, and a notice at 80% and 95%. It uses the sign-in Claude Code keeps on the PC and never renews or stores it.
+- Music widget: what plays in Spotify, the browser or any player, with the cover, play and pause on the tile, and a panel with every player side by side (Spotify, each browser tab, any app), each with previous, play and next. The tile hides while nothing plays.
+- Seven new dock themes next to Dark and Light: Midnight, Neon, Canarinho, Aqua, Sunset, Paper and Floating, each with its own border, corners and indicator color, picked from a list with a preview of each in the **Dock** tab.
+- Weather widget: temperature and condition on the tile (blue by day, indigo at night), and a panel with feels like, high and low and the next hours. Type the city on the environment card or leave it empty to use the Windows location. Data from Open-Meteo, free and without an account.
+- Network speed widget, note widget, and the Pomodoro counts the cycles done today.
+- Start with Windows is on for new installs and sits in the **Dock** tab and in the dock menu too.
+- Unread badges on dock icons, from the counts apps put on the Windows taskbar (WhatsApp, Teams, Mail) and from window titles that start with a count.
+- The `^` button lists the apps with a tray icon, to open them or quit them without bringing back the Windows taskbar.
+- Microphone: a button next to the sound to mute it, and a microphone widget.
+- The sound panel lists every output device and switches the Windows default with one click, on the screen it was opened on.
+- Compact widgets, on by default: each widget is a square the size of an icon; Claude shows two rings (session outside, week inside) and the note keeps its wide tile.
+- The weather refreshes every 9 seconds while it is on the dock, just under the free Open-Meteo limit of 10,000 calls a day, and waits an hour if Open-Meteo says the limit was reached.
+- Each screen can have its own dock, with the windows open on it and an environment of its own.
+
+### Changed
+- The tray, network, sound, microphone, battery and the clock sit together at the right end of the dock; network, sound, microphone and battery share one pill. Start stays at the left end.
+- Shortcuts that start another exe (Discord) light up the pinned icon instead of adding a second one, and programs split over several exes with the same icon (Google Play Games) take one slot.
+- The Claude widget asks again as soon as Claude Code renews its sign-in.
+- The dock text uses the Windows font (Segoe UI Variable), a little larger in the clock, the date and the note.
+- Widgets that are not on the dock (other environments, or the dock turned off) stop refreshing: no Claude or weather requests and no processor, memory or network sampling for them. A running Pomodoro or timer still rings on time.
+- Icons that only come in small sizes (many games and older programs) fill their tile like the others, without the faint square frame Windows draws around them.
+- The clock widget steps aside while the dock already shows the Windows clock.
+- The environment dots left the dock; switch with the mouse wheel, `Ctrl+Alt+1..9` or the dock menu.
+- The minutes of the timer and the period of the progress widget are remembered.
+- Panels (folders, sound, Claude, music, note) share one look and close on Esc or a click outside.
+- Needs Windows 10 version 2004 or newer, for the media controls.
+
 ## [0.3.0] - 2026-10-12
 
 ### Added

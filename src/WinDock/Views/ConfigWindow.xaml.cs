@@ -61,29 +61,62 @@ public partial class ConfigWindow : Window
         DockPage.Visibility = dock ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    public sealed record ThemeChoice(string Id, string Name, System.Windows.Media.Brush Swatch, System.Windows.Media.Brush Rim);
+
+    bool fillingThemes;
+
+    void FillThemes()
+    {
+        fillingThemes = true;
+        ThemeBox.ItemsSource = WinDock.Models.DockTheme.All.Select(t => new ThemeChoice(
+            t.Id,
+            Loc.T("theme" + char.ToUpperInvariant(t.Id[0]) + t.Id[1..]),
+            new System.Windows.Media.LinearGradientBrush(Color(t.BarTop), Color(t.BarBottom), 90),
+            new System.Windows.Media.SolidColorBrush(Color(t.Stroke ?? "#59FFFFFF")))).ToList();
+        ThemeBox.SelectedValue = vm.Dock.Theme;
+        fillingThemes = false;
+    }
+
+    void OnThemePicked(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (!fillingThemes && ThemeBox.SelectedValue is string id && id != vm.Dock.Theme) vm.Dock.Theme = id;
+    }
+
+    static System.Windows.Media.Color Color(string hex) => (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex);
+
     void FillScreens()
     {
         var screens = System.Windows.Forms.Screen.AllScreens;
         ScreenRow.Visibility = screens.Length > 1 ? Visibility.Visible : Visibility.Collapsed;
         Screens.Children.Clear();
         if (screens.Length < 2) return;
+        AddScreenChip(Loc.T("allScreens"), vm.Dock.AllScreens, () => vm.Dock.AllScreens = true);
         var current = screens.FirstOrDefault(s => s.DeviceName == vm.Dock.Screen) ?? System.Windows.Forms.Screen.PrimaryScreen;
         for (var i = 0; i < screens.Length; i++)
         {
             var screen = screens[i];
-            var chip = new System.Windows.Controls.Primitives.ToggleButton
-            {
-                Content = $"{i + 1}  {screen.Bounds.Width}×{screen.Bounds.Height}",
-                Style = (Style)FindResource("ChipToggle"),
-                IsChecked = screen.DeviceName == current?.DeviceName
-            };
-            chip.Click += (_, _) =>
+            AddScreenChip($"{i + 1}  {screen.Bounds.Width}×{screen.Bounds.Height}", !vm.Dock.AllScreens && screen.DeviceName == current?.DeviceName, () =>
             {
                 vm.Dock.Screen = screen.DeviceName;
-                FillScreens();
-            };
-            Screens.Children.Add(chip);
+                vm.Dock.AllScreens = false;
+            });
         }
+    }
+
+    void AddScreenChip(string label, bool on, Action pick)
+    {
+        var chip = new System.Windows.Controls.Primitives.ToggleButton
+        {
+            Content = label,
+            Style = (Style)FindResource("ChipToggle"),
+            IsChecked = on
+        };
+        chip.Click += (_, _) =>
+        {
+            pick();
+            FillScreens();
+        };
+        Screens.Children.Add(chip);
     }
 
     public void Release()
@@ -117,6 +150,7 @@ public partial class ConfigWindow : Window
 
     void ShowLanguage()
     {
+        FillThemes();
         EnChip.IsChecked = Loc.Instance.Language == Loc.English;
         PtChip.IsChecked = Loc.Instance.Language == Loc.Portuguese;
     }

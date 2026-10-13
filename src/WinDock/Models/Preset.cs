@@ -29,11 +29,18 @@ public sealed class WidgetSpec
     public const string Progress = "progress";
     public const string Activity = "activity";
     public const string Battery = "battery";
+    public const string Claude = "claude";
+    public const string Music = "music";
+    public const string Network = "network";
+    public const string Note = "note";
+    public const string Weather = "weather";
+    public const string Mic = "mic";
 
-    public static readonly string[] Kinds = [Clock, Pomodoro, Stopwatch, Timer, Countdown, Progress, Activity, Battery];
+    public static readonly string[] Kinds = [Clock, Weather, Music, Claude, Pomodoro, Stopwatch, Timer, Countdown, Progress, Activity, Network, Battery, Mic, Note];
 
     public string Kind { get; set; } = Clock;
     public string? Label { get; set; }
     public string? Date { get; set; }
     public int? Minutes { get; set; }
+    public string? Text { get; set; }
 }

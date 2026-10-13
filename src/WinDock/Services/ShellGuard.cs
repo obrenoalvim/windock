@@ -145,6 +145,12 @@ public sealed class ShellGuard : IDisposable
 
     public static void PowerMenu() => Native.Keys(Native.VK_LWIN, 0x58);
 
+    public static void SoundOutput() => Native.Keys(Native.VK_LWIN, 0x11, 0x56);
+
+    public static void ShowDesktop() => Native.Keys(Native.VK_LWIN, 0x44);
+
+    public static bool TaskbarAutoHides() => IsAutoHide();
+
     void Persist()
     {
         if (!state.TaskbarHidden && state.HiddenWindows.Count == 0)

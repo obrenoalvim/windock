@@ -18,6 +18,8 @@ public sealed class Settings
 
     static string FilePath => Path.Combine(Dir, "settings.json");
 
+    public static bool Exists => File.Exists(FilePath);
+
     public static Settings Load()
     {
         try { return Parse(File.ReadAllText(FilePath)); }
@@ -61,6 +63,10 @@ public sealed class DockSettings
     public double LensWidth { get; set; } = 2.5;
     public double IconSize { get; set; } = 46;
     public string Theme { get; set; } = ThemeDark;
+    public bool AllScreens { get; set; } = true;
+    public bool CompactWidgets { get; set; } = true;
+    public bool PerScreen { get; set; }
+    public Dictionary<string, string> ScreenEnvironments { get; set; } = [];
     public string? Screen { get; set; }
 
     public void Clamp()
@@ -69,7 +75,7 @@ public sealed class DockSettings
         LensWidth = Math.Clamp(LensWidth, 1, 4.5);
         IconSize = Math.Clamp(IconSize, 32, 72);
         if (Lens is not (LensNone or LensScale or LensMagnify)) Lens = LensMagnify;
-        if (Theme is not (ThemeDark or ThemeLight)) Theme = ThemeDark;
+        if (DockTheme.All.All(t => t.Id != Theme)) Theme = ThemeDark;
     }
 }
 

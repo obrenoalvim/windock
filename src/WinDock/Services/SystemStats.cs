@@ -1,8 +1,53 @@
+using System.Globalization;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using Forms = System.Windows.Forms;
 
 namespace WinDock.Services;
+
+public sealed record BatteryState(bool Present, int Percent, bool Charging, TimeSpan? Left);
+
+public sealed class NetworkMeter
+{
+    long lastDown = -1, lastUp = -1;
+    DateTime lastAt;
+
+    public (double Down, double Up) Sample(DateTime now)
+    {
+        long down = 0, up = 0;
+        try
+        {
+            foreach (var n in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (n.OperationalStatus != OperationalStatus.Up || n.NetworkInterfaceType is NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel) continue;
+                if (n.GetIPProperties().GatewayAddresses.Count == 0) continue;
+                var stats = n.GetIPStatistics();
+                down += stats.BytesReceived;
+                up += stats.BytesSent;
+            }
+        }
+        catch (NetworkInformationException) { return (0, 0); }
+
+        var seconds = (now - lastAt).TotalSeconds;
+        var rates = lastDown < 0 || seconds <= 0 || seconds > 5 ? (0.0, 0.0) : (Math.Max(0, down - lastDown) / seconds, Math.Max(0, up - lastUp) / seconds);
+        lastDown = down;
+        lastUp = up;
+        lastAt = now;
+        return rates;
+    }
+
+    public static string Rate(double bytesPerSecond)
+    {
+        var culture = Loc.Instance.Culture;
+        return bytesPerSecond switch
+        {
+            >= 1024 * 1024 * 100 => $"{(bytesPerSecond / 1024 / 1024).ToString("0", culture)} MB/s",
+            >= 1024 * 1024 => $"{(bytesPerSecond / 1024 / 1024).ToString("0.0", culture)} MB/s",
+            >= 1024 => $"{(bytesPerSecond / 1024).ToString("0", culture)} KB/s",
+            _ => $"{bytesPerSecond.ToString("0", CultureInfo.InvariantCulture)} B/s"
+        };
+    }
+}
 
 public sealed class SystemStats
 {
@@ -25,28 +70,13 @@ public sealed class SystemStats
         return Native.GlobalMemoryStatusEx(ref s) ? s.MemoryLoad : 0;
     }
 
-    public static (bool Present, int Percent, bool Charging) Battery()
+    public static BatteryState Battery()
     {
         var p = Forms.SystemInformation.PowerStatus;
         if (p.BatteryChargeStatus.HasFlag(Forms.BatteryChargeStatus.NoSystemBattery) || p.BatteryLifePercent > 1)
-            return (false, 0, false);
-        return (true, (int)Math.Round(p.BatteryLifePercent * 100), p.PowerLineStatus == Forms.PowerLineStatus.Online);
-    }
-
-    public static NetworkKind Network()
-    {
-        try
-        {
-            var up = NetworkInterface.GetAllNetworkInterfaces()
-                .Where(n => n.OperationalStatus == OperationalStatus.Up
-                            && n.NetworkInterfaceType is not (NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel))
-                .Where(n => n.GetIPProperties().GatewayAddresses.Count > 0)
-                .ToList();
-            if (up.Any(n => n.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)) return NetworkKind.Wifi;
-            return up.Count > 0 ? NetworkKind.Wired : NetworkKind.None;
-        }
-        catch (NetworkInformationException) { return NetworkKind.None; }
+            return new BatteryState(false, 0, false, null);
+        var charging = p.PowerLineStatus == Forms.PowerLineStatus.Online;
+        var left = !charging && p.BatteryLifeRemaining > 0 ? TimeSpan.FromSeconds(p.BatteryLifeRemaining) : (TimeSpan?)null;
+        return new BatteryState(true, (int)Math.Round(p.BatteryLifePercent * 100), charging, left);
     }
 }
-
-public enum NetworkKind { None, Wired, Wifi }
