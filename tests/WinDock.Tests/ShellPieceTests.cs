@@ -53,7 +53,8 @@ public class ShellPieceTests
         var claude = (ClaudeWidget)WidgetTile.Create("k", new Models.WidgetSpec { Kind = Models.WidgetSpec.Claude });
         claude.RefreshFace();
         Assert.True(claude.Face!.HasRing && claude.Face.HasInnerRing);
-        Assert.False(claude.Face.HasValue);
+        // Two empty rings say nothing; without usage yet the square shows a dash.
+        Assert.Equal(ClaudeUsage.Shared.Last is null ? "—" : "", claude.Face.Value);
         var progress = WidgetTile.Create("p", new Models.WidgetSpec { Kind = Models.WidgetSpec.Progress });
         progress.Tick(new DateTime(2026, 10, 13, 12, 0, 0));
         progress.RefreshFace();

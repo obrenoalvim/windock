@@ -223,7 +223,9 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         var loose = new List<(string Key, List<AppWindow> Windows)>();
         foreach (var w in WindowsHere())
         {
-            if (pinned.FirstOrDefault(t => t.Matches(w)) is { } owner)
+            // ponytail: the rest of a link's program (the Play Games client) joins the first pin it hosts; an unpinned
+            // Play Games game lights that pin too. Match the launcher window by its own title if that ever bothers.
+            if ((pinned.FirstOrDefault(t => t.Matches(w)) ?? pinned.FirstOrDefault(t => t.Hosts(w))) is { } owner)
             {
                 assigned[owner].Add(w);
                 continue;
@@ -254,6 +256,8 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
             .ToList();
         if (shown.Count > 0) desired.Add(Get("sep:widgets", () => new SeparatorTile("sep:widgets")));
         desired.AddRange(shown);
+        // A size picked on the environment card: the docks pick the widget templates again.
+        var resized = shown.Count(w => w.TakeResize()) > 0;
 
         if (SystemVisible)
         {
@@ -263,6 +267,7 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         }
 
         Sync(desired);
+        if (resized) Options.Retemplate();
     }
 
     // The Windows badge (WhatsApp, Teams) or a "(3) ..." count in a window title, whichever is higher.
@@ -445,11 +450,27 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         if (target is not null) main.AddPrograms(target, [item]);
     }
 
-    public void Unpin(AppTile tile, bool everywhere)
+    // Returns what puts the pin back where it was.
+    public Action? Unpin(AppTile tile, bool everywhere)
     {
         var target = everywhere ? main.Always : Active;
-        if (target?.Pins.FirstOrDefault(p => KeyOf(p.Model) == tile.Key) is { } pin) pin.RemoveCommand.Execute(null);
+        if (target?.Pins.FirstOrDefault(p => KeyOf(p.Model) == tile.Key) is not { } pin) return null;
+        var at = target.Pins.IndexOf(pin);
+        pin.RemoveCommand.Execute(null);
+        return () => target.InsertItem(pin.Model, at);
     }
+
+    // A pin dragged in front of another tile (null: past the last one). Pins stay in their list: always pinned first,
+    // then the environment's.
+    public void Move(AppTile tile, AppTile? before)
+    {
+        var group = IsAlwaysPinned(tile) ? main.Always : Active;
+        if (group is null || Find(group, tile) is not { } item) return;
+        var next = before is null ? null : Find(group, before);
+        group.Place(item, next, atStart: before is not null && next is null && group != main.Always);
+    }
+
+    static PinItem? Find(PresetViewModel group, AppTile tile) => group.Model.Items.FirstOrDefault(p => KeyOf(p) == tile.Key);
 
     public bool IsAlwaysPinned(AppTile tile) => main.Always.Model.Items.Any(p => KeyOf(p) == tile.Key);
 

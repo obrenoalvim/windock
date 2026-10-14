@@ -8,16 +8,60 @@ using WinDock.Services;
 
 namespace WinDock.ViewModels;
 
-public sealed partial class WidgetChoice(string kind, bool isOn, Action<WidgetChoice> toggled) : ObservableObject
+public sealed record SizeOption(string Value, string Label)
+{
+    // The closed combo box shows the item itself, not DisplayMemberPath.
+    public override string ToString() => Label;
+}
+
+public sealed partial class WidgetChoice(string kind, bool isOn, Action<WidgetChoice> toggled, Func<string, WidgetSpec?> spec, Action resized)
+    : ObservableObject
 {
     public string Kind { get; } = kind;
     public string Label => Loc.T("widget_" + Kind);
 
     [ObservableProperty] bool isOn = isOn;
 
-    partial void OnIsOnChanged(bool value) => toggled(this);
+    partial void OnIsOnChanged(bool value)
+    {
+        toggled(this);
+        OnPropertyChanged(nameof(Size));
+    }
 
-    public void RefreshText() => OnPropertyChanged(nameof(Label));
+    // "" follows the default of the Dock tab.
+    public IReadOnlyList<SizeOption> Sizes =>
+        (Kind == WidgetSpec.Music
+            ? new[] { "", WidgetSpec.SquareSize, WidgetSpec.WideSize, WidgetSpec.FullSize, WidgetSpec.BackdropSize }
+            : new[] { "", WidgetSpec.SquareSize, WidgetSpec.WideSize })
+        .Select(v => new SizeOption(v, Loc.T(SizeKey(v)))).ToList();
+
+    string SizeKey(string size) => size switch
+    {
+        "" => "sizeDefault",
+        WidgetSpec.SquareSize => "widgetSquare",
+        WidgetSpec.WideSize => Kind == WidgetSpec.Music ? "musicPause" : "widgetWide",
+        WidgetSpec.FullSize => "musicFull",
+        _ => "musicBackdrop"
+    };
+
+    public string Size
+    {
+        get => spec(Kind)?.Size ?? "";
+        set
+        {
+            if (spec(Kind) is not { } s || (s.Size ?? "") == value) return;
+            s.Size = value.Length == 0 ? null : value;
+            OnPropertyChanged();
+            resized();
+        }
+    }
+
+    public void RefreshText()
+    {
+        OnPropertyChanged(nameof(Label));
+        OnPropertyChanged(nameof(Sizes));
+        OnPropertyChanged(nameof(Size));
+    }
 }
 
 public sealed partial class PresetViewModel : ObservableObject
@@ -34,7 +78,8 @@ public sealed partial class PresetViewModel : ObservableObject
         Slots = new ObservableCollection<SlotViewModel>(model.Schedule.Select(Wrap));
         Pins = new ObservableCollection<PinViewModel>(model.Items.Select(WrapPin));
         var shown = model.ShownWidgets.Select(w => w.Kind).ToHashSet();
-        Widgets = new ObservableCollection<WidgetChoice>(WidgetSpec.Kinds.Select(k => new WidgetChoice(k, shown.Contains(k), ToggleWidget)));
+        Widgets = new ObservableCollection<WidgetChoice>(WidgetSpec.Kinds.Select(k =>
+            new WidgetChoice(k, shown.Contains(k), ToggleWidget, FindWidget, () => changed(this))));
         AddSlotCommand = new RelayCommand(AddSlot);
     }
 
@@ -94,6 +139,9 @@ public sealed partial class PresetViewModel : ObservableObject
         }
     }
 
+    // An environment that never chose widgets shows the clock; its list is made real the first time it is sized.
+    WidgetSpec? FindWidget(string kind) => (Model.Widgets ??= Model.ShownWidgets.ToList()).FirstOrDefault(w => w.Kind == kind);
+
     void ToggleWidget(WidgetChoice choice)
     {
         var current = Model.ShownWidgets.ToDictionary(w => w.Kind);
@@ -130,6 +178,28 @@ public sealed partial class PresetViewModel : ObservableObject
             Pins.Add(WrapPin(item));
         }
         ItemsChanged();
+    }
+
+    public void InsertItem(PinItem item, int at)
+    {
+        at = Math.Clamp(at, 0, Pins.Count);
+        Model.Items.Insert(at, item);
+        Pins.Insert(at, WrapPin(item));
+        ItemsChanged();
+    }
+
+    // Moves a pin in front of another one, or to the start or the end.
+    public void Place(PinItem item, PinItem? before, bool atStart)
+    {
+        var from = Model.Items.IndexOf(item);
+        if (from < 0 || ReferenceEquals(item, before)) return;
+        var pin = Pins[from];
+        Model.Items.RemoveAt(from);
+        Pins.RemoveAt(from);
+        var to = before is not null && Model.Items.IndexOf(before) is >= 0 and var i ? i : atStart ? 0 : Model.Items.Count;
+        Model.Items.Insert(to, item);
+        Pins.Insert(to, pin);
+        if (to != from) ItemsChanged();
     }
 
     public void ReplaceItems(IEnumerable<PinItem> items)

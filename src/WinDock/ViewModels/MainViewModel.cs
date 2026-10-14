@@ -69,6 +69,33 @@ public sealed partial class MainViewModel : ObservableObject
         Reload();
         tick.Start();
         Tick();
+        updates.Tick += async (_, _) => await CheckUpdatesAsync();
+        updates.Start();
+        _ = FirstUpdateCheckAsync();
+    }
+
+    readonly System.Windows.Threading.DispatcherTimer updates = new() { Interval = TimeSpan.FromHours(6) };
+
+    async Task FirstUpdateCheckAsync()
+    {
+        await Task.Delay(TimeSpan.FromSeconds(20));
+        await CheckUpdatesAsync();
+    }
+
+    public async Task CheckUpdatesAsync()
+    {
+        if (!Settings.CheckUpdates || await Updates.LatestAsync() is not { } latest) return;
+        if (latest <= Updates.Current)
+        {
+            Dock.NewVersion = null;
+            return;
+        }
+        var text = latest.ToString(3);
+        Dock.NewVersion = text;
+        if (Settings.UpdateSeen == text) return;
+        Settings.UpdateSeen = text;
+        Settings.Save();
+        Notify(Loc.F("updateAvailable", text));
     }
 
     public void Reload()

@@ -102,6 +102,10 @@
                                 <TextBlock Text="{Binding [followWindowsDesc], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource Note}"/>
                                 <ToggleButton Content="{Binding [syncTaskbar], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource SwitchToggle}" IsChecked="{Binding SyncTaskbar, Mode=TwoWay}"/>
                                 <TextBlock Text="{Binding [syncTaskbarDesc], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource Note}" Margin="43,3,0,0"/>
+                                <ToggleButton Content="{Binding [checkUpdates], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource SwitchToggle}" IsChecked="{Binding CheckUpdates, Mode=TwoWay}" Margin="0,14,0,0"/>
+                                <TextBlock Text="{Binding [checkUpdatesDesc], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" Style="{StaticResource Note}"/>
+                                <Button Content="{Binding UpdateText}" Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Margin="37,4,0,0" Click="OnUpdateClick"
+                                        Visibility="{Binding HasUpdate, Converter={StaticResource Show}}"/>
                             </StackPanel>
                         </Border>
 
@@ -300,6 +304,22 @@
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
+                                        <TextBlock Text="{Binding [widgetSize], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" FontFamily="{StaticResource Mono}" FontSize="9" Foreground="{StaticResource Muted}"
+                                                   Margin="2,12,0,8"/>
+                                        <ItemsControl ItemsSource="{Binding Widgets}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6" Visibility="{Binding IsOn, Converter={StaticResource Show}}">
+                                                        <TextBlock Text="{Binding Label}" Width="160" FontFamily="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink}"
+                                                                   VerticalAlignment="Center" Margin="2,0,8,0" TextTrimming="CharacterEllipsis"/>
+                                                        <ComboBox Style="{StaticResource FlatCombo}" Width="220" ItemsSource="{Binding Sizes}" DisplayMemberPath="Label"
+                                                                  SelectedValuePath="Value" SelectedValue="{Binding Size, Mode=TwoWay}"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <TextBlock Text="{Binding [widgetSizeHint], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" FontFamily="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Muted}"
+                                                   Margin="2,2,0,0" TextWrapping="Wrap"/>
                                         <StackPanel Orientation="Horizontal" Margin="0,6,0,0" Visibility="{Binding HasCountdown, Converter={StaticResource Show}}">
                                             <TextBlock Text="{Binding [countdownDate], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" FontFamily="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Muted}"
                                                        VerticalAlignment="Center" Margin="2,0,8,0"/>

@@ -37,6 +37,11 @@ public sealed class TrayService : IDisposable
     {
         var menu = icon.ContextMenuStrip!.Items;
         menu.Clear();
+        if (vm.Dock.NewVersion is { } version)
+        {
+            menu.Add(Loc.F("updateDownload", version), null, (_, _) => Launcher.OpenFile(Updates.Page));
+            menu.Add(new Forms.ToolStripSeparator());
+        }
         menu.Add(Loc.T("trayOpen"), null, (_, _) => window.Open());
         menu.Add(new Forms.ToolStripSeparator());
 

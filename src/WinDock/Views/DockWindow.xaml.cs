@@ -46,7 +46,13 @@ public partial class DockWindow : Window
     PreviewWindow? preview;
     Flyout? flyout;
     (object Item, Type Kind)? flyoutKey, closedKey;
-    DateTime closedAt;
+    DateTime closedAt, menuClosedAt;
+    FrameworkElement? pressedElement;
+    AppTile? pressed;
+    Point pressAt;
+    bool dragging, dragOut;
+    Action? undo;
+    readonly DispatcherTimer toastTimer = new() { Interval = TimeSpan.FromSeconds(6) };
 
     public DockWindow(DockViewModel vm, Action openSettings, string screenName)
     {
@@ -84,7 +90,18 @@ public partial class DockWindow : Window
             preview?.Hide();
         };
         DragOver += OnDragOver;
+        DragLeave += (_, _) => HideName();
         Drop += OnDrop;
+        // The click that closed a menu must not open it again (or launch the app under it): the menu closes on the press,
+        // and the release lands on the dock.
+        PreviewMouseUp += (_, e) =>
+        {
+            if (DateTime.Now - menuClosedAt > TimeSpan.FromMilliseconds(400) || dragging) return;
+            e.Handled = true;
+            if (pressedElement is { } element) element.Opacity = 1;
+            pressed = null;
+        };
+        toastTimer.Tick += (_, _) => HideToast();
         DpiChanged += (_, _) => Dispatcher.BeginInvoke(Resize, DispatcherPriority.Loaded);
         ApplyAccent(false);
         poll.Start();
@@ -207,7 +224,7 @@ public partial class DockWindow : Window
             return;
         }
         if (name is nameof(DockOptions.Enabled) or nameof(DockOptions.AllScreens) or nameof(DockOptions.Screen)
-            or nameof(DockOptions.FollowWindows) or nameof(DockOptions.SyncTaskbar)) return;
+            or nameof(DockOptions.FollowWindows) or nameof(DockOptions.SyncTaskbar) or nameof(DockOptions.CheckUpdates)) return;
         ApplyOptions();
     }
 
@@ -311,7 +328,116 @@ public partial class DockWindow : Window
     void OnPanelMove(object sender, MouseEventArgs e)
     {
         if (panel is null) return;
-        panel.Pointer = e.GetPosition(panel).X;
+        if (!dragging) panel.Pointer = e.GetPosition(panel).X;
+        if (pressed is null || pressedElement is null || e.LeftButton != MouseButtonState.Pressed) return;
+        var at = e.GetPosition(Root);
+        if (!dragging)
+        {
+            if (Math.Abs(at.X - pressAt.X) < 7 && Math.Abs(at.Y - pressAt.Y) < 7) return;
+            StartDrag();
+        }
+        var shift = Shift(pressedElement);
+        shift.X = at.X - pressAt.X;
+        shift.Y = Math.Min(0, at.Y - pressAt.Y);
+        var barTop = panel.TranslatePoint(new Point(0, panel.Bar.Top), Root).Y;
+        var outside = at.Y < barTop - IconSize * 0.9;
+        if (outside != dragOut)
+        {
+            dragOut = outside;
+            pressedElement.Opacity = outside ? 0.45 : 0.9;
+            if (outside) ShowName(Loc.T("dropToUnpin"));
+            else HideName();
+        }
+        if (dragOut) PlaceName();
+    }
+
+    // Dragging a pinned icon: the lens rests so the icons hold still, and the icon follows the pointer.
+    void StartDrag()
+    {
+        dragging = true;
+        dragOut = false;
+        hover.Stop();
+        preview?.Hide();
+        HideName();
+        hovered = pressedElement;
+        pressedElement!.Opacity = 0.9;
+        Panel.SetZIndex(Container(pressedElement), 10);
+        pressedElement.CaptureMouse();
+        pressedElement.LostMouseCapture += OnDragLost;
+        panel?.BeginAnimation(LensPanel.AmplitudeProperty, new DoubleAnimation(0, TimeSpan.FromMilliseconds(120)));
+    }
+
+    void OnDragLost(object sender, MouseEventArgs e)
+    {
+        if (dragging) EndDrag(null);
+    }
+
+    // at: where the icon was let go, or null when the drag was cut short (another window took the mouse).
+    void EndDrag(Point? at)
+    {
+        var app = pressed!;
+        var element = pressedElement!;
+        dragging = false;
+        pressed = null;
+        element.LostMouseCapture -= OnDragLost;
+        element.ReleaseMouseCapture();
+        var shift = Shift(element);
+        shift.X = 0;
+        shift.Y = 0;
+        element.Opacity = 1;
+        Panel.SetZIndex(Container(element), 0);
+        HideName();
+        if (panel is { IsMouseOver: true }) panel.BeginAnimation(LensPanel.AmplitudeProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(140)));
+        if (at is not { } point) return;
+        if (dragOut)
+        {
+            Unpinned(app);
+            return;
+        }
+        var pins = vm.Tiles.OfType<AppTile>().Where(t => t.IsPinned).ToList();
+        var others = pins.Where(t => t != app).ToList();
+        var before = others.FirstOrDefault(t => Strip.ItemContainerGenerator.ContainerFromItem(t) is FrameworkElement box
+                                                && box.TranslatePoint(new Point(box.ActualWidth / 2, 0), Root).X > point.X);
+        var index = pins.IndexOf(app);
+        var currentNext = index + 1 < pins.Count ? pins[index + 1] : null;
+        if (before != currentNext) vm.Move(app, before);
+    }
+
+    UIElement Container(FrameworkElement element) => Strip.ItemContainerGenerator.ContainerFromItem(element.DataContext) as UIElement ?? element;
+
+    void Unpinned(AppTile app)
+    {
+        if (vm.Unpin(app, vm.IsAlwaysPinned(app)) is { } back) ShowToast(Loc.F("unpinned", app.Name), back);
+    }
+
+    void ShowToast(string text, Action back)
+    {
+        undo = back;
+        ToastText.Text = text;
+        UndoText.Text = Loc.T("undo");
+        Toast.Visibility = Visibility.Visible;
+        Toast.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        var barTop = panel is null ? Height - BarHeight : panel.TranslatePoint(new Point(0, panel.Bar.Top), Root).Y;
+        Canvas.SetLeft(Toast, Math.Round((ActualWidth - Toast.DesiredSize.Width) / 2));
+        Canvas.SetTop(Toast, Math.Round(barTop - Toast.DesiredSize.Height - 10));
+        Toast.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(150)));
+        toastTimer.Stop();
+        toastTimer.Start();
+    }
+
+    void HideToast()
+    {
+        toastTimer.Stop();
+        undo = null;
+        Toast.Visibility = Visibility.Collapsed;
+    }
+
+    void OnUndo(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        var back = undo;
+        HideToast();
+        back?.Invoke();
     }
 
     void OnPanelEnter(object sender, MouseEventArgs e)
@@ -428,14 +554,25 @@ public partial class DockWindow : Window
 
     void OnTileDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ChangedButton == MouseButton.Left) ((UIElement)sender).Opacity = 0.72;
+        if (e.ChangedButton != MouseButton.Left) return;
+        var element = (FrameworkElement)sender;
+        element.Opacity = 0.72;
+        pressedElement = element;
+        pressed = element.DataContext is AppTile { IsPinned: true } app ? app : null;
+        pressAt = e.GetPosition(Root);
     }
 
     void OnTileUp(object sender, MouseButtonEventArgs e)
     {
         var element = (FrameworkElement)sender;
-        element.Opacity = 1;
         e.Handled = true;
+        if (dragging)
+        {
+            EndDrag(e.GetPosition(Root));
+            return;
+        }
+        pressed = null;
+        element.Opacity = 1;
         switch (element.DataContext)
         {
             case AppTile app:
@@ -510,6 +647,11 @@ public partial class DockWindow : Window
             vm.Main.Notify(Loc.F("launchFailed", app.Name));
             return;
         }
+        Bounce(element);
+    }
+
+    void Bounce(FrameworkElement element)
+    {
         var bounce = new DoubleAnimationUsingKeyFrames { Duration = TimeSpan.FromMilliseconds(760), FillBehavior = FillBehavior.Stop };
         var up = new QuadraticEase { EasingMode = EasingMode.EaseOut };
         var down = new QuadraticEase { EasingMode = EasingMode.EaseIn };
@@ -563,6 +705,7 @@ public partial class DockWindow : Window
             MusicWidget => new MusicPanel(MediaSessions.Shared, Dark),
             WeatherWidget weather => new WeatherPanel(weather.Service, Dark),
             NoteWidget note => new NotePanel(note, Dark),
+            TodoWidget todo => new TodoPanel(todo, Dark),
             _ => null
         };
         if (next is not null) ShowFlyout(next, element);
@@ -572,6 +715,18 @@ public partial class DockWindow : Window
     {
         e.Handled = true;
         if (e.ChangedButton == MouseButton.Left) _ = MediaSessions.Shared.Toggle();
+    }
+
+    void OnMediaPrevious(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        if (e.ChangedButton == MouseButton.Left) _ = MediaSessions.Shared.Previous();
+    }
+
+    void OnMediaNext(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        if (e.ChangedButton == MouseButton.Left) _ = MediaSessions.Shared.Next();
     }
 
     void ShowFlyout(Flyout next, FrameworkElement element)
@@ -602,6 +757,22 @@ public partial class DockWindow : Window
         var bottomRight = element.PointToScreen(new Point(element.ActualWidth, element.ActualHeight));
         var barTop = panel is null ? topLeft.Y : panel.PointToScreen(new Point(0, panel.Bar.Top)).Y;
         next.ShowAt((topLeft.X + bottomRight.X) / 2, barTop, TargetScreen());
+    }
+
+    // Win+n with the taskbar replaced: the nth app of the dock, as if clicked (Shift: a new window).
+    public bool OpenNth(int n, bool fresh)
+    {
+        if (vm.Tiles.OfType<AppTile>().Skip(n - 1).FirstOrDefault() is not { } app) return false;
+        var element = Strip.ItemContainerGenerator.ContainerFromItem(app) as FrameworkElement ?? Root;
+        Dispatcher.BeginInvoke(() => OnApp(app, element, fresh ? MouseButton.Middle : MouseButton.Left));
+        return true;
+    }
+
+    public bool ShowTour()
+    {
+        if (panel is null || !IsVisible || fullscreen) return false;
+        ShowFlyout(new TourPanel(Dark), panel);
+        return true;
     }
 
     void OnTrayClick(object sender, MouseButtonEventArgs e)
@@ -708,7 +879,7 @@ public partial class DockWindow : Window
             if (edge) Reveal();
             return;
         }
-        var busy = menuOpen || (panel?.IsMouseOver ?? false) || preview is { IsVisible: true } || flyout is not null;
+        var busy = menuOpen || dragging || undo is not null || (panel?.IsMouseOver ?? false) || preview is { IsVisible: true } || flyout is not null;
         away = busy || edge ? Math.Min(away, 0) : away + 1;
         if (away > 7) Conceal();
     }
@@ -804,7 +975,7 @@ public partial class DockWindow : Window
         if (app.IsPinned)
         {
             var everywhere = vm.IsAlwaysPinned(app);
-            menu.Items.Add(Item(Loc.T(everywhere ? "unpinEverywhere" : "unpinHere"), () => vm.Unpin(app, everywhere)));
+            menu.Items.Add(Item(Loc.T(everywhere ? "unpinEverywhere" : "unpinHere"), () => Unpinned(app)));
         }
         else
         {
@@ -826,8 +997,26 @@ public partial class DockWindow : Window
     {
         var menu = new ContextMenu();
         if (widget.CanReset) menu.Items.Add(Item(Loc.T("reset"), widget.Reset));
+        var square = widget.Square(vm.Options.CompactWidgets);
+        menu.Items.Add(Item(Loc.T("widgetSquare"), () => Resize(widget, WidgetSpec.SquareSize), square));
+        if (widget is MusicWidget)
+        {
+            var size = widget.Spec.Size;
+            menu.Items.Add(Item(Loc.T("musicPause"), () => Resize(widget, WidgetSpec.WideSize),
+                !square && size is not (WidgetSpec.FullSize or WidgetSpec.BackdropSize)));
+            menu.Items.Add(Item(Loc.T("musicFull"), () => Resize(widget, WidgetSpec.FullSize), size == WidgetSpec.FullSize));
+            menu.Items.Add(Item(Loc.T("musicBackdrop"), () => Resize(widget, WidgetSpec.BackdropSize), size == WidgetSpec.BackdropSize));
+        }
+        else menu.Items.Add(Item(Loc.T("widgetWide"), () => Resize(widget, WidgetSpec.WideSize), !square));
+        menu.Items.Add(new Separator());
         menu.Items.Add(Item(Loc.T("editWidgets"), openSettings));
         Open(menu);
+    }
+
+    void Resize(WidgetTile widget, string size)
+    {
+        widget.Resize(size);
+        vm.Options.Retemplate();
     }
 
     static MenuItem Item(string header, Action click, bool check = false, bool enabled = true)
@@ -841,19 +1030,62 @@ public partial class DockWindow : Window
     {
         menuOpen = true;
         menu.Placement = PlacementMode.MousePoint;
-        menu.Closed += (_, _) => menuOpen = false;
+        // Only the foreground app can hold the mouse, and the dock never takes focus: without this a click elsewhere leaves the menu open.
+        Native.SetForegroundWindow(hwnd);
+        menu.Closed += (_, _) =>
+        {
+            menuOpen = false;
+            menuClosedAt = DateTime.Now;
+        };
         menu.IsOpen = true;
     }
 
     void OnDragOver(object sender, DragEventArgs e)
     {
-        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) && vm.Active is not null ? DragDropEffects.Link : DragDropEffects.None;
         e.Handled = true;
+        var files = e.Data.GetDataPresent(DataFormats.FileDrop);
+        if (files && DropTarget(e) is (var app, var element))
+        {
+            // An app that cannot take files (Store apps, games) refuses the drop instead of pinning the file.
+            var opens = app.Opener() is not null;
+            e.Effects = opens ? DragDropEffects.Copy : DragDropEffects.None;
+            if (hovered != element)
+            {
+                hovered = element;
+                ShowName(Loc.F(opens ? "openWith" : "cantOpen", app.Name));
+            }
+            return;
+        }
+        if (hovered is not null && hovered.DataContext is AppTile) HideName();
+        hovered = null;
+        e.Effects = files && vm.Active is not null ? DragDropEffects.Link : DragDropEffects.None;
+    }
+
+    // The app icon under a drag (not a folder), and its slot on the dock.
+    (AppTile App, FrameworkElement Element)? DropTarget(DragEventArgs e)
+    {
+        (AppTile, FrameworkElement)? found = null;
+        for (var d = e.OriginalSource as DependencyObject; d is Visual; d = VisualTreeHelper.GetParent(d))
+        {
+            if (d is not FrameworkElement { DataContext: AppTile { IsFolder: false } app } element) break;
+            found = (app, element);
+        }
+        return found;
     }
 
     void OnDrop(object sender, DragEventArgs e)
     {
-        if (e.Data.GetData(DataFormats.FileDrop) is not string[] files || vm.Active is not { } env) return;
+        if (e.Data.GetData(DataFormats.FileDrop) is not string[] files) return;
+        HideName();
+        hovered = null;
+        if (DropTarget(e) is (var app, var element))
+        {
+            if (app.Opener() is not (var exe, var args)) return;
+            if (Launcher.OpenWith(exe, args, files)) Bounce(element);
+            else vm.Main.Notify(Loc.F("launchFailed", app.Name));
+            return;
+        }
+        if (vm.Active is not { } env) return;
         var items = files
             .Where(f => File.Exists(f) || Directory.Exists(f))
             .Select(f => new PinItem { Name = Directory.Exists(f) ? new DirectoryInfo(f).Name : Path.GetFileNameWithoutExtension(f), Target = f })
@@ -881,6 +1113,7 @@ public partial class DockWindow : Window
         poll.Stop();
         hover.Stop();
         closePreview.Stop();
+        toastTimer.Stop();
         preview?.Close();
         flyout?.Close();
         vm.Layout -= OnLayout;

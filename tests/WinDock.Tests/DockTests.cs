@@ -240,6 +240,91 @@ public class DockTests
     }
 
     [Fact]
+    public void Link_shortcut_claims_the_windows_titled_like_it_in_its_handler_folder()
+    {
+        var match = AppMatch.Empty() with { Host = @"C:\Program Files\Google\Play Games\", Title = "Clash of Clans" };
+        AppWindow Titled(string title, string exe) => new(1, title, exe, "CROSVM-1", false);
+
+        Assert.True(match.Matches(Titled("Clash of Clans - Alvim", @"C:\Program Files\Google\Play Games\current\emulator\crosvm.exe")));
+        Assert.False(match.Matches(Titled("Brawl Stars - Alvim", @"C:\Program Files\Google\Play Games\current\emulator\crosvm.exe")));
+        Assert.False(match.Matches(Titled("Clash of Clans", @"C:\Games\clash.exe")));
+        Assert.True(match.Hosts(Titled("Google Play Games", @"C:\Program Files\Google\Play Games\current\client\client.exe")));
+    }
+
+    [Fact]
+    public void Music_progress_moves_on_while_playing_and_stays_while_paused()
+    {
+        var updated = new DateTimeOffset(2026, 10, 13, 12, 0, 0, TimeSpan.Zero);
+        var now = updated.AddSeconds(30);
+        var length = TimeSpan.FromSeconds(200);
+        Assert.Equal(0.25, MediaSessions.Fraction(TimeSpan.Zero, length, TimeSpan.FromSeconds(20), updated, true, now), 3);
+        Assert.Equal(0.1, MediaSessions.Fraction(TimeSpan.Zero, length, TimeSpan.FromSeconds(20), updated, false, now), 3);
+        Assert.Equal(1, MediaSessions.Fraction(TimeSpan.Zero, length, TimeSpan.FromSeconds(190), updated, true, now), 3);
+        Assert.Equal(-1, MediaSessions.Fraction(TimeSpan.Zero, TimeSpan.Zero, TimeSpan.Zero, updated, true, now));
+        Assert.Equal(0.1, MediaSessions.Fraction(TimeSpan.Zero, length, TimeSpan.FromSeconds(20), default, true, now), 3);
+    }
+
+    [Fact]
+    public void Release_tags_compare_with_the_running_version()
+    {
+        Assert.Equal(new Version(0, 4, 0), Updates.Parse("v0.4.0"));
+        Assert.Equal(new Version(0, 5, 0), Updates.Parse("0.5.0-beta"));
+        Assert.Null(Updates.Parse("latest"));
+        Assert.True(Updates.Parse("v0.4.1") > Updates.Parse("v0.4.0"));
+        Assert.False(Updates.Parse("v0.4.0") > new Version(0, 4, 0));
+    }
+
+    [Fact]
+    public void Dragged_pin_lands_before_the_tile_it_was_dropped_on_and_undo_puts_it_back()
+    {
+        PinItem a = new() { Name = "A" }, b = new() { Name = "B" }, c = new() { Name = "C" };
+        var saves = 0;
+        var env = new PresetViewModel(new Preset { Items = [a, b, c] }, 1, _ => saves++);
+        string Order() => string.Concat(env.Model.Items.Select(i => i.Name));
+
+        env.Place(c, a, atStart: false);
+        Assert.Equal("CAB", Order());
+        env.Place(c, null, atStart: false);
+        Assert.Equal("ABC", Order());
+        env.Place(b, null, atStart: true);
+        Assert.Equal("BAC", Order());
+        Assert.Equal(env.Model.Items, env.Pins.Select(p => p.Model));
+
+        env.Pins[1].RemoveCommand.Execute(null);
+        env.InsertItem(a, 1);
+        Assert.Equal("BAC", Order());
+        Assert.Equal(5, saves);
+    }
+
+    [Fact]
+    public void Widget_size_picked_on_the_card_reaches_the_spec_and_the_dock()
+    {
+        var saves = 0;
+        var env = new PresetViewModel(new Preset { Widgets = [new WidgetSpec { Kind = WidgetSpec.Music }] }, 1, _ => saves++);
+        var music = env.Widgets.First(w => w.Kind == WidgetSpec.Music);
+        var tile = new MusicWidget("m", env.Model.Widgets![0]);
+
+        Assert.Equal(5, music.Sizes.Count);
+        music.Size = WidgetSpec.FullSize;
+        Assert.Equal(WidgetSpec.FullSize, env.Model.Widgets[0].Size);
+        Assert.True(tile.TakeResize());
+        Assert.False(tile.TakeResize());
+        music.Size = "";
+        Assert.Null(env.Model.Widgets[0].Size);
+        Assert.Equal(2, saves);
+    }
+
+    [Fact]
+    public void Todo_list_round_trips_through_the_widget_text()
+    {
+        var items = TodoWidget.Parse("[ ] Ligar pro dentista\n[x] Pagar luz\nsem marca\n\n[x]   ");
+        Assert.Equal([new TodoItem("Ligar pro dentista", false), new TodoItem("Pagar luz", true), new TodoItem("sem marca", false)], items);
+        Assert.Equal("[ ] Ligar pro dentista\n[x] Pagar luz\n[ ] sem marca", TodoWidget.Format(items));
+        Assert.Equal("[ ] duas linhas", TodoWidget.Format([new TodoItem("duas\nlinhas", false)]));
+        Assert.Null(TodoWidget.Format([]));
+    }
+
+    [Fact]
     public void Unknown_game_folder_claims_nothing()
     {
         var pin = new PinItem { Name = "Game", Target = @"C:\Windows\explorer.exe", Args = "steam://rungameid/1", AppId = "WinDock.Steam.1" };

@@ -8,8 +8,11 @@ namespace WinDock.ViewModels;
 // The square, minimal look of a widget: one value, an optional ring, glyph or picture.
 public sealed record CompactFace(string Value, string Caption = "", string? Glyph = null, string? Symbol = null,
     double Ring = -1, System.Windows.Media.ImageSource? Image = null, bool Alert = false, string? Tip = null,
-    double InnerRing = -1, System.Windows.Media.Brush? Tint = null, System.Windows.Media.Brush? InnerTint = null)
+    double InnerRing = -1, System.Windows.Media.Brush? Tint = null, System.Windows.Media.Brush? InnerTint = null, double Bar = -1,
+    string? Paper = null, bool Dim = false)
 {
+    public bool HasPaper => Paper is not null;
+    public bool HasBar => Bar >= 0;
     public bool HasInnerRing => InnerRing >= 0;
     public bool HasTint => Tint is not null;
     public bool HasGlyph => !string.IsNullOrEmpty(Glyph);
@@ -27,6 +30,25 @@ public abstract partial class WidgetTile(string key, WidgetSpec spec) : DockTile
     protected abstract CompactFace Compact();
 
     public void RefreshFace() => Face = Compact();
+
+    // Each widget can be a square or a wide tile; the note reads better wide unless asked.
+    public bool Square(bool byDefault) => Spec.Size is { } size ? size == WidgetSpec.SquareSize : byDefault && this is not NoteWidget;
+
+    string? applied = spec.Size;
+
+    public void Resize(string size)
+    {
+        Spec.Size = applied = size;
+        Save();
+    }
+
+    // True once after the size changed somewhere else (the environment card) since the dock drew the widget.
+    public bool TakeResize()
+    {
+        if (applied == Spec.Size) return false;
+        applied = Spec.Size;
+        return true;
+    }
 
     public override string Key { get; } = key;
     public WidgetSpec Spec { get; private set; } = spec;
@@ -75,6 +97,7 @@ public abstract partial class WidgetTile(string key, WidgetSpec spec) : DockTile
         WidgetSpec.Mic => new MicWidget(key, spec),
         WidgetSpec.Network => new NetworkWidget(key, spec),
         WidgetSpec.Note => new NoteWidget(key, spec),
+        WidgetSpec.Todo => new TodoWidget(key, spec),
         _ => new ClockWidget(key, spec)
     };
 }
@@ -460,7 +483,7 @@ public sealed partial class ClaudeWidget(string key, WidgetSpec spec) : WidgetTi
     }
 
     // Two rings, one inside the other: the 5-hour session outside, the week inside. The panel has the numbers.
-    protected override CompactFace Compact() => new("", Ring: Session, InnerRing: Week, Alert: Hot, Tip: Tip,
+    protected override CompactFace Compact() => new(ClaudeUsage.Shared.Last is null ? "—" : "", Ring: Session, InnerRing: Week, Alert: Hot, Tip: Tip, Dim: Stale,
         Tint: Hot ? HotTint : SessionTint, InnerTint: Hot ? HotTint : WeekTint);
 
     static readonly HashSet<string> Alerted = [];
@@ -521,7 +544,8 @@ public sealed partial class ClaudeWidget(string key, WidgetSpec spec) : WidgetTi
 
 public sealed partial class MusicWidget : WidgetTile
 {
-    protected override CompactFace Compact() => new("", HasCover ? "" : Title, Glyph: HasCover ? null : "\uE8D6", Image: Cover, Tip: Tip);
+    protected override CompactFace Compact() =>
+        new("", HasCover ? "" : Title, Glyph: HasCover ? null : "\uE8D6", Image: Cover, Tip: Tip, Bar: Idle ? -1 : Progress);
 
     public MusicWidget(string key, WidgetSpec spec) : base(key, spec)
     {
@@ -535,7 +559,11 @@ public sealed partial class MusicWidget : WidgetTile
     [ObservableProperty] string title = "";
     [ObservableProperty] string artist = "";
     [ObservableProperty] System.Windows.Media.ImageSource? cover;
+    // The cover shrunk to a few pixels and stretched back: a soft, blurred backdrop like PrimoDock's.
+    [ObservableProperty] System.Windows.Media.ImageSource? backdrop;
     [ObservableProperty] bool hasCover;
+    [ObservableProperty] double progress = -1;
+    [ObservableProperty] bool hasProgress;
     [ObservableProperty] bool playing;
     [ObservableProperty] bool idle = true;
     [ObservableProperty] string toggleGlyph = "\uE768";
@@ -547,8 +575,10 @@ public sealed partial class MusicWidget : WidgetTile
         Idle = media is null;
         Title = media?.Title ?? Loc.T("musicIdle");
         Artist = media?.Artist ?? "";
+        if (!ReferenceEquals(Cover, media?.Cover)) Backdrop = Smear(media?.Cover);
         Cover = media?.Cover;
         HasCover = Cover is not null;
+        Track(media);
         Playing = media?.Playing ?? false;
         ToggleGlyph = Playing ? "\uE769" : "\uE768";
         Tip = media is null ? Loc.T("musicIdle") : media.Artist.Length > 0 ? $"{media.Title} · {media.Artist}" : media.Title;
@@ -557,12 +587,38 @@ public sealed partial class MusicWidget : WidgetTile
     public override void Tick(DateTime now)
     {
         if (Idle) Title = Loc.T("musicIdle");
+        Track(MediaSessions.Shared.Current);
+    }
+
+    void Track(MediaInfo? media)
+    {
+        Progress = MediaSessions.Progress(media);
+        HasProgress = Progress >= 0;
+    }
+
+    static readonly System.Windows.Media.Brush Plate = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x2D, 0x2F, 0x3A));
+
+    static System.Windows.Media.ImageSource? Smear(System.Windows.Media.ImageSource? cover)
+    {
+        if (cover is null) return null;
+        // The middle of the cover, in the shape of the wide tile, over a dark plate for covers with clear edges (app icons).
+        var visual = new System.Windows.Media.DrawingVisual();
+        System.Windows.Media.RenderOptions.SetBitmapScalingMode(visual, System.Windows.Media.BitmapScalingMode.HighQuality);
+        using (var dc = visual.RenderOpen())
+        {
+            dc.DrawRectangle(Plate, null, new System.Windows.Rect(0, 0, 8, 3));
+            dc.DrawImage(cover, new System.Windows.Rect(-4, -6.5, 16, 16));
+        }
+        var small = new System.Windows.Media.Imaging.RenderTargetBitmap(8, 3, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        small.Render(visual);
+        small.Freeze();
+        return small;
     }
 }
 
 public sealed partial class WeatherWidget : WidgetTile
 {
-    protected override CompactFace Compact() => new(Temp, Symbol: Glyph, Tip: Tip);
+    protected override CompactFace Compact() => new(Temp, Symbol: Glyph, Tip: Tip, Dim: Stale);
 
     public WeatherWidget(string key, WidgetSpec spec) : base(key, spec) => Service.Updated += Show;
 
@@ -611,6 +667,7 @@ public sealed partial class WeatherWidget : WidgetTile
         WeatherStatus.NoPlace => "weatherNoPlace",
         WeatherStatus.NotFound => "weatherNotFound",
         WeatherStatus.Offline => "weatherOffline",
+        WeatherStatus.Limited => "weatherLimited",
         _ => "weatherLoading"
     };
 }
@@ -673,7 +730,8 @@ public sealed partial class NetworkWidget(string key, WidgetSpec spec) : WidgetT
 
 public sealed partial class NoteWidget(string key, WidgetSpec spec) : WidgetTile(key, spec)
 {
-    protected override CompactFace Compact() => new("", Text.Split('\n')[0], Glyph: "\uE70B", Tip: Text);
+    // Square, the note is a small post-it with its text.
+    protected override CompactFace Compact() => new("", Paper: Text, Tip: Text);
 
     public override bool HasPanel => true;
 
@@ -697,5 +755,60 @@ public sealed partial class NoteWidget(string key, WidgetSpec spec) : WidgetTile
     {
         Empty = string.IsNullOrWhiteSpace(Spec.Text);
         Text = Empty ? Loc.T("noteEmpty") : Spec.Text!;
+    }
+}
+
+public sealed record TodoItem(string Text, bool Done);
+
+public sealed partial class TodoWidget(string key, WidgetSpec spec) : WidgetTile(key, spec)
+{
+    const string DoneMark = "[x] ", OpenMark = "[ ] ";
+
+    protected override CompactFace Compact()
+    {
+        var items = Items;
+        var value = Left > 0 ? Left.ToString(CultureInfo.InvariantCulture) : items.Count > 0 ? "\u2713" : "+";
+        return new(value, Loc.T("todoShort"), Ring: items.Count > 0 ? Progress : -1, Tip: Tip);
+    }
+
+    public override bool HasPanel => true;
+
+    [ObservableProperty] int left;
+    [ObservableProperty] string count = "";
+    [ObservableProperty] string next = "";
+    [ObservableProperty] double progress;
+    [ObservableProperty] string tip = "";
+
+    public IReadOnlyList<TodoItem> Items => Parse(Spec.Text);
+
+    public static List<TodoItem> Parse(string? text) =>
+        (text ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(line => line.StartsWith(DoneMark.Trim(), StringComparison.OrdinalIgnoreCase) ? new TodoItem(line[3..].Trim(), true)
+                : new TodoItem(line.StartsWith(OpenMark.Trim()) ? line[3..].Trim() : line, false))
+            .Where(i => i.Text.Length > 0)
+            .ToList();
+
+    public static string? Format(IEnumerable<TodoItem> items)
+    {
+        var text = string.Join('\n', items.Select(i => (i.Done ? DoneMark : OpenMark) + i.Text.ReplaceLineEndings(" ").Trim()));
+        return text.Length == 0 ? null : text;
+    }
+
+    public void Set(IEnumerable<TodoItem> items)
+    {
+        Spec.Text = Format(items);
+        Save();
+        Tick(DateTime.Now);
+        RefreshFace();
+    }
+
+    public override void Tick(DateTime now)
+    {
+        var items = Items;
+        Left = items.Count(i => !i.Done);
+        Next = items.FirstOrDefault(i => !i.Done)?.Text ?? "";
+        Progress = items.Count == 0 ? 0 : (double)(items.Count - Left) / items.Count;
+        Count = items.Count == 0 ? Loc.T("todoEmpty") : Left == 0 ? Loc.T("todoAllDone") : Loc.F(Left == 1 ? "todoLeftOne" : "todoLeft", Left);
+        Tip = Next.Length > 0 ? $"{Count} · {Next}" : Count;
     }
 }

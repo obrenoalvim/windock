@@ -56,6 +56,9 @@ public partial class App : System.Windows.Application
         shell = new ShellGuard();
         dock = new DockViewModel(main, shell);
         docks = new DockHost(dock, () => window.Open());
+        WinKeys.Pressed = (n, fresh) => docks.OpenNth(n, fresh);
+        main.Dock.Changed += _ => SyncKeys();
+        SyncKeys();
 
         tray = new TrayService(main, window, dock);
         if (!e.Args.Contains("--tray")) window.Open();
@@ -70,6 +73,9 @@ public partial class App : System.Windows.Application
         }) { IsBackground = true }.Start();
     }
 
+    // The hook runs only while the dock stands in for the taskbar.
+    void SyncKeys() => WinKeys.Enable(main!.Dock.Enabled && main.Dock.ReplaceTaskbar);
+
     void OnCrash(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         try
@@ -83,6 +89,7 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        WinKeys.Enable(false);
         main?.Dock.Flush();
         docks?.Dispose();
         dock?.Dispose();

@@ -32,7 +32,7 @@ Você não precisa instalar o .NET nem mais nada. É um arquivo só.
 
 1. **Baixe** o [`WinDock.exe`](https://github.com/obrenoalvim/windock/releases/latest/download/WinDock.exe) (uns 75 MB, tudo incluso). Precisa do Windows 10 versão 2004 ou mais novo.
 2. **Dê dois cliques.** Se o Windows mostrar uma tela azul "O Windows protegeu seu PC", clique em **Mais informações** e depois em **Executar assim mesmo**. Essa tela aparece porque o arquivo ainda não tem assinatura digital.
-3. **O dock aparece** em todas as telas e a janela de configurações abre. O WinDock também coloca um ícone na bandeja do sistema.
+3. **O dock aparece** em todas as telas e a janela de configurações abre. Um tour curto na dock mostra os gestos uma vez. O WinDock também coloca um ícone na bandeja do sistema.
 4. A partir daí ele inicia com o Windows. Desligue na aba **Dock**, no menu do dock ou no menu da bandeja se preferir.
 
 Para remover: clique com o botão direito no dock, escolha **Sair** e apague o `WinDock.exe` e a pasta `%APPDATA%\WinDock`.
@@ -41,7 +41,7 @@ Para remover: clique com o botão direito no dock, escolha **Sair** e apague o `
 
 1. Abra as configurações (botão direito no dock, ícone da bandeja ou `Ctrl+Alt+W`). O app abre em inglês: clique em **PT** no canto superior direito. A aba **Ambientes** tem um cartão por ambiente.
 2. Clique em **+ Programa** em um cartão e escolha apps, apps da Microsoft Store, jogos da Steam e da Epic, ou uma **Pasta...** para empilhar no dock (a de Downloads é uma boa).
-3. Ligue os **widgets** que quiser naquele ambiente: relógio, clima, música, uso do Claude, Pomodoro, cronômetro, timer, contagem regressiva, progresso, atividade, velocidade da rede, bateria, microfone, nota.
+3. Ligue os **widgets** que quiser naquele ambiente: relógio, clima, música, uso do Claude, Pomodoro, cronômetro, timer, contagem regressiva, progresso, atividade, velocidade da rede, bateria, microfone, nota, tarefas.
 4. Em **Agenda**, escolha os dias e horários em que o ambiente fica ativo. Ou pule isso e troque na mão: role a roda do mouse sobre o dock, use `Ctrl+Alt+1..9` ou escolha no menu do dock (botão direito no vidro).
 
 Os programas do cartão **Sempre fixos** aparecem em todos os ambientes, antes dos outros.
@@ -70,7 +70,7 @@ Os programas do cartão **Sempre fixos** aparecem em todos os ambientes, antes d
 |---|---|---|---|
 | Relógio | Hora e data | Abre o calendário e as notificações | Some quando o dock já mostra o relógio do Windows |
 | Clima | Temperatura e condição, azul de dia e anil à noite | Painel com sensação térmica, máxima e mínima e as próximas horas | Digite a cidade no card do ambiente, ou deixe vazio para usar a localização do Windows; dados do Open-Meteo |
-| Música | O que toca no Spotify, no navegador ou em qualquer player, com a capa | Painel com todos os players com mídia, lado a lado, cada um com anterior, play e próxima | Play e pausa direto no tile; some quando nada está tocando |
+| Música | O que toca no Spotify, no navegador ou em qualquer player: quadrado, a capa; largo, a capa, título, artista e progresso com play e pausa, ou com todos os controles (como no PrimoDock), ou sobre a capa desfocada | Painel com todos os players com mídia, lado a lado, cada um com anterior, play e próxima | Some quando nada está tocando |
 | Uso do Claude | A sessão de 5 horas e a semana de 7 dias do seu plano do Claude | Painel com a renovação, o ritmo da semana e atualizar | Fica vermelho a partir de 90%; avisa em 80% e 95%; precisa do Claude Code logado no PC |
 | Pomodoro | 25 min de foco, 5 de pausa, 15 a cada quatro | Inicia ou pausa | Conta os ciclos feitos hoje; botão direito zera; avisa no fim |
 | Cronômetro | Tempo decorrido | Inicia ou pausa | Botão direito zera |
@@ -80,10 +80,11 @@ Os programas do cartão **Sempre fixos** aparecem em todos os ambientes, antes d
 | Atividade | Uso de processador e memória | | |
 | Velocidade da rede | Download e upload agora | | |
 | Bateria | Carga, ou na tomada | | Tempo restante na dica |
-| Nota | Um recado curto que fica no dock | Abre um editor | Salva junto com o ambiente |
+| Nota | Um recado curto que fica no dock; quadrada, um post-it com o texto | Abre um editor | Salva junto com o ambiente |
 | Microfone | Se o microfone está ligado | Muta ou desmuta | Fica vermelho quando mutado |
+| Tarefas | Quantas faltam e a próxima; quadrado, o número com um anel do que já foi feito | Painel para adicionar (digite e Enter), concluir e remover tarefas, e limpar as concluídas | Salvas junto com o ambiente |
 
-**Widgets compactos** (ligado por padrão, na aba **Dock** ou no menu do dock) mostram cada widget como um quadrado do tamanho de um ícone: o valor principal, um anel para progresso e timers, dois anéis para o Claude (a sessão de 5h por fora, a semana por dentro), a capa para a música. A nota mantém o tile largo para continuar legível. Desligue para ver os tiles largos com mais detalhes.
+**Quadrado ou largo, por widget.** Clique com o botão direito num widget da dock e escolha **Quadrado** ou **Largo**. O quadrado tem o tamanho de um ícone: o valor principal, um anel para progresso e timers, dois anéis para o Claude (a sessão de 5h por fora, a semana por dentro), a capa para a música. O largo mostra mais detalhes. A música tem três versões largas: **Largo, só pausa**, **Largo com controles** e **Capa de fundo**. Os widgets que você nunca ajustou seguem **Widgets quadrados por padrão**, na aba **Dock** (ligado por padrão; a nota fica larga, a não ser que você escolha quadrado). O card do ambiente também mostra o tamanho de cada widget.
 
 Os widgets continuam rodando quando você troca de ambiente, então um Pomodoro iniciado no trabalho termina na hora certa.
 
@@ -93,6 +94,7 @@ Os widgets continuam rodando quando você troca de ambiente, então um Pomodoro 
 |---|---|
 | `Ctrl+Alt+W` | Abrir ou ocultar as configurações |
 | `Ctrl+Alt+1` ... `9` | Trocar para o 1º ... 9º ambiente |
+| `Win+1` ... `9` | Com a barra substituída: abre o 1º ... 9º app da dock, como um clique (`Win+Shift`: nova janela) |
 | `Esc` | Fechar as configurações (o app continua rodando) |
 
 | Mouse no dock | O que faz |
@@ -101,10 +103,12 @@ Os widgets continuam rodando quando você troca de ambiente, então um Pomodoro 
 | `Shift`+clique ou clique do meio | Abre outra janela |
 | `Ctrl`+clique | Mostra o programa no Explorador de Arquivos |
 | Botão direito num app | Nova janela, fixar ou desafixar (neste ambiente ou em todos), mostrar no Explorador, fechar janelas |
+| Arrastar um ícone para o lado | Muda de lugar; arraste para cima e solte para tirar da dock (com **Desfazer**) |
 | Parar o ponteiro num app aberto | Prévia ao vivo das janelas |
 | Rolar a roda | Ambiente anterior ou próximo |
 | Botão direito no vidro | Ambientes, substituir a barra, ocultar automaticamente, janelas seguem, iniciar com o Windows, configurações, sair |
-| Soltar arquivos ou programas | Fixa no ambiente atual |
+| Soltar arquivos num app | Abre com aquele app |
+| Soltar arquivos ou programas no vidro | Fixa no ambiente atual |
 
 ## Ambientes
 
@@ -134,7 +138,7 @@ Os ambientes ficam em `%APPDATA%\WinDock\presets` como JSON, e as configuraçõe
 }
 ```
 
-`days` aceita `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. O `end` é exclusivo e `24:00` é meia-noite. Vale o primeiro ambiente (pelo nome do arquivo) que combinar com o horário. `target` é um `.exe`, `.lnk` ou pasta (variáveis de ambiente funcionam). Apps da Loja e jogos são salvos como um launcher (`target` mais `args`, `icon` e um `appId`), por exemplo `steam://rungameid/1243130`. Tipos de widget: `clock`, `weather` (`label` é a cidade), `music`, `claude`, `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `network`, `battery`, `mic`, `note` (`text` é a nota). A `date` da contagem é `yyyy-MM-dd` para um dia fixo ou `MM-dd` para repetir todo ano.
+`days` aceita `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. O `end` é exclusivo e `24:00` é meia-noite. Vale o primeiro ambiente (pelo nome do arquivo) que combinar com o horário. `target` é um `.exe`, `.lnk` ou pasta (variáveis de ambiente funcionam). Apps da Loja e jogos são salvos como um launcher (`target` mais `args`, `icon` e um `appId`), por exemplo `steam://rungameid/1243130`. Tipos de widget: `clock`, `weather` (`label` é a cidade), `music`, `claude`, `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `network`, `battery`, `mic`, `note` (`text` é a nota), `todo` (`text` guarda uma tarefa por linha, com `[x] ` na frente das concluídas). `size` é `square` ou `wide` (a música aceita também `full` e `backdrop`); sem ele, vale o padrão. A `date` da contagem é `yyyy-MM-dd` para um dia fixo ou `MM-dd` para repetir todo ano.
 
 ### O modo antigo da taskbar
 
@@ -146,7 +150,7 @@ Antes do dock, o WinDock trocava os apps fixados na barra de tarefas de verdade.
 
 **O que o processo vigia faz?** Quando o WinDock esconde a barra ou uma janela, ele abre uma cópia mínima de si mesmo (`WinDock.exe --watchdog`) que só espera. Se o WinDock fechar por qualquer motivo, o vigia mostra de novo a barra e todas as janelas escondidas. Se os dois forem encerrados à força, a próxima abertura do WinDock arruma tudo.
 
-**O widget de uso do Claude lê minhas conversas?** Não. Ele lê só as duas porcentagens de uso e os horários de renovação, no mesmo endereço da Anthropic que o Claude Code usa, com o login que o Claude Code já guarda neste PC. O WinDock consulta no máximo a cada cinco minutos, nunca renova nem guarda esse login, e não manda para lugar nenhum além de api.anthropic.com.
+**O widget de uso do Claude lê minhas conversas?** Não. Ele lê só as duas porcentagens de uso e os horários de renovação, no mesmo endereço da Anthropic que o Claude Code usa, com o login que o Claude Code já guarda neste PC. O WinDock consulta no máximo a cada cinco minutos. O Claude Code só renova esse login enquanto está aberto, então quando ele expira (depois de uma noite com o PC desligado) o WinDock renova do mesmo jeito que o Claude Code e grava o novo no mesmo arquivo, e o Claude Code continua funcionando. O login não vai para lugar nenhum além da Anthropic (api.anthropic.com e platform.claude.com).
 
 **O que o widget de clima envia?** Só a cidade que você digitou, para o Open-Meteo (grátis, sem conta), e depois as coordenadas dela para buscar a previsão, a cada 9 segundos enquanto o widget está no dock (logo abaixo do limite grátis de 10.000 chamadas por dia). Com a cidade vazia ele pede a localização ao Windows, o que só funciona se apps da área de trabalho puderem usá-la nas configurações de privacidade do Windows.
 
@@ -155,6 +159,8 @@ Antes do dock, o WinDock trocava os apps fixados na barra de tarefas de verdade.
 **Por que o dock sumiu enquanto eu jogava?** O WinDock sai da frente quando a janela da frente cobre a tela inteira, como um jogo ou vídeo em tela cheia.
 
 **O contador de não lidas lê minhas mensagens?** Não. O Windows guarda o número que cada app põe no ícone da barra no banco de notificações; o WinDock lê só esses números, sem alterar nada, e nunca o texto de uma notificação.
+
+**Ele procura atualizações?** A cada poucas horas ele pergunta ao GitHub (api.github.com) qual é a última versão, e só isso. Uma versão nova aparece no menu da bandeja e na aba **Dock** com um link para baixar; nada é baixado nem instalado sozinho. Desligue em **Avisar quando sair versão nova**.
 
 **Ele deixa o PC lento?** Parado, ele usa menos de 1% de um núcleo do processador e uns 170 MB de memória, a maior parte do runtime .NET que vem dentro do exe único. Ele ouve os eventos de janelas do Windows em vez de ficar consultando.
 

@@ -35,12 +35,21 @@ public sealed class WidgetSpec
     public const string Note = "note";
     public const string Weather = "weather";
     public const string Mic = "mic";
+    public const string Todo = "todo";
+    public const string SquareSize = "square";
+    public const string WideSize = "wide";
+    // Music only: the PrimoDock look with every control, and the cover blurred behind everything.
+    public const string FullSize = "full";
+    public const string BackdropSize = "backdrop";
 
-    public static readonly string[] Kinds = [Clock, Weather, Music, Claude, Pomodoro, Stopwatch, Timer, Countdown, Progress, Activity, Network, Battery, Mic, Note];
+    public static readonly string[] Kinds = [Clock, Weather, Music, Claude, Pomodoro, Stopwatch, Timer, Countdown, Progress, Activity, Network, Battery, Mic, Note, Todo];
 
     public string Kind { get; set; } = Clock;
     public string? Label { get; set; }
     public string? Date { get; set; }
     public int? Minutes { get; set; }
+    // The note's text; for the to-do list, one task per line, "[x] " in front of the done ones.
     public string? Text { get; set; }
+    // "square" or "wide" ("full" and "backdrop" for music); empty follows the default of the Dock tab.
+    public string? Size { get; set; }
 }

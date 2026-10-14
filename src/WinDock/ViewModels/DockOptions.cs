@@ -40,11 +40,33 @@ public sealed class DockOptions : ObservableObject
     public bool AllScreens { get => D.AllScreens; set => Set(() => D.AllScreens = value); }
     public bool CompactWidgets { get => D.CompactWidgets; set => Set(() => D.CompactWidgets = value); }
     public bool PerScreen { get => D.PerScreen; set => Set(() => D.PerScreen = value); }
+    public bool CheckUpdates { get => settings.CheckUpdates; set => Set(() => settings.CheckUpdates = value); }
+
+    string? newVersion;
+
+    // The newer release on GitHub, if any; shown in the Dock tab and the tray menu.
+    public string? NewVersion
+    {
+        get => newVersion;
+        set
+        {
+            newVersion = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasUpdate));
+            OnPropertyChanged(nameof(UpdateText));
+        }
+    }
+
+    public bool HasUpdate => NewVersion is not null;
+    public string UpdateText => NewVersion is null ? "" : Loc.F("updateDownload", NewVersion);
     public Dictionary<string, string> ScreenEnvironments => D.ScreenEnvironments;
 
     public void SetScreenEnvironment(string screen, string id) => Set(() => D.ScreenEnvironments[screen] = id, name: nameof(ScreenEnvironments));
 
     public bool CanReserve => !AutoHide;
+
+    // One widget changed size: every dock picks its widget templates again.
+    public void Retemplate() => Changed?.Invoke(nameof(CompactWidgets));
 
     public bool StartWithWindows
     {

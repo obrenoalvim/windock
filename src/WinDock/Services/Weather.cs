@@ -5,7 +5,7 @@ using Windows.Devices.Geolocation;
 
 namespace WinDock.Services;
 
-public enum WeatherStatus { Loading, Ok, NoPlace, NotFound, Offline }
+public enum WeatherStatus { Loading, Ok, NoPlace, NotFound, Offline, Limited }
 
 public sealed record WeatherHour(DateTime Time, double Temp, int Code, bool Day);
 
@@ -86,7 +86,7 @@ public sealed class Weather
         catch (HttpRequestException e) when (e.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
         {
             nextCall = DateTime.Now + Limited;
-            Status = WeatherStatus.Offline;
+            Status = WeatherStatus.Limited;
         }
         catch (Exception e) when (e is HttpRequestException or TaskCanceledException or IOException or JsonException)
         {

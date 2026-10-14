@@ -101,6 +101,7 @@ static class Native
     [DllImport("user32.dll")] public static extern bool ShowWindow(nint hwnd, int cmd);
     [DllImport("user32.dll")] public static extern bool ShowWindowAsync(nint hwnd, int cmd);
     [DllImport("user32.dll")] public static extern bool PostMessage(nint hwnd, int msg, nint wParam, nint lParam);
+    [DllImport("user32.dll")] public static extern bool EndTask(nint hwnd, bool shutdown, bool force);
     [DllImport("user32.dll")] public static extern bool SetWindowPos(nint hwnd, nint after, int x, int y, int w, int h, uint flags);
     [DllImport("user32.dll")] public static extern bool GetWindowRect(nint hwnd, out Rect rect);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern nint FindWindow(string? cls, string? title);

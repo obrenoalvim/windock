@@ -1,4 +1,5 @@
 using System.Windows.Media;
+using Microsoft.Win32;
 using CommunityToolkit.Mvvm.ComponentModel;
 using WinDock.Models;
 using WinDock.Services;
@@ -80,6 +81,8 @@ public sealed partial class AppTile : DockTile, IDisposable
 
     public bool Matches(AppWindow w) => match.Matches(w);
 
+    public bool Hosts(AppWindow w) => match.Hosts(w);
+
     public bool Launch()
     {
         if (Pin is not null) return Launcher.Open(Pin);
@@ -88,6 +91,34 @@ public sealed partial class AppTile : DockTile, IDisposable
     }
 
     public string? RevealPath => Folder?.Path ?? (Pin is not null ? Launcher.RevealTarget(Pin) : Exe);
+
+    (string Exe, string? Args)? opener;
+    bool openerKnown;
+
+    // The exe (and the shortcut's own arguments) that opens files dropped on this icon, or null when it takes none.
+    public (string Exe, string? Args)? Opener()
+    {
+        if (!openerKnown)
+        {
+            opener = FindOpener();
+            openerKnown = true;
+        }
+        return opener;
+    }
+
+    (string Exe, string? Args)? FindOpener()
+    {
+        if (IsFolder) return null;
+        if (Pin is null)
+            return Exe is { } exe && AppId?.Contains('!') != true && !exe.EndsWith("ApplicationFrameHost.exe", StringComparison.OrdinalIgnoreCase) ? (exe, null) : null;
+        if (Pin.IsLauncher || Pin.IsRaw || Pin.IsUriLauncher || Pin.ResolvedTarget is not { } target) return null;
+        if (!target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+            return target.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? (target, null) : null;
+        if (ShellLinks.ReadTarget(target) is not { } linked || !linked.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) return null;
+        var args = ShellLinks.ReadArguments(target);
+        // ponytail: Squirrel stubs (Discord) would read the files as their own switches, so they take none.
+        return AppMatch.UpdaterFolder(linked, args) is null ? (linked, args) : null;
+    }
 
     public void Dispose() => Folder?.Dispose();
 }
@@ -99,6 +130,10 @@ public sealed record AppMatch(HashSet<string> Ids, HashSet<string> Exes, List<st
         ["explorer.exe"] = WindowTracker.ExplorerId,
         ["steam.exe"] = "Valve.Steam.Client"
     };
+
+    // A shortcut to a link runs inside the program that opens the link: its windows titled like the shortcut are this pin.
+    public string? Host { get; init; }
+    public string? Title { get; init; }
 
     public static AppMatch Empty() => new(new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), []);
 
@@ -128,6 +163,8 @@ public sealed record AppMatch(HashSet<string> Ids, HashSet<string> Exes, List<st
             var exe = isLink ? ShellLinks.ReadTarget(target) : target;
             if (exe is not null) match.AddExe(exe);
             if (exe is not null && UpdaterFolder(exe, isLink ? ShellLinks.ReadArguments(target) : pin.Args) is { } updater) match.Folders.Add(updater);
+            if (exe is null && isLink && ShellLinks.ReadLink(target) is { } link && LinkHandlerFolder(link) is { } host)
+                match = match with { Host = host, Title = Path.GetFileNameWithoutExtension(target) };
             if ((pin.AppId ?? (isLink ? ShellLinks.ReadAppId(target) : null)) is { } id) match.Ids.Add(id);
         }
         return match;
@@ -138,6 +175,21 @@ public sealed record AppMatch(HashSet<string> Ids, HashSet<string> Exes, List<st
         args?.Contains("--processStart", StringComparison.OrdinalIgnoreCase) == true && Path.GetDirectoryName(exe) is { Length: > 3 } dir
             ? dir.TrimEnd('\\') + "\\"
             : null;
+
+    // Google Play Games: googleplaygames://launch/?id=... opens in C:\Program Files\Google\Play Games\.
+    public static string? LinkHandlerFolder(string link)
+    {
+        var colon = link.IndexOf(':');
+        if (colon < 2) return null;
+        try
+        {
+            using var key = Registry.ClassesRoot.OpenSubKey(link[..colon] + @"\shell\open\command");
+            if (key?.GetValue(null) is not string command) return null;
+            var exe = command.StartsWith('"') ? command.Split('"')[1] : command.Split(' ')[0];
+            return Path.GetDirectoryName(exe) is { Length: > 3 } dir && !IsSharedRoot(dir) ? dir.TrimEnd('\\') + "\\" : null;
+        }
+        catch (Exception e) when (e is ArgumentException or System.Security.SecurityException or IOException) { return null; }
+    }
 
     static readonly string[] SharedRoots =
     [
@@ -160,9 +212,11 @@ public sealed record AppMatch(HashSet<string> Ids, HashSet<string> Exes, List<st
         var n = 0;
         while (n < pa.Length && n < pb.Length && pa[n].Equals(pb[n], StringComparison.OrdinalIgnoreCase)) n++;
         if (n < 2) return false;
-        var common = string.Join('\\', pa.Take(n));
-        return !SharedRoots.Any(r => r.Length > 0 && common.Equals(r.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase));
+        return !IsSharedRoot(string.Join('\\', pa.Take(n)));
     }
+
+    static bool IsSharedRoot(string dir) =>
+        SharedRoots.Any(r => r.Length > 0 && dir.TrimEnd('\\').Equals(r.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase));
 
     void AddExe(string exe)
     {
@@ -172,10 +226,13 @@ public sealed record AppMatch(HashSet<string> Ids, HashSet<string> Exes, List<st
 
     public bool Matches(AppWindow w)
     {
+        if (Title is { } name) return Hosts(w) && w.Title.StartsWith(name, StringComparison.OrdinalIgnoreCase);
         if (w.AppId is { } id && Ids.Count > 0) return Ids.Contains(id);
         if (w.Exe is not { } exe) return false;
         return Exes.Contains(exe) || Folders.Any(f => exe.StartsWith(f, StringComparison.OrdinalIgnoreCase));
     }
+
+    public bool Hosts(AppWindow w) => Host is { } host && w.Exe?.StartsWith(host, StringComparison.OrdinalIgnoreCase) == true;
 }
 
 public sealed partial class SystemTile : DockTile

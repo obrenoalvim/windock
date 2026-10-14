@@ -170,4 +170,6 @@ public partial class ConfigWindow : Window
         else _ = vm.ApplyIndexAsync(id - PresetBaseId);
         return 0;
     }
+
+    void OnUpdateClick(object sender, RoutedEventArgs e) => Launcher.OpenFile(Updates.Page);
 }

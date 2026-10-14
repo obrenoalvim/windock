@@ -8,6 +8,8 @@ public static class ShellLinks
 {
     static readonly Guid AppUserModelFormat = new("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3");
     const uint AppUserModelId = 5;
+    static readonly Guid LinkFormat = new("B9B4B3FC-2B51-4A42-B5D8-324146AFCF25");
+    const uint LinkTargetParsingPath = 2;
 
     [ComImport, Guid("00021401-0000-0000-C000-000000000046")]
     class ShellLinkCoClass;
@@ -108,6 +110,19 @@ public static class ShellLinks
             var iid = PropertyStores.Iid;
             SHGetPropertyStoreFromParsingName(path, IntPtr.Zero, 0, ref iid, out var store);
             return AppIdFrom(store);
+        }
+        catch (Exception e) when (e is COMException or FileNotFoundException) { return null; }
+    }
+
+    // A shortcut to a link (googleplaygames://...) has no exe, only the parsing name of its target.
+    public static string? ReadLink(string lnkPath)
+    {
+        try
+        {
+            var iid = PropertyStores.Iid;
+            SHGetPropertyStoreFromParsingName(lnkPath, IntPtr.Zero, 0, ref iid, out var store);
+            try { return PropertyStores.ReadString(store, LinkFormat, LinkTargetParsingPath); }
+            finally { Marshal.FinalReleaseComObject(store); }
         }
         catch (Exception e) when (e is COMException or FileNotFoundException) { return null; }
     }

@@ -117,6 +117,28 @@ public sealed class MediaSessions
         catch (Exception e) when (e is System.Runtime.InteropServices.COMException or IOException or NotSupportedException or InvalidOperationException) { return null; }
     }
 
+    // How far the track is, 0..1, or -1 when the player does not say (some browsers, radio).
+    public static double Progress(MediaInfo? media)
+    {
+        if (media?.Session is not { } s) return -1;
+        try
+        {
+            var t = s.GetTimelineProperties();
+            return Fraction(t.StartTime, t.EndTime, t.Position, t.LastUpdatedTime, media.Playing, DateTimeOffset.Now);
+        }
+        catch (Exception e) when (e is System.Runtime.InteropServices.COMException or InvalidOperationException) { return -1; }
+    }
+
+    // Players report the position when it last changed, so a playing track moves on by the time since.
+    public static double Fraction(TimeSpan start, TimeSpan end, TimeSpan position, DateTimeOffset updated, bool playing, DateTimeOffset now)
+    {
+        var length = (end - start).TotalSeconds;
+        if (length <= 0) return -1;
+        var at = (position - start).TotalSeconds;
+        if (playing && updated.Year > 2000 && now > updated) at += (now - updated).TotalSeconds;
+        return Math.Clamp(at / length, 0, 1);
+    }
+
     // No target means the current session, the one the tile shows.
     public async Task Toggle(MediaInfo? target = null)
     {

@@ -19,6 +19,23 @@ public sealed class DockHost : IDisposable
         vm.Options.Changed += OnOption;
         SystemEvents.DisplaySettingsChanged += OnDisplays;
         Sync();
+        if (!vm.Main.Settings.TourSeen) _ = TourAsync();
+    }
+
+    async Task TourAsync()
+    {
+        await Task.Delay(TimeSpan.FromSeconds(3));
+        if (windows.Values.FirstOrDefault().Window is not { } home || !home.ShowTour()) return;
+        vm.Main.Settings.TourSeen = true;
+        vm.Main.Settings.Save();
+    }
+
+    // Win+n goes to the dock on the screen of the pointer, else the main one.
+    public bool OpenNth(int n, bool fresh)
+    {
+        var screen = Forms.Screen.FromPoint(Forms.Cursor.Position).DeviceName;
+        var window = windows.TryGetValue(screen, out var here) ? here.Window : windows.Values.FirstOrDefault().Window;
+        return window?.OpenNth(n, fresh) ?? false;
     }
 
     public static IReadOnlyList<string> Targets(bool enabled, bool all, string? chosen, IReadOnlyList<string> screens, string primary)

@@ -161,7 +161,12 @@ public sealed class WindowTracker : IDisposable
 
     public static void Minimize(nint h) => Native.ShowWindowAsync(h, Native.SW_MINIMIZE);
 
-    public static void Close(nint h) => Native.PostMessage(h, Native.WM_CLOSE, 0, 0);
+    // An admin window (Task Manager, apps run as administrator) refuses messages from WinDock; EndTask asks it to close
+    // the way the taskbar does, still letting it ask to save.
+    public static void Close(nint h)
+    {
+        if (!Native.PostMessage(h, Native.WM_CLOSE, 0, 0)) Native.EndTask(h, false, false);
+    }
 
     AppWindow? Describe(nint h, HashSet<int> pids)
     {

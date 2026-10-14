@@ -1,6 +1,6 @@
 # TODO IMPROVEMENTS
 
-> Last updated: 2026-10-12
+> Last updated: 2026-10-13
 
 ## Pending Changes
 
@@ -26,7 +26,7 @@
 - **Category:** Feature
 - **Flagged by:** PO, UX
 - **Source:** https://dock.oprimo.dev/
-- **What:** Color picker (pick any pixel, copy the hex, keep the last colors), world clock (another city, analog face), calendar with the next events (needs Outlook or Google access), shelf (drop files mid-drag and pick them up later), favorite sites, stopwatch laps.
+- **What:** Color picker (pick any pixel, copy the hex, keep the last colors), world clock (another city, analog face), calendar with the next events (needs Outlook or Google access), shelf (drop files mid-drag and pick them up later), favorite sites, stopwatch laps, clipboard history with pins, latest screenshots to drag out, unit converter, water goal, GitHub PRs waiting for review.
 - **Where:** `src/WinDock/ViewModels/Widgets.cs`, `Views/DockWindow.xaml`
 - **Why:** PrimoDock lists 31 widgets; WinDock has 12.
 - **Risk:** Calendar and color picker need extra permissions or a full-screen capture overlay.
@@ -35,19 +35,76 @@
 ### Tray icons inside the dock
 - **Category:** Feature
 - **Flagged by:** UX
-- **What:** With the taskbar replaced, tray icons are reached through the `^` button, which shows the real taskbar for a moment. Re-hosting them needs the notification area UI Automation tree (Windows 11) or the toolbar of `TrayNotifyWnd` (Windows 10).
+- **What:** The `^` panel lists the tray apps (open or quit) from `NotifyIconSettings`, but not their real icons, menus or state (Wi-Fi of a VPN, a sync spinner). Re-hosting them needs the notification area UI Automation tree (Windows 11) or the toolbar of `TrayNotifyWnd` (Windows 10).
 - **Where:** `src/WinDock/ViewModels/DockTiles.cs` (`SystemTile`)
 - **Why:** One less trip to the hidden taskbar.
 - **Risk:** Fragile across Windows builds.
 - **Effort:** High
 
-### Drag icons inside the dock to reorder or remove
+### Feedback while an app opens
 - **Category:** UI-UX
+- **Flagged by:** UX, UI, Dev Sr
+- **Source:** https://dock.oprimo.dev/ (opening animation is a theme option), macOS Dock bounce
+- **What:** After a click the icon does nothing until the window shows, which takes seconds for games and Electron apps. Pulse the icon (or blink its dot) from the click until a matching window appears, at most ~10 s, and ignore a second click on the same tile meanwhile.
+- **Where:** `AppTile.Launch` in `ViewModels/DockTiles.cs`, `OnTileUp` in `Views/DockWindow.xaml.cs`, `LensPanel`
+- **Why:** Without feedback people click again and get two instances (Steam, Discord, Play Games). The most felt gap in daily use.
+- **Risk:** Apps that open no window (tray only) must stop pulsing on the timeout.
+- **Effort:** Low
+
+### Recent files in the app menu
+- **Category:** Feature
 - **Flagged by:** UX
-- **What:** Reordering is done in the settings window. Dragging a dock icon sideways should move it, and dragging it out should unpin it.
-- **Where:** `src/WinDock/Views/DockWindow.xaml.cs`, `LensPanel.cs`
-- **Why:** It is the gesture people try first on a dock.
-- **Risk:** Must not fight the lens and the click-to-launch.
+- **What:** Right-click an app to see its recent files (like the taskbar jump list) and open one. Start with `%APPDATA%\Microsoft\Windows\Recent` shortcuts filtered by the extensions the app opens; real jump lists live in `AutomaticDestinations` (undocumented format).
+- **Where:** `AppMenu` in `Views/DockWindow.xaml.cs`
+- **Why:** The taskbar jump list is the other thing people miss after replacing it.
+- **Risk:** The Recent folder may be off by privacy settings; keep it read only.
+- **Effort:** Medium
+
+### Screen readers and keyboard on the dock
+- **Category:** UI-UX
+- **Flagged by:** UI, UX, QA
+- **Source:** https://learn.microsoft.com/en-us/archive/blogs/jaimer/wpf-discussion-090522 , https://learn.microsoft.com/en-us/archive/blogs/gautamg/how-to-get-automation-working-properly-on-data-bound-wpf-list-or-combo-box
+- **What:** The dock is a plain `ItemsControl` of `Grid` tiles: Narrator sees nothing (no automation peer, no names) and the dock cannot be reached with the keyboard. Give the strip an automation peer (or a `ListBox` restyled flat) with each tile named (app name, widget tip), and a key to focus the dock and walk it with the arrows.
+- **Where:** `Views/DockWindow.xaml` (`Strip`), `ViewModels/DockTiles.cs`
+- **Why:** The taskbar it replaces is fully accessible; replacing it should not lock out screen reader users.
+- **Risk:** The window is `WS_EX_NOACTIVATE`; keyboard focus needs it to take activation while walking, and give it back after.
+- **Effort:** Medium
+
+### The Win+n hook can be dropped silently
+- **Category:** Bug
+- **Flagged by:** Dev Sr
+- **What:** `WinKeys` hooks the keyboard on the UI thread. If that thread stalls longer than `LowLevelHooksTimeout` (a big folder stack, a slow COM call), Windows 10+ removes the hook without telling, and Win+1..9 go back to the hidden taskbar until WinDock restarts. Run the hook on a thread of its own with its own message loop, and post the action to the dispatcher.
+- **Where:** `Services/WinKeys.cs`
+- **Why:** A shortcut that stops working at random reads as a broken app.
+- **Risk:** Low; the callback already only decides and hands off.
+- **Effort:** Low
+
+### An empty environment says what to do
+- **Category:** UI-UX
+- **Flagged by:** UX, PM
+- **Source:** https://nngroup.com/articles/empty-state-interface-design
+- **What:** An environment with nothing pinned and no widgets shows a bare strip of glass. Show one ghost tile ("+" — "Drop apps here or open the settings") that opens the settings on click and goes away with the first pin.
+- **Where:** `DockViewModel.Rebuild`, a template in `DockWindow.xaml`
+- **Why:** A new environment looks broken instead of empty.
+- **Risk:** Low.
+- **Effort:** Low
+
+### Tell when something went wrong
+- **Category:** UX
+- **Flagged by:** Dev Sr, UX, Engenheiro de Software
+- **What:** `App.OnCrash` writes `error.log` and swallows every UI exception, so a failing feature just does nothing. Show one notice per session ("Something went wrong — open the log") with a link to the log, and add "Open log folder" to the tray menu.
+- **Where:** `App.xaml.cs`, `Services/TrayService.cs`
+- **Why:** Silent failures cannot be reported; the user cannot tell a bug from a missing feature.
+- **Risk:** A loop of errors must not flood notices.
+- **Effort:** Low
+
+### Drop files on a folder stack to move them there
+- **Category:** Feature
+- **Flagged by:** UX, PO
+- **What:** Dropping on an app opens the files with it, dropping on a pinned folder still pins the files. Moving (Shift: copying) them into the folder, like File Explorer, is what people expect from a folder.
+- **Where:** `OnDragOver` / `OnDrop` in `Views/DockWindow.xaml.cs`
+- **Why:** Consistent drop targets: app opens, folder receives, glass pins.
+- **Risk:** Moving files is destructive if aimed wrong; show the name label ("Move to Downloads") and use the shell's own copy (`IFileOperation`) for undo and conflicts.
 - **Effort:** Medium
 
 ### Settings folder override for tests and harnesses

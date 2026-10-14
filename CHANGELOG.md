@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Drag a pinned icon sideways to move it, or up and away to remove it; an **Undo** shows for a few seconds after removing, from the drag or the menu.
+- Drop files on an app icon to open them with that app; dropping on the glass still pins them.
+- `Win+1..9` open the dock apps while the dock replaces the taskbar (`Win+Shift` for a new window).
+- A short tour on the dock the first time it runs: environments, arranging icons, widget sizes, files and keys.
+- WinDock tells when a new version is out (tray menu, **Dock** tab and a notice once), asking GitHub every few hours. It can be turned off and never downloads anything by itself.
+- The environment card lists the size of each widget (default, square, wide, and the three music looks).
+- The square note is a small post-it with its text.
+- To-do widget: how many tasks are left and the next one, and a panel to add, check off, remove and clear tasks.
+- Each widget is square or wide, picked with a right-click on the dock; the setting in the **Dock** tab is now the default for widgets not sized yet.
+- Music has three wide looks: the cover, title, artist and progress of the track with play and pause; the same with previous and next, like PrimoDock; or everything over the cover blurred. The square one shows the progress under the cover.
+
+### Fixed
+- The Claude widget asked to sign in after the PC was off for a while, because the Claude Code sign-in expires in 8 hours and renews only while Claude Code runs. WinDock now renews it by itself, the same way Claude Code does.
+- The weather said "offline" when Open-Meteo's daily limit was reached; it now says so and comes back on its own.
+- Square Claude and weather widgets show a dash or fade when there is no fresh data, instead of empty rings.
+- Dropping a file on an app that cannot open files (Store apps, games) no longer pins the file; the label says so.
+- Clicking the dock again with one of its menus open opened the menu again instead of closing it.
+- **Close window** did nothing on windows running as administrator (Task Manager, apps opened as admin).
+- A dock menu stayed open after clicking somewhere else on the screen.
+- A pinned Google Play Games shortcut (Clash of Clans) lights up when its game runs, and the Play Games window joins it instead of taking a second slot.
+
 ## [0.4.0] - 2026-10-13
 
 ### Added

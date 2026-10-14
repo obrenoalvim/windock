@@ -43,15 +43,35 @@ public class SystemTests
         Assert.Null(ClaudeUsage.Parse(json, DateTime.Now));
 
     [Fact]
-    public void Claude_login_reads_token_expiry_and_plan_without_the_refresh_token()
+    public void Claude_login_reads_token_expiry_plan_and_renewal()
     {
         var login = ClaudeUsage.ParseLogin("""
-            { "claudeAiOauth": { "accessToken": "sk-ant-test", "refreshToken": "never-used", "expiresAt": 1791840058143, "subscriptionType": "pro" } }
+            { "claudeAiOauth": { "accessToken": "sk-ant-test", "refreshToken": "rt-old", "expiresAt": 1791840058143, "scopes": ["user:inference", "user:profile"], "subscriptionType": "pro" } }
             """);
         Assert.NotNull(login);
         Assert.Equal("sk-ant-test", login!.Token);
         Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(1791840058143).UtcDateTime, login.Expires);
         Assert.Equal("Pro", login.Plan);
+        Assert.Equal("rt-old", login.RefreshToken);
+        Assert.Equal("user:inference user:profile", login.Scopes);
+    }
+
+    [Fact]
+    public void Claude_renewal_rewrites_only_the_renewed_fields()
+    {
+        var now = new DateTime(2026, 10, 14, 8, 0, 0, DateTimeKind.Utc);
+        var updated = ClaudeUsage.ApplyRenewal("""
+            { "claudeAiOauth": { "accessToken": "old", "refreshToken": "rt-old", "expiresAt": 1, "scopes": ["user:inference"], "subscriptionType": "max", "rateLimitTier": "t" }, "other": 7 }
+            """, """{ "access_token": "new", "refresh_token": "rt-new", "expires_in": 28800, "refresh_token_expires_in": 60 }""", now);
+        var login = ClaudeUsage.ParseLogin(updated!);
+        Assert.Equal("new", login!.Token);
+        Assert.Equal("rt-new", login.RefreshToken);
+        Assert.Equal(now.AddHours(8), login.Expires);
+        Assert.Equal("user:inference", login.Scopes);
+        Assert.Equal("Max", login.Plan);
+        Assert.Contains("\"rateLimitTier\":\"t\"", updated);
+        Assert.Contains("\"other\":7", updated);
+        Assert.Null(ClaudeUsage.ApplyRenewal(updated!, """{ "error": "invalid_grant" }""", now));
     }
 
     [Theory]

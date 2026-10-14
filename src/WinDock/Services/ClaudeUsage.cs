@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace WinDock.Services;
 
@@ -9,7 +11,7 @@ public enum ClaudeStatus { Loading, Ok, NoLogin, Expired, Offline, RateLimited, 
 
 public sealed record ClaudeLimits(double? Session, DateTime? SessionReset, double? Week, DateTime? WeekReset, DateTime FetchedAt);
 
-public sealed record ClaudeLogin(string Token, DateTime? Expires, string? Plan);
+public sealed record ClaudeLogin(string Token, DateTime? Expires, string? Plan, string? RefreshToken = null, string? Scopes = null);
 
 public sealed class ClaudeUsage
 {
@@ -18,11 +20,15 @@ public sealed class ClaudeUsage
     static readonly TimeSpan Fresh = TimeSpan.FromMinutes(5);
     static readonly TimeSpan Manual = TimeSpan.FromSeconds(60);
     static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(15) };
+    // Same sign-in app and endpoint Claude Code renews with.
+    const string TokenUrl = "https://platform.claude.com/v1/oauth/token";
+    const string ClientId = "9d1c250a-e61b-44d9-88ed-5944d1962f5e";
 
     Task? running;
     DateTime lastTry = DateTime.MinValue;
     DateTime retryAfter = DateTime.MinValue;
     int backoff;
+    string? deadRefresh;
 
     public static ClaudeUsage Shared { get; } = new();
 
@@ -84,10 +90,15 @@ public sealed class ClaudeUsage
                 Status = ClaudeStatus.NoLogin;
                 return;
             }
+            // Claude Code renews only while it runs, so after a night off the sign-in has expired; renew it the same way.
             if (login.Expires is { } expires && expires <= DateTime.UtcNow)
             {
-                Status = ClaudeStatus.Expired;
-                return;
+                if (!await Renew(login) || ReadLogin(CredentialsPath) is not { } renewed)
+                {
+                    Status = ClaudeStatus.Expired;
+                    return;
+                }
+                login = renewed;
             }
 
             using var request = new HttpRequestMessage(HttpMethod.Get, "https://api.anthropic.com/api/oauth/usage");
@@ -123,7 +134,7 @@ public sealed class ClaudeUsage
             Last = limits;
             Status = ClaudeStatus.Ok;
         }
-        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or IOException)
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or IOException or UnauthorizedAccessException)
         {
             Status = ClaudeStatus.Offline;
         }
@@ -132,6 +143,52 @@ public sealed class ClaudeUsage
             running = null;
             Updated?.Invoke();
         }
+    }
+
+    // Only after the sign-in expired, so a running Claude Code (which renews five minutes early) is never raced.
+    async Task<bool> Renew(ClaudeLogin login)
+    {
+        if (login.RefreshToken is not { } refresh || refresh == deadRefresh) return false;
+        var body = new Dictionary<string, string> { ["grant_type"] = "refresh_token", ["refresh_token"] = refresh, ["client_id"] = ClientId };
+        if (login.Scopes is { } scopes) body["scope"] = scopes;
+        using var response = await Http.PostAsync(TokenUrl, JsonContent.Create(body));
+        if (response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.Unauthorized)
+        {
+            deadRefresh = refresh;
+            return false;
+        }
+        if (!response.IsSuccessStatusCode) return false;
+        var answer = await response.Content.ReadAsStringAsync();
+        var current = File.ReadAllText(CredentialsPath);
+        // Claude Code renewed meanwhile: its file wins.
+        if (ParseLogin(current)?.RefreshToken != refresh) return true;
+        if (ApplyRenewal(current, answer, DateTime.UtcNow) is not { } updated) return false;
+        var temp = CredentialsPath + ".windock";
+        File.WriteAllText(temp, updated);
+        File.Move(temp, CredentialsPath, true);
+        return true;
+    }
+
+    // Rewrites only the renewed fields and keeps everything else Claude Code stores in the file.
+    public static string? ApplyRenewal(string credentials, string response, DateTime nowUtc)
+    {
+        try
+        {
+            if (JsonNode.Parse(credentials) is not JsonObject root || root["claudeAiOauth"] is not JsonObject oauth) return null;
+            using var doc = JsonDocument.Parse(response);
+            var r = doc.RootElement;
+            if (!r.TryGetProperty("access_token", out var access) || access.GetString() is not { Length: > 0 } token
+                || !r.TryGetProperty("expires_in", out var life) || !life.TryGetDouble(out var seconds)) return null;
+            static long At(DateTime now, double s) => new DateTimeOffset(now).AddSeconds(s).ToUnixTimeMilliseconds();
+            oauth["accessToken"] = token;
+            oauth["expiresAt"] = At(nowUtc, seconds);
+            if (r.TryGetProperty("refresh_token", out var next) && next.GetString() is { Length: > 0 } nextToken) oauth["refreshToken"] = nextToken;
+            if (r.TryGetProperty("refresh_token_expires_in", out var nextLife) && nextLife.TryGetDouble(out var nextSeconds)) oauth["refreshTokenExpiresAt"] = At(nowUtc, nextSeconds);
+            if (r.TryGetProperty("scope", out var scope) && scope.GetString() is { Length: > 0 } scopeText)
+                oauth["scopes"] = new JsonArray(scopeText.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(x => (JsonNode?)x).ToArray());
+            return root.ToJsonString();
+        }
+        catch (Exception e) when (e is JsonException or InvalidOperationException) { return null; }
     }
 
     public static ClaudeLogin? ReadLogin(string path)
@@ -152,7 +209,11 @@ public sealed class ClaudeUsage
                 ? DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime
                 : null;
             var plan = oauth.TryGetProperty("subscriptionType", out var s) && s.ValueKind == JsonValueKind.String ? PlanName(s.GetString()) : null;
-            return new ClaudeLogin(token, expires, plan);
+            var refresh = oauth.TryGetProperty("refreshToken", out var rt) && rt.ValueKind == JsonValueKind.String ? rt.GetString() : null;
+            var scopes = oauth.TryGetProperty("scopes", out var sc) && sc.ValueKind == JsonValueKind.Array
+                ? string.Join(' ', sc.EnumerateArray().Where(x => x.ValueKind == JsonValueKind.String).Select(x => x.GetString()))
+                : null;
+            return new ClaudeLogin(token, expires, plan, refresh, scopes is { Length: > 0 } ? scopes : null);
         }
         catch (JsonException) { return null; }
     }

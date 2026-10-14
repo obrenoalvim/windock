@@ -78,6 +78,10 @@
             <GradientStop Color="#FFE58A" Offset="0"/>
             <GradientStop Color="#F6C945" Offset="1"/>
         </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WTodo" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#3CC98F" Offset="0"/>
+            <GradientStop Color="#1E8E62" Offset="1"/>
+        </LinearGradientBrush>
         <LinearGradientBrush x:Key="WClaude" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#E58A68" Offset="0"/>
             <GradientStop Color="#C4603E" Offset="1"/>
@@ -133,6 +137,19 @@
                 <Ellipse Margin="10" Stroke="{DynamicResource DockLine}" StrokeThickness="2.4" Visibility="{Binding Face.HasInnerRing, Converter={StaticResource Show}}"/>
                 <v:RingArc Margin="10" Progress="{Binding Face.InnerRing}" Stroke="{Binding Face.InnerTint}" StrokeThickness="2.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                            Visibility="{Binding Face.HasInnerRing, Converter={StaticResource Show}}"/>
+                <Border CornerRadius="13" Background="{StaticResource WNote}" Visibility="{Binding Face.HasPaper, Converter={StaticResource Show}}">
+                    <TextBlock Text="{Binding Face.Paper}" FontFamily="{StaticResource DockFont}" FontSize="8" FontWeight="SemiBold" Foreground="#3A2E12"
+                               TextWrapping="Wrap" TextTrimming="CharacterEllipsis" LineHeight="9.5" LineStackingStrategy="BlockLineHeight"
+                               Margin="5,5,4,5" VerticalAlignment="Center"/>
+                </Border>
+                <Grid VerticalAlignment="Bottom" Height="2.5" Margin="8,0,8,5" Visibility="{Binding Face.HasBar, Converter={StaticResource Show}}">
+                    <Border CornerRadius="1.25" Background="#66FFFFFF"/>
+                    <Border CornerRadius="1.25" Background="White" RenderTransformOrigin="0,0.5">
+                        <Border.RenderTransform>
+                            <ScaleTransform ScaleX="{Binding Face.Bar}"/>
+                        </Border.RenderTransform>
+                    </Border>
+                </Grid>
                 <Viewbox x:Name="Content" Margin="8" StretchDirection="DownOnly">
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="{Binding Face.Glyph}" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{DynamicResource DockInk}" HorizontalAlignment="Center"
@@ -156,9 +173,13 @@
                 <DataTrigger Binding="{Binding Face.HasTint}" Value="True">
                     <Setter TargetName="Outer" Property="Stroke" Value="{Binding Face.Tint}"/>
                 </DataTrigger>
+                <!-- Old data (offline, signed out): the value fades, like the wide tiles. -->
+                <DataTrigger Binding="{Binding Face.Dim}" Value="True">
+                    <Setter TargetName="Content" Property="Opacity" Value="0.5"/>
+                    <Setter TargetName="Outer" Property="Opacity" Value="0.5"/>
+                </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
-        <v:FaceSelector x:Key="Faces" Compact="{StaticResource CompactWidget}"/>
 
         <Style x:Key="ClusterSpot" TargetType="Border" BasedOn="{StaticResource SystemSpot}">
             <Setter Property="Padding" Value="6,0"/>
@@ -367,6 +388,35 @@
             </Grid>
         </DataTemplate>
 
+        <!-- To-do: how many are left and the next one. -->
+        <DataTemplate DataType="{x:Type vm:TodoWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
+                <Viewbox>
+                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WTodo}">
+                        <Grid Margin="8,0,7,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="22" Height="22" CornerRadius="11" BorderBrush="{StaticResource WInk}" BorderThickness="1.6" VerticalAlignment="Center">
+                                <TextBlock x:Name="Left" Text="{Binding Left}" FontFamily="{StaticResource DockFont}" FontWeight="Bold" FontSize="10.5" Foreground="{StaticResource WInk}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="6,0,0,0">
+                                <TextBlock Text="{Binding Count}" Style="{StaticResource Caption}" FontSize="8" FontWeight="Bold" Foreground="{StaticResource WInk}"/>
+                                <TextBlock Text="{Binding Next}" Style="{StaticResource Caption}" FontSize="7.5" Margin="0,1,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Viewbox>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Left}" Value="0">
+                    <Setter TargetName="Left" Property="Text" Value="&#x2713;"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:CountdownWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
                 <Viewbox>
@@ -509,50 +559,191 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <DataTemplate DataType="{x:Type vm:MusicWidget}">
+        <!-- Music like PrimoDock: the cover, title and artist with the progress, and every control, over the cover tint. -->
+        <DataTemplate x:Key="MusicFull">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WiderSize}" ToolTip="{Binding Tip}">
                 <Viewbox>
                     <Border Style="{StaticResource WidgetFace}" Width="154" Background="{StaticResource WMusic}">
-                        <Grid Margin="6,6,6,6">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="34"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Width="34" Height="34" CornerRadius="7" Background="{StaticResource WTrack}">
-                                <Grid>
-                                    <TextBlock Text="&#xE8D6;" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{StaticResource WInk}"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    <Border CornerRadius="7" Visibility="{Binding HasCover, Converter={StaticResource Show}}">
-                                        <Border.Background>
-                                            <ImageBrush ImageSource="{Binding Cover}" Stretch="UniformToFill"/>
-                                        </Border.Background>
+                        <Grid>
+                            <Border CornerRadius="11" Visibility="{Binding HasCover, Converter={StaticResource Show}}">
+                                <Border.Background>
+                                    <ImageBrush ImageSource="{Binding Backdrop}" Stretch="Fill" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                </Border.Background>
+                            </Border>
+                            <Border CornerRadius="11" Background="#99000000"/>
+                            <Grid Margin="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="34"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="34" Height="34" CornerRadius="7" Background="{StaticResource WTrack}">
+                                    <Grid>
+                                        <TextBlock Text="&#xE8D6;" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{StaticResource WInk}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <Border CornerRadius="7" Visibility="{Binding HasCover, Converter={StaticResource Show}}">
+                                            <Border.Background>
+                                                <ImageBrush ImageSource="{Binding Cover}" Stretch="UniformToFill"/>
+                                            </Border.Background>
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="6,0,4,0">
+                                    <TextBlock Text="{Binding Title}" Style="{StaticResource Caption}" FontSize="8" FontWeight="Bold" Foreground="{StaticResource WInk}"/>
+                                    <TextBlock Text="{Binding Artist}" Style="{StaticResource Caption}" FontSize="7.5" Margin="0,1,0,0"/>
+                                    <Grid Height="2" Margin="0,4,0,0" Visibility="{Binding HasProgress, Converter={StaticResource Show}}">
+                                        <Border CornerRadius="1" Background="{StaticResource WTrack}"/>
+                                        <Border CornerRadius="1" Background="{StaticResource WInk}" RenderTransformOrigin="0,0.5">
+                                            <Border.RenderTransform>
+                                                <ScaleTransform ScaleX="{Binding Progress}"/>
+                                            </Border.RenderTransform>
+                                        </Border>
+                                    </Grid>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Idle}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <Border Background="Transparent" Cursor="Hand" Padding="3,2" MouseUp="OnMediaPrevious" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE892;" FontFamily="{StaticResource Glyphs}" FontSize="8" Foreground="{StaticResource WInk}"/>
                                     </Border>
-                                </Grid>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="6,0,2,0">
-                                <TextBlock Text="{Binding Title}" Style="{StaticResource Caption}" FontSize="8" FontWeight="Bold" Foreground="{StaticResource WInk}"/>
-                                <TextBlock Text="{Binding Artist}" Style="{StaticResource Caption}" Margin="0,2,0,0"/>
-                            </StackPanel>
-                            <Border Grid.Column="2" Width="18" Height="18" CornerRadius="9" Background="{StaticResource WTrack}" VerticalAlignment="Center"
-                                    Cursor="Hand" MouseUp="OnMediaToggle">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Idle}" Value="True">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
-                                <TextBlock Text="{Binding ToggleGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="8" Foreground="{StaticResource WInk}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
+                                    <Border Background="Transparent" Cursor="Hand" Padding="4,2" MouseUp="OnMediaToggle" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding ToggleGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="10" Foreground="{StaticResource WInk}"/>
+                                    </Border>
+                                    <Border Background="Transparent" Cursor="Hand" Padding="3,2" MouseUp="OnMediaNext" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE893;" FontFamily="{StaticResource Glyphs}" FontSize="8" Foreground="{StaticResource WInk}"/>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
                         </Grid>
                     </Border>
                 </Viewbox>
             </Grid>
         </DataTemplate>
+
+        <!-- Music, smaller: the same, with only play and pause. -->
+        <DataTemplate x:Key="MusicPause">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
+                <Viewbox>
+                    <Border Style="{StaticResource WidgetFace}" Width="100" Background="{StaticResource WMusic}">
+                        <Grid>
+                            <Border CornerRadius="11" Visibility="{Binding HasCover, Converter={StaticResource Show}}">
+                                <Border.Background>
+                                    <ImageBrush ImageSource="{Binding Backdrop}" Stretch="Fill" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                </Border.Background>
+                            </Border>
+                            <Border CornerRadius="11" Background="#99000000"/>
+                            <Grid Margin="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="34"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="34" Height="34" CornerRadius="7" Background="{StaticResource WTrack}">
+                                    <Grid>
+                                        <TextBlock Text="&#xE8D6;" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{StaticResource WInk}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <Border CornerRadius="7" Visibility="{Binding HasCover, Converter={StaticResource Show}}">
+                                            <Border.Background>
+                                                <ImageBrush ImageSource="{Binding Cover}" Stretch="UniformToFill"/>
+                                            </Border.Background>
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="6,0,4,0">
+                                    <TextBlock Text="{Binding Title}" Style="{StaticResource Caption}" FontSize="8" FontWeight="Bold" Foreground="{StaticResource WInk}"/>
+                                    <TextBlock Text="{Binding Artist}" Style="{StaticResource Caption}" FontSize="7.5" Margin="0,1,0,0"/>
+                                    <Grid Height="2" Margin="0,4,0,0" Visibility="{Binding HasProgress, Converter={StaticResource Show}}">
+                                        <Border CornerRadius="1" Background="{StaticResource WTrack}"/>
+                                        <Border CornerRadius="1" Background="{StaticResource WInk}" RenderTransformOrigin="0,0.5">
+                                            <Border.RenderTransform>
+                                                <ScaleTransform ScaleX="{Binding Progress}"/>
+                                            </Border.RenderTransform>
+                                        </Border>
+                                    </Grid>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Idle}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <Border Background="Transparent" Cursor="Hand" Padding="3,2" MouseUp="OnMediaToggle" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding ToggleGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="10" Foreground="{StaticResource WInk}"/>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Viewbox>
+            </Grid>
+        </DataTemplate>
+
+        <!-- Music with the cover stretched and blurred behind the title, the controls and the progress. -->
+        <DataTemplate x:Key="MusicBackdrop">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WiderSize}" ToolTip="{Binding Tip}">
+                <Viewbox>
+                    <Border Style="{StaticResource WidgetFace}" Width="154" Background="{StaticResource WMusic}">
+                        <Grid>
+                            <Border CornerRadius="11" Visibility="{Binding HasCover, Converter={StaticResource Show}}">
+                                <Border.Background>
+                                    <ImageBrush ImageSource="{Binding Backdrop}" Stretch="Fill" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                </Border.Background>
+                            </Border>
+                            <Border CornerRadius="11" Background="#38000000"/>
+                            <Grid Margin="10,5,10,6">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="{Binding Title}" Style="{StaticResource Caption}" FontSize="8.5" FontWeight="Bold" Foreground="{StaticResource WInk}"/>
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Idle}" Value="True">
+                                                    <Setter Property="Visibility" Value="Hidden"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <Border Background="Transparent" Cursor="Hand" Padding="6,2" MouseUp="OnMediaPrevious">
+                                        <TextBlock Text="&#xE892;" FontFamily="{StaticResource Glyphs}" FontSize="10" Foreground="{StaticResource WInk}"/>
+                                    </Border>
+                                    <Border Background="Transparent" Cursor="Hand" Padding="10,2" MouseUp="OnMediaToggle">
+                                        <TextBlock Text="{Binding ToggleGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="12" Foreground="{StaticResource WInk}"/>
+                                    </Border>
+                                    <Border Background="Transparent" Cursor="Hand" Padding="6,2" MouseUp="OnMediaNext">
+                                        <TextBlock Text="&#xE893;" FontFamily="{StaticResource Glyphs}" FontSize="10" Foreground="{StaticResource WInk}"/>
+                                    </Border>
+                                </StackPanel>
+                                <Grid Grid.Row="2" Height="2" Visibility="{Binding HasProgress, Converter={StaticResource Show}}">
+                                    <Border CornerRadius="1" Background="{StaticResource WTrack}"/>
+                                    <Border CornerRadius="1" Background="{StaticResource WInk}" RenderTransformOrigin="0,0.5">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform ScaleX="{Binding Progress}"/>
+                                        </Border.RenderTransform>
+                                    </Border>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Viewbox>
+            </Grid>
+        </DataTemplate>
+        <v:FaceSelector x:Key="Faces" Compact="{StaticResource CompactWidget}" MusicPause="{StaticResource MusicPause}"
+                        MusicFull="{StaticResource MusicFull}" MusicBackdrop="{StaticResource MusicBackdrop}"/>
 
         <DataTemplate DataType="{x:Type vm:WeatherWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
@@ -680,6 +871,16 @@
             </Border>
             <Border x:Name="Banner" CornerRadius="14" Padding="14,7" Opacity="0" BorderBrush="#40FFFFFF" BorderThickness="1">
                 <TextBlock x:Name="BannerText" FontSize="12" FontWeight="Bold" Foreground="#101114"/>
+            </Border>
+        </Canvas>
+        <Canvas>
+            <Border x:Name="Toast" CornerRadius="11" Padding="12,5,6,5" Visibility="Collapsed" Background="#F21E2029" BorderBrush="#26FFFFFF" BorderThickness="1">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock x:Name="ToastText" FontSize="11.5" Foreground="#F4EFE7" VerticalAlignment="Center"/>
+                    <Border Margin="10,0,0,0" Padding="9,3" CornerRadius="8" Background="#26FFFFFF" Cursor="Hand" MouseLeftButtonUp="OnUndo">
+                        <TextBlock x:Name="UndoText" FontSize="11.5" FontWeight="SemiBold" Foreground="#FFB547"/>
+                    </Border>
+                </StackPanel>
             </Border>
         </Canvas>
     </Grid>
