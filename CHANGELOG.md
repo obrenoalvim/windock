@@ -6,7 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-14
+
+### Changed
+- Widgets wake only when what they show changes: the clock on the minute, timers on the second, the countdown at midnight, notes and to-dos only when edited. While the dock is hidden by a fullscreen game or by auto-hide, nothing updates; timers still ring on time.
+- Volume and microphone follow Windows events instead of being read every second, the battery follows power events, and the hidden taskbar is kept hidden by a window event instead of a check every second.
+- The weather asks Open-Meteo every 10 minutes instead of every 9 seconds. Claude usage refreshes every minute.
+- Music covers are decoded once per track, and the progress bar redraws the dock about once a second while a track plays.
+- Less memory: no background garbage collection thread, and a smaller heap.
+
 ### Added
+- The settings window shows how much memory and CPU WinDock is using.
 - Drag a pinned icon sideways to move it, or up and away to remove it; an **Undo** shows for a few seconds after removing, from the drag or the menu.
 - Drop files on an app icon to open them with that app; dropping on the glass still pins them.
 - `Win+1..9` open the dock apps while the dock replaces the taskbar (`Win+Shift` for a new window).
