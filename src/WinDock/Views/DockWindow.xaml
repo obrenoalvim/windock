@@ -122,7 +122,6 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Compact widgets: a square tile with one value, an optional ring, glyph or picture. -->
         <DataTemplate x:Key="CompactWidget">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource IconSize}" ToolTip="{Binding Face.Tip}">
                 <Border x:Name="Plate" CornerRadius="13" Background="{DynamicResource TileFace}"/>
@@ -173,7 +172,6 @@
                 <DataTrigger Binding="{Binding Face.HasTint}" Value="True">
                     <Setter TargetName="Outer" Property="Stroke" Value="{Binding Face.Tint}"/>
                 </DataTrigger>
-                <!-- Old data (offline, signed out): the value fades, like the wide tiles. -->
                 <DataTrigger Binding="{Binding Face.Dim}" Value="True">
                     <Setter TargetName="Content" Property="Opacity" Value="0.5"/>
                     <Setter TargetName="Outer" Property="Opacity" Value="0.5"/>
@@ -262,7 +260,6 @@
                 <Border Background="Transparent" Padding="6,0" Cursor="Hand" ToolTip="{Binding TrayTip}" MouseLeftButtonUp="OnTrayClick">
                     <TextBlock Text="&#xE70E;" FontFamily="{StaticResource Glyphs}" FontSize="12" Foreground="{DynamicResource DockInk}" VerticalAlignment="Center"/>
                 </Border>
-                <!-- Network, sound, microphone and battery share one pill, like the quick settings button of Windows 11. -->
                 <Border CornerRadius="11" Margin="2,8,2,8" Padding="3,0" Background="{DynamicResource TileFace}">
                     <StackPanel Orientation="Horizontal">
                         <Border Style="{StaticResource ClusterSpot}" ToolTip="{Binding NetworkTip}" MouseLeftButtonUp="OnStatusClick">
@@ -388,7 +385,6 @@
             </Grid>
         </DataTemplate>
 
-        <!-- To-do: how many are left and the next one. -->
         <DataTemplate DataType="{x:Type vm:TodoWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
                 <Viewbox>
@@ -559,7 +555,6 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Music like PrimoDock: the cover, title and artist with the progress, and every control, over the cover tint. -->
         <DataTemplate x:Key="MusicFull">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WiderSize}" ToolTip="{Binding Tip}">
                 <Viewbox>
@@ -627,7 +622,6 @@
             </Grid>
         </DataTemplate>
 
-        <!-- Music, smaller: the same, with only play and pause. -->
         <DataTemplate x:Key="MusicPause">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
                 <Viewbox>
@@ -689,7 +683,6 @@
             </Grid>
         </DataTemplate>
 
-        <!-- Music with the cover stretched and blurred behind the title, the controls and the progress. -->
         <DataTemplate x:Key="MusicBackdrop">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WiderSize}" ToolTip="{Binding Tip}">
                 <Viewbox>

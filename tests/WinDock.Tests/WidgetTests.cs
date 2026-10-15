@@ -7,6 +7,15 @@ namespace WinDock.Tests;
 
 public class WidgetTests
 {
+    [Fact]
+    public void Widgets_wake_when_the_shown_number_turns()
+    {
+        var now = new DateTime(2026, 10, 14, 12, 34, 56, 700);
+        Assert.Equal(new DateTime(2026, 10, 14, 12, 35, 0), WidgetTile.NextMinute(now));
+        Assert.Equal(now.AddMilliseconds(300), WidgetTile.NextSecond(now, TimeSpan.FromMilliseconds(2300)));
+        Assert.Equal(now.AddSeconds(1), WidgetTile.NextSecond(now, TimeSpan.FromSeconds(2)));
+    }
+
     [Theory]
     [InlineData(0, "0 B/s")]
     [InlineData(512, "512 B/s")]

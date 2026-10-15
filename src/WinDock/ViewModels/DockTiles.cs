@@ -62,7 +62,6 @@ public sealed partial class AppTile : DockTile, IDisposable
     public bool HasBadge => Badge != 0;
     public string BadgeText => Badge < 0 ? "" : Badge > 99 ? "99+" : Badge.ToString();
 
-    // Every app id this tile stands for, to find its unread badge.
     public IEnumerable<string?> BadgeIds => match.Ids.Append(AppId).Append(Pin?.AppId).Concat(Windows.Select(w => w.AppId));
 
     [ObservableProperty]
@@ -95,7 +94,6 @@ public sealed partial class AppTile : DockTile, IDisposable
     (string Exe, string? Args)? opener;
     bool openerKnown;
 
-    // The exe (and the shortcut's own arguments) that opens files dropped on this icon, or null when it takes none.
     public (string Exe, string? Args)? Opener()
     {
         if (!openerKnown)
@@ -116,7 +114,6 @@ public sealed partial class AppTile : DockTile, IDisposable
             return target.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? (target, null) : null;
         if (ShellLinks.ReadTarget(target) is not { } linked || !linked.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) return null;
         var args = ShellLinks.ReadArguments(target);
-        // ponytail: Squirrel stubs (Discord) would read the files as their own switches, so they take none.
         return AppMatch.UpdaterFolder(linked, args) is null ? (linked, args) : null;
     }
 
@@ -131,7 +128,6 @@ public sealed record AppMatch(HashSet<string> Ids, HashSet<string> Exes, List<st
         ["steam.exe"] = "Valve.Steam.Client"
     };
 
-    // A shortcut to a link runs inside the program that opens the link: its windows titled like the shortcut are this pin.
     public string? Host { get; init; }
     public string? Title { get; init; }
 
@@ -170,13 +166,11 @@ public sealed record AppMatch(HashSet<string> Ids, HashSet<string> Exes, List<st
         return match;
     }
 
-    // Squirrel apps (Discord, Slack, Figma...) pin a stub with "--processStart X.exe" and run X from app-1.2.3\.
     public static string? UpdaterFolder(string exe, string? args) =>
         args?.Contains("--processStart", StringComparison.OrdinalIgnoreCase) == true && Path.GetDirectoryName(exe) is { Length: > 3 } dir
             ? dir.TrimEnd('\\') + "\\"
             : null;
 
-    // Google Play Games: googleplaygames://launch/?id=... opens in C:\Program Files\Google\Play Games\.
     public static string? LinkHandlerFolder(string link)
     {
         var colon = link.IndexOf(':');
@@ -204,7 +198,6 @@ public sealed record AppMatch(HashSet<string> Ids, HashSet<string> Exes, List<st
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "WindowsApps")
     ];
 
-    // Two exes of one program live under a folder of their own (not Program Files or AppData itself).
     public static bool SameProgramFolder(string a, string b)
     {
         var pa = Path.GetDirectoryName(a)?.Split('\\') ?? [];
@@ -237,16 +230,43 @@ public sealed record AppMatch(HashSet<string> Ids, HashSet<string> Exes, List<st
 
 public sealed partial class SystemTile : DockTile
 {
-    int volumeTick;
     DateTime nextNetwork, nextBattery;
     volatile bool networkChanged = true;
+    bool volumeRead;
     NetworkKind kind;
 
     public SystemTile()
     {
-        System.Net.NetworkInformation.NetworkChange.NetworkAddressChanged += (_, _) => networkChanged = true;
-        System.Net.NetworkInformation.NetworkChange.NetworkAvailabilityChanged += (_, _) => networkChanged = true;
+        System.Net.NetworkInformation.NetworkChange.NetworkAddressChanged += (_, _) => NetworkMoved();
+        System.Net.NetworkInformation.NetworkChange.NetworkAvailabilityChanged += (_, _) => NetworkMoved();
+        Microsoft.Win32.SystemEvents.PowerModeChanged += (_, e) =>
+        {
+            if (e.Mode != Microsoft.Win32.PowerModes.StatusChange) return;
+            nextBattery = DateTime.MinValue;
+            Raise();
+        };
+        Audio.Watch();
+        Audio.Changed += () =>
+        {
+            RefreshVolume();
+            Woke?.Invoke();
+        };
     }
+
+    public event Action? Woke;
+
+    void NetworkMoved()
+    {
+        networkChanged = true;
+        Raise();
+    }
+
+    static void RaiseOn(Action? action) => System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => action?.Invoke());
+
+    void Raise() => RaiseOn(Woke);
+
+    public DateTime Due(DateTime now) =>
+        new[] { WidgetTile.NextMinute(now), nextNetwork, HasBattery ? nextBattery : DateTime.MaxValue }.Min();
 
     public override string Key => "system";
 
@@ -276,13 +296,17 @@ public sealed partial class SystemTile : DockTile
         Date = now.ToString(pt ? "dd/MM/yyyy" : "M/d/yyyy", culture);
         ClockTip = $"{now.ToString(pt ? "dddd, d 'de' MMMM 'de' yyyy" : "dddd, MMMM d, yyyy", culture)} · {Loc.T("calendar")}";
 
-        if (++volumeTick % 5 == 0) RefreshVolume();
+        if (!volumeRead)
+        {
+            volumeRead = true;
+            RefreshVolume();
+        }
         if (networkChanged || now >= nextNetwork)
         {
             networkChanged = false;
             var net = NetworkStatus.Read();
             kind = net.Kind;
-            nextNetwork = now.AddSeconds(kind == NetworkKind.Wifi ? 10 : 60);
+            nextNetwork = now.AddSeconds(kind == NetworkKind.Wifi ? 30 : 300);
             NetworkGlyph = NetworkStatus.Glyph(net);
             NetworkTip = NetworkText(net);
             OnPropertyChanged(nameof(TrayTip));
@@ -290,7 +314,7 @@ public sealed partial class SystemTile : DockTile
         }
         if (now >= nextBattery)
         {
-            nextBattery = now.AddSeconds(10);
+            nextBattery = now.AddMinutes(1);
             var battery = SystemStats.Battery();
             HasBattery = battery.Present;
             BatteryGlyph = battery.Present ? BatteryGlyphFor(battery.Percent, battery.Charging) : "";

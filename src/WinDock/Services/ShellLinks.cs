@@ -114,7 +114,6 @@ public static class ShellLinks
         catch (Exception e) when (e is COMException or FileNotFoundException) { return null; }
     }
 
-    // A shortcut to a link (googleplaygames://...) has no exe, only the parsing name of its target.
     public static string? ReadLink(string lnkPath)
     {
         try

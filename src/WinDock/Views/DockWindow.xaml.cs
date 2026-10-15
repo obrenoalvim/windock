@@ -92,8 +92,6 @@ public partial class DockWindow : Window
         DragOver += OnDragOver;
         DragLeave += (_, _) => HideName();
         Drop += OnDrop;
-        // The click that closed a menu must not open it again (or launch the app under it): the menu closes on the press,
-        // and the release lands on the dock.
         PreviewMouseUp += (_, e) =>
         {
             if (DateTime.Now - menuClosedAt > TimeSpan.FromMilliseconds(400) || dragging) return;
@@ -165,6 +163,7 @@ public partial class DockWindow : Window
         Reserve(o.Reserve && !o.AutoHide);
         ApplyShell();
         if (!o.AutoHide && concealed) Reveal();
+        if (o.AutoHide) poll.Start();
         Resize();
     }
 
@@ -215,7 +214,6 @@ public partial class DockWindow : Window
     {
         if (name == nameof(DockOptions.CompactWidgets))
         {
-            // A new selector makes the strip pick the templates again.
             var faces = (FaceSelector)Resources["Faces"];
             faces.On = vm.Options.CompactWidgets;
             Strip.ItemTemplateSelector = null;
@@ -351,7 +349,6 @@ public partial class DockWindow : Window
         if (dragOut) PlaceName();
     }
 
-    // Dragging a pinned icon: the lens rests so the icons hold still, and the icon follows the pointer.
     void StartDrag()
     {
         dragging = true;
@@ -372,7 +369,6 @@ public partial class DockWindow : Window
         if (dragging) EndDrag(null);
     }
 
-    // at: where the icon was let go, or null when the drag was cut short (another window took the mouse).
     void EndDrag(Point? at)
     {
         var app = pressed!;
@@ -466,7 +462,9 @@ public partial class DockWindow : Window
 
     void OnTileWheel(object sender, MouseWheelEventArgs e)
     {
-        if (((FrameworkElement)sender).DataContext is WidgetTile w && w.Wheel(e.Delta > 0 ? 1 : -1)) e.Handled = true;
+        if (((FrameworkElement)sender).DataContext is not WidgetTile w || !w.Wheel(e.Delta > 0 ? 1 : -1)) return;
+        e.Handled = true;
+        w.Poke();
     }
 
     void OnTileLoaded(object sender, RoutedEventArgs e)
@@ -584,7 +582,11 @@ public partial class DockWindow : Window
                 break;
             case WidgetTile widget:
                 if (e.ChangedButton == MouseButton.Left && widget.HasPanel) OpenPanel(widget, element);
-                else if (e.ChangedButton == MouseButton.Left) widget.Click(DateTime.Now);
+                else if (e.ChangedButton == MouseButton.Left)
+                {
+                    widget.Click(DateTime.Now);
+                    widget.Poke();
+                }
                 else if (e.ChangedButton == MouseButton.Right) WidgetMenu(widget);
                 break;
         }
@@ -732,8 +734,6 @@ public partial class DockWindow : Window
     void ShowFlyout(Flyout next, FrameworkElement element)
     {
         var key = (element.DataContext ?? element, next.GetType());
-        // A second click on what opened the panel closes it. The panel may already be gone by then: the press took its
-        // focus and it closed itself a moment before the click ends.
         if ((flyout is not null && flyoutKey == key) || (closedKey == key && DateTime.Now - closedAt < TimeSpan.FromMilliseconds(400)))
         {
             closedKey = null;
@@ -759,7 +759,6 @@ public partial class DockWindow : Window
         next.ShowAt((topLeft.X + bottomRight.X) / 2, barTop, TargetScreen());
     }
 
-    // Win+n with the taskbar replaced: the nth app of the dock, as if clicked (Shift: a new window).
     public bool OpenNth(int n, bool fresh)
     {
         if (vm.Tiles.OfType<AppTile>().Skip(n - 1).FirstOrDefault() is not { } app) return false;
@@ -786,6 +785,7 @@ public partial class DockWindow : Window
     {
         var show = !vm.Shell.Peeking;
         vm.Shell.Peek(show);
+        if (show) poll.Start();
         peekAway = 0;
         if (show && Native.FindWindow("Shell_TrayWnd", null) is var bar && bar != 0) Native.SetForegroundWindow(bar);
     }
@@ -860,7 +860,12 @@ public partial class DockWindow : Window
 
     void Poll()
     {
-        if ((!IsVisible && !fullscreen) || !(vm.Options.AutoHide || vm.Shell.Peeking)) return;
+        if (!(vm.Options.AutoHide || vm.Shell.Peeking))
+        {
+            poll.Stop();
+            return;
+        }
+        if (!IsVisible && !fullscreen) return;
         Native.GetCursorPos(out var p);
         var screen = TargetScreen().Bounds;
 
@@ -886,7 +891,7 @@ public partial class DockWindow : Window
 
     void Conceal()
     {
-        concealed = true;
+        concealed = vm.OffScreen = true;
         preview?.Hide();
         var distance = BarHeight + BottomGap + 16;
         Slide.BeginAnimation(TranslateTransform.YProperty,
@@ -896,6 +901,7 @@ public partial class DockWindow : Window
     void Reveal()
     {
         concealed = false;
+        vm.OffScreen = fullscreen;
         away = 0;
         Slide.BeginAnimation(TranslateTransform.YProperty,
             new DoubleAnimation(0, TimeSpan.FromMilliseconds(200)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
@@ -906,6 +912,7 @@ public partial class DockWindow : Window
         var now = IsFullscreen(Native.GetForegroundWindow());
         if (now == fullscreen) return;
         fullscreen = now;
+        vm.OffScreen = fullscreen || concealed;
         if (!vm.Options.Enabled) return;
         if (fullscreen)
         {
@@ -932,7 +939,6 @@ public partial class DockWindow : Window
         var m = info.Monitor;
         var ours = m.Left == screen.Left && m.Top == screen.Top;
         if (!ours || r.Left > m.Left || r.Top > m.Top || r.Right < m.Right || r.Bottom < m.Bottom) return false;
-        // A maximized window overhangs the screen by its hidden borders; a full screen one (game, player) sits exactly on it.
         return !IsZoomed(window) || (r.Left == m.Left && r.Top == m.Top && r.Right == m.Right && r.Bottom == m.Bottom);
     }
 
@@ -996,7 +1002,11 @@ public partial class DockWindow : Window
     void WidgetMenu(WidgetTile widget)
     {
         var menu = new ContextMenu();
-        if (widget.CanReset) menu.Items.Add(Item(Loc.T("reset"), widget.Reset));
+        if (widget.CanReset) menu.Items.Add(Item(Loc.T("reset"), () =>
+        {
+            widget.Reset();
+            widget.Poke();
+        }));
         var square = widget.Square(vm.Options.CompactWidgets);
         menu.Items.Add(Item(Loc.T("widgetSquare"), () => Resize(widget, WidgetSpec.SquareSize), square));
         if (widget is MusicWidget)
@@ -1030,7 +1040,6 @@ public partial class DockWindow : Window
     {
         menuOpen = true;
         menu.Placement = PlacementMode.MousePoint;
-        // Only the foreground app can hold the mouse, and the dock never takes focus: without this a click elsewhere leaves the menu open.
         Native.SetForegroundWindow(hwnd);
         menu.Closed += (_, _) =>
         {
@@ -1046,7 +1055,6 @@ public partial class DockWindow : Window
         var files = e.Data.GetDataPresent(DataFormats.FileDrop);
         if (files && DropTarget(e) is (var app, var element))
         {
-            // An app that cannot take files (Store apps, games) refuses the drop instead of pinning the file.
             var opens = app.Opener() is not null;
             e.Effects = opens ? DragDropEffects.Copy : DragDropEffects.None;
             if (hovered != element)
@@ -1061,7 +1069,6 @@ public partial class DockWindow : Window
         e.Effects = files && vm.Active is not null ? DragDropEffects.Link : DragDropEffects.None;
     }
 
-    // The app icon under a drag (not a folder), and its slot on the dock.
     (AppTile App, FrameworkElement Element)? DropTarget(DragEventArgs e)
     {
         (AppTile, FrameworkElement)? found = null;

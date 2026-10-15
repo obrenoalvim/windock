@@ -49,6 +49,25 @@ public sealed class NetworkMeter
     }
 }
 
+public sealed class SelfUsage
+{
+    readonly System.Diagnostics.Process self = System.Diagnostics.Process.GetCurrentProcess();
+    TimeSpan lastCpu;
+    DateTime lastAt;
+
+    public (double Megabytes, double Cpu) Sample(DateTime now)
+    {
+        var counters = new Native.MemoryCounters { Size = (uint)Marshal.SizeOf<Native.MemoryCounters>() };
+        var bytes = Native.GetProcessMemoryInfo(self.Handle, ref counters, counters.Size) ? (double)counters.PrivateWorkingSet : 0;
+        self.Refresh();
+        var cpu = self.TotalProcessorTime;
+        var seconds = (now - lastAt).TotalSeconds;
+        var percent = lastAt == default || seconds <= 0 ? 0 : (cpu - lastCpu).TotalSeconds / seconds / Environment.ProcessorCount * 100;
+        (lastCpu, lastAt) = (cpu, now);
+        return (bytes / 1024 / 1024, Math.Clamp(percent, 0, 100));
+    }
+}
+
 public sealed class SystemStats
 {
     long lastIdle, lastBusy;

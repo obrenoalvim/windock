@@ -7,7 +7,6 @@ using WinDock.Services;
 
 namespace WinDock.Views;
 
-// The apps of the notification area, to open or quit without bringing back the Windows taskbar.
 public sealed class TrayPanel : Flyout
 {
     readonly Action showWindowsTray;
@@ -62,7 +61,6 @@ public sealed class TrayPanel : Flyout
         {
             e.Handled = true;
             if (!TrayApps.End(app)) quit.ToolTip = Loc.T("trayEndFailed");
-            // Give the processes a moment to go before listing again.
             var later = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
             later.Tick += (_, _) =>
             {

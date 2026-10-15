@@ -5,7 +5,6 @@ using WinDock.Services;
 
 namespace WinDock.ViewModels;
 
-// The square, minimal look of a widget: one value, an optional ring, glyph or picture.
 public sealed record CompactFace(string Value, string Caption = "", string? Glyph = null, string? Symbol = null,
     double Ring = -1, System.Windows.Media.ImageSource? Image = null, bool Alert = false, string? Tip = null,
     double InnerRing = -1, System.Windows.Media.Brush? Tint = null, System.Windows.Media.Brush? InnerTint = null, double Bar = -1,
@@ -31,7 +30,6 @@ public abstract partial class WidgetTile(string key, WidgetSpec spec) : DockTile
 
     public void RefreshFace() => Face = Compact();
 
-    // Each widget can be a square or a wide tile; the note reads better wide unless asked.
     public bool Square(bool byDefault) => Spec.Size is { } size ? size == WidgetSpec.SquareSize : byDefault && this is not NoteWidget;
 
     string? applied = spec.Size;
@@ -42,7 +40,6 @@ public abstract partial class WidgetTile(string key, WidgetSpec spec) : DockTile
         Save();
     }
 
-    // True once after the size changed somewhere else (the environment card) since the dock drew the widget.
     public bool TakeResize()
     {
         if (applied == Spec.Size) return false;
@@ -56,8 +53,26 @@ public abstract partial class WidgetTile(string key, WidgetSpec spec) : DockTile
     public virtual bool Wide => true;
     public virtual bool CanReset => false;
     public virtual bool HasPanel => false;
-    // Ticks even off screen (another environment), because it has to ring on time.
     public virtual bool KeepsTime => false;
+
+    public virtual DateTime Due(DateTime now) => now.AddSeconds(30);
+
+    public DateTime DueAt { get; set; }
+    public event Action<WidgetTile>? Woke;
+
+    public void Poke()
+    {
+        DueAt = DateTime.MinValue;
+        Woke?.Invoke(this);
+    }
+
+    public static DateTime NextMinute(DateTime now) => now.Date.AddHours(now.Hour).AddMinutes(now.Minute + 1);
+
+    public static DateTime NextSecond(DateTime now, TimeSpan remaining)
+    {
+        var part = remaining.Ticks % TimeSpan.TicksPerSecond;
+        return now.AddTicks(part > 0 ? part : TimeSpan.TicksPerSecond);
+    }
 
     public event Action<string>? Alert;
     public event Action<WidgetTile>? Edited;
@@ -78,6 +93,8 @@ public abstract partial class WidgetTile(string key, WidgetSpec spec) : DockTile
     protected void Raise(string text) => Alert?.Invoke(text);
 
     protected void Save() => Edited?.Invoke(this);
+
+    protected static readonly TimeSpan Second = TimeSpan.FromMilliseconds(900);
 
     public static string Clock(TimeSpan t) =>
         t.TotalHours >= 1 ? $"{(int)t.TotalHours}:{t.Minutes:00}:{t.Seconds:00}" : $"{t.Minutes:00}:{t.Seconds:00}";
@@ -118,6 +135,8 @@ public sealed partial class ClockWidget(string key, WidgetSpec spec) : WidgetTil
     }
 
     public override void Click(DateTime now) => ShellGuard.Notifications();
+
+    public override DateTime Due(DateTime now) => NextMinute(now);
 }
 
 public enum PomodoroPhase { Idle, Focus, Break }
@@ -136,6 +155,7 @@ public sealed partial class PomodoroWidget(string key, WidgetSpec spec) : Widget
     public PomodoroPhase Phase { get; private set; }
     public bool Running { get; private set; }
     public override bool KeepsTime => Running;
+    public override DateTime Due(DateTime now) => Running ? NextSecond(now, endsAt - now) : DateTime.MaxValue;
     public int Completed { get; private set; }
     public int Today { get; private set; }
     public override bool CanReset => Phase != PomodoroPhase.Idle;
@@ -224,6 +244,7 @@ public sealed partial class StopwatchWidget(string key, WidgetSpec spec) : Widge
     TimeSpan stored;
 
     public bool Running { get; private set; }
+    public override DateTime Due(DateTime now) => Running ? now.AddMilliseconds(200) : DateTime.MaxValue;
     public override bool CanReset => Running || stored > TimeSpan.Zero;
 
     [ObservableProperty] string text = "00:00.0";
@@ -264,6 +285,7 @@ public sealed partial class TimerWidget(string key, WidgetSpec spec) : WidgetTil
 
     public bool Running { get; private set; }
     public override bool KeepsTime => Running;
+    public override DateTime Due(DateTime now) => Running ? NextSecond(now, endsAt - now) : DateTime.MaxValue;
     public bool Started { get; private set; }
     public override bool CanReset => Started;
 
@@ -359,6 +381,8 @@ public sealed partial class CountdownWidget(string key, WidgetSpec spec) : Widge
     static DateTime OnYear(DateTime monthDay, int year) =>
         new(year, monthDay.Month, Math.Min(monthDay.Day, DateTime.DaysInMonth(year, monthDay.Month)));
 
+    public override DateTime Due(DateTime now) => now.Date.AddDays(1);
+
     public static int? DaysLeft(string? date, DateTime today) =>
         Target(date, today) is { } t ? Math.Max(0, (t - today.Date).Days) : null;
 
@@ -405,6 +429,12 @@ public sealed partial class ProgressWidget(string key, WidgetSpec spec) : Widget
         return Math.Clamp((now - start) / (end - start), 0, 1);
     }
 
+    public override DateTime Due(DateTime now)
+    {
+        var days = Periods[period] switch { "week" => 7, "month" => 30, "year" => 365, _ => 1 };
+        return now.AddMinutes(Math.Max(1, days * 24 * 60 / 200.0));
+    }
+
     public override void Click(DateTime now)
     {
         period = (period + 1) % Periods.Length;
@@ -429,6 +459,8 @@ public sealed partial class ActivityWidget(string key, WidgetSpec spec) : Widget
     readonly SystemStats stats = new();
     DateTime last;
 
+    public override DateTime Due(DateTime now) => now.AddSeconds(1);
+
     [ObservableProperty] double cpu;
     [ObservableProperty] double ram;
     [ObservableProperty] string cpuText = "";
@@ -436,7 +468,7 @@ public sealed partial class ActivityWidget(string key, WidgetSpec spec) : Widget
 
     public override void Tick(DateTime now)
     {
-        if (now - last < TimeSpan.FromSeconds(1)) return;
+        if (now - last < Second) return;
         last = now;
         var c = stats.Cpu();
         var r = SystemStats.Ram();
@@ -446,11 +478,19 @@ public sealed partial class ActivityWidget(string key, WidgetSpec spec) : Widget
         RamText = $"{r:0}%";
     }
 }
-public sealed partial class BatteryWidget(string key, WidgetSpec spec) : WidgetTile(key, spec)
+public sealed partial class BatteryWidget : WidgetTile
 {
     protected override CompactFace Compact() => new(Text, Ring: Level, Tip: Tip);
 
-    DateTime last;
+    public BatteryWidget(string key, WidgetSpec spec) : base(key, spec) =>
+        Microsoft.Win32.SystemEvents.PowerModeChanged += (_, e) =>
+        {
+            if (e.Mode == Microsoft.Win32.PowerModes.StatusChange) System.Windows.Application.Current?.Dispatcher.BeginInvoke(Poke);
+        };
+
+    public override DateTime Due(DateTime now) => Present ? now.AddMinutes(1) : DateTime.MaxValue;
+
+    public bool Present { get; private set; }
 
     public override bool Wide => false;
 
@@ -461,9 +501,8 @@ public sealed partial class BatteryWidget(string key, WidgetSpec spec) : WidgetT
 
     public override void Tick(DateTime now)
     {
-        if (now - last < TimeSpan.FromSeconds(10) && Text.Length > 0) return;
-        last = now;
         var battery = SystemStats.Battery();
+        Present = battery.Present;
         Text = battery.Present ? $"{battery.Percent}%" : Loc.T("plugged");
         Level = battery.Present ? battery.Percent / 100.0 : 1;
         Glyph = battery.Present ? SystemTile.BatteryGlyphFor(battery.Percent, battery.Charging) : "\uE945";
@@ -471,8 +510,12 @@ public sealed partial class BatteryWidget(string key, WidgetSpec spec) : WidgetT
     }
 }
 
-public sealed partial class ClaudeWidget(string key, WidgetSpec spec) : WidgetTile(key, spec)
+public sealed partial class ClaudeWidget : WidgetTile
 {
+    public ClaudeWidget(string key, WidgetSpec spec) : base(key, spec) => ClaudeUsage.Shared.Updated += Poke;
+
+    public override DateTime Due(DateTime now) => now.AddMinutes(1);
+
     static readonly System.Windows.Media.Brush SessionTint = Frozen("#E58A68"), WeekTint = Frozen("#F2C3A6"), HotTint = Frozen("#FFFFFF");
 
     static System.Windows.Media.Brush Frozen(string hex)
@@ -482,7 +525,6 @@ public sealed partial class ClaudeWidget(string key, WidgetSpec spec) : WidgetTi
         return brush;
     }
 
-    // Two rings, one inside the other: the 5-hour session outside, the week inside. The panel has the numbers.
     protected override CompactFace Compact() => new(ClaudeUsage.Shared.Last is null ? "—" : "", Ring: Session, InnerRing: Week, Alert: Hot, Tip: Tip, Dim: Stale,
         Tint: Hot ? HotTint : SessionTint, InnerTint: Hot ? HotTint : WeekTint);
 
@@ -559,7 +601,6 @@ public sealed partial class MusicWidget : WidgetTile
     [ObservableProperty] string title = "";
     [ObservableProperty] string artist = "";
     [ObservableProperty] System.Windows.Media.ImageSource? cover;
-    // The cover shrunk to a few pixels and stretched back: a soft, blurred backdrop like PrimoDock's.
     [ObservableProperty] System.Windows.Media.ImageSource? backdrop;
     [ObservableProperty] bool hasCover;
     [ObservableProperty] double progress = -1;
@@ -568,6 +609,8 @@ public sealed partial class MusicWidget : WidgetTile
     [ObservableProperty] bool idle = true;
     [ObservableProperty] string toggleGlyph = "\uE768";
     [ObservableProperty] string tip = "";
+
+    public override DateTime Due(DateTime now) => Playing && HasProgress ? now.AddSeconds(1) : DateTime.MaxValue;
 
     void Show()
     {
@@ -582,6 +625,7 @@ public sealed partial class MusicWidget : WidgetTile
         Playing = media?.Playing ?? false;
         ToggleGlyph = Playing ? "\uE769" : "\uE768";
         Tip = media is null ? Loc.T("musicIdle") : media.Artist.Length > 0 ? $"{media.Title} · {media.Artist}" : media.Title;
+        Poke();
     }
 
     public override void Tick(DateTime now)
@@ -592,7 +636,8 @@ public sealed partial class MusicWidget : WidgetTile
 
     void Track(MediaInfo? media)
     {
-        Progress = MediaSessions.Progress(media);
+        var p = MediaSessions.Progress(media);
+        Progress = p < 0 ? p : Math.Round(p * 200) / 200;
         HasProgress = Progress >= 0;
     }
 
@@ -601,7 +646,6 @@ public sealed partial class MusicWidget : WidgetTile
     static System.Windows.Media.ImageSource? Smear(System.Windows.Media.ImageSource? cover)
     {
         if (cover is null) return null;
-        // The middle of the cover, in the shape of the wide tile, over a dark plate for covers with clear edges (app icons).
         var visual = new System.Windows.Media.DrawingVisual();
         System.Windows.Media.RenderOptions.SetBitmapScalingMode(visual, System.Windows.Media.BitmapScalingMode.HighQuality);
         using (var dc = visual.RenderOpen())
@@ -620,7 +664,9 @@ public sealed partial class WeatherWidget : WidgetTile
 {
     protected override CompactFace Compact() => new(Temp, Symbol: Glyph, Tip: Tip, Dim: Stale);
 
-    public WeatherWidget(string key, WidgetSpec spec) : base(key, spec) => Service.Updated += Show;
+    public WeatherWidget(string key, WidgetSpec spec) : base(key, spec) => Service.Updated += Poke;
+
+    public override DateTime Due(DateTime now) => Service.Due;
 
     public Weather Service { get; } = new();
     public override bool HasPanel => true;
@@ -672,11 +718,17 @@ public sealed partial class WeatherWidget : WidgetTile
     };
 }
 
-public sealed partial class MicWidget(string key, WidgetSpec spec) : WidgetTile(key, spec)
+public sealed partial class MicWidget : WidgetTile
 {
     protected override CompactFace Compact() => new("", Glyph: Glyph, Alert: Muted, Tip: Tip);
 
-    DateTime last;
+    public MicWidget(string key, WidgetSpec spec) : base(key, spec)
+    {
+        Audio.Watch();
+        Audio.Changed += Poke;
+    }
+
+    public override DateTime Due(DateTime now) => DateTime.MaxValue;
 
     public override bool Wide => false;
 
@@ -685,15 +737,10 @@ public sealed partial class MicWidget(string key, WidgetSpec spec) : WidgetTile(
     [ObservableProperty] bool present;
     [ObservableProperty] string tip = "";
 
-    public override void Tick(DateTime now)
-    {
-        if (now - last < TimeSpan.FromSeconds(1)) return;
-        Refresh(now);
-    }
+    public override void Tick(DateTime now) => Refresh(now);
 
     public void Refresh(DateTime now)
     {
-        last = now;
         var mic = Audio.ReadMic();
         Present = mic is not null;
         Muted = mic?.Muted ?? false;
@@ -715,12 +762,14 @@ public sealed partial class NetworkWidget(string key, WidgetSpec spec) : WidgetT
     readonly NetworkMeter meter = new();
     DateTime last;
 
+    public override DateTime Due(DateTime now) => now.AddSeconds(1);
+
     [ObservableProperty] string down = "—";
     [ObservableProperty] string up = "—";
 
     public override void Tick(DateTime now)
     {
-        if (now - last < TimeSpan.FromSeconds(1)) return;
+        if (now - last < Second) return;
         last = now;
         var (d, u) = meter.Sample(now);
         Down = NetworkMeter.Rate(d);
@@ -730,7 +779,6 @@ public sealed partial class NetworkWidget(string key, WidgetSpec spec) : WidgetT
 
 public sealed partial class NoteWidget(string key, WidgetSpec spec) : WidgetTile(key, spec)
 {
-    // Square, the note is a small post-it with its text.
     protected override CompactFace Compact() => new("", Paper: Text, Tip: Text);
 
     public override bool HasPanel => true;
@@ -748,8 +796,11 @@ public sealed partial class NoteWidget(string key, WidgetSpec spec) : WidgetTile
             Spec.Text = clean.Length == 0 ? null : clean;
             Save();
             Tick(DateTime.Now);
+            Poke();
         }
     }
+
+    public override DateTime Due(DateTime now) => DateTime.MaxValue;
 
     public override void Tick(DateTime now)
     {
@@ -772,6 +823,7 @@ public sealed partial class TodoWidget(string key, WidgetSpec spec) : WidgetTile
     }
 
     public override bool HasPanel => true;
+    public override DateTime Due(DateTime now) => DateTime.MaxValue;
 
     [ObservableProperty] int left;
     [ObservableProperty] string count = "";

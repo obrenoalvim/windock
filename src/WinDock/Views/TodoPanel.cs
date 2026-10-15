@@ -7,7 +7,6 @@ using WinDock.ViewModels;
 
 namespace WinDock.Views;
 
-// The to-do list: type and Enter to add, the circle checks a task off, the cross removes it.
 public sealed class TodoPanel : Flyout
 {
     static readonly Brush Green = Paint("#2FB37A");

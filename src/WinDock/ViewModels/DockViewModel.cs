@@ -15,14 +15,15 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     readonly MainViewModel main;
     readonly ShellGuard shell;
     readonly WindowTracker tracker;
-    // The main dock owns the tracker and the shell; the dock of another screen (with "each screen its own dock") only shows.
     readonly bool owner;
     readonly string? screen;
     readonly Dictionary<string, DockTile> cache = [];
     readonly Dictionary<string, WidgetTile> widgets = [];
-    readonly DispatcherTimer tick = new() { Interval = TimeSpan.FromMilliseconds(200) };
+    readonly DispatcherTimer tick = new();
+    readonly HashSet<WidgetTile> lastShown = [];
+    bool wakePending;
+    DateTime systemDue;
     readonly DispatcherTimer persist = new() { Interval = TimeSpan.FromMilliseconds(700) };
-    // Grace before the music tile hides, so a track change does not make it blink.
     readonly DispatcherTimer musicGrace = new() { Interval = TimeSpan.FromSeconds(3) };
     readonly HashSet<PresetViewModel> dirty = [];
     readonly StartTile start = new();
@@ -30,7 +31,8 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     List<AppMatch> always = [];
     string? activeId;
     string? onlyScreen;
-    int enforce;
+    DateTime nextEnforce;
+    bool offScreen;
     bool taskbarAutoHides = ShellGuard.TaskbarAutoHides();
     DateTime nextTaskbarCheck;
 
@@ -52,7 +54,8 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         main.Dock.Changed += OnOption;
         Loc.Instance.PropertyChanged += OnLanguage;
         tick.Tick += (_, _) => Tick();
-        tick.Start();
+        system.Woke += Wake;
+        if (owner) tracker.TaskbarShown += OnTaskbarShown;
         persist.Tick += (_, _) => Persist();
         musicGrace.Tick += (_, _) =>
         {
@@ -74,13 +77,11 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     public SystemTile System => system;
     public bool SystemVisible => Options.ReplaceTaskbar || taskbarAutoHides;
 
-    // The dock of another screen can sit on an environment of its own; otherwise every dock follows the main one.
     public PresetViewModel? Active =>
         screen is not null && Options.ScreenEnvironments.TryGetValue(screen, out var id) && main.Presets.FirstOrDefault(p => p.Id == id) is { } own
             ? own
             : main.Active;
 
-    // With "each screen its own dock", the main dock lists only the windows on its own screen.
     public string? OnlyScreen
     {
         get => onlyScreen;
@@ -89,6 +90,17 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
             if (onlyScreen == value) return;
             onlyScreen = value;
             Rebuild();
+        }
+    }
+
+    public bool OffScreen
+    {
+        get => offScreen;
+        set
+        {
+            if (offScreen == value) return;
+            offScreen = value;
+            if (!value) Tick(all: true);
         }
     }
 
@@ -108,7 +120,23 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
 
     void OnPresets(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) => Rebuild();
 
-    void OnLanguage(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => Tick();
+    void OnLanguage(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => Tick(all: true);
+
+    void Wake()
+    {
+        if (wakePending) return;
+        wakePending = true;
+        global::System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
+        {
+            wakePending = false;
+            Tick();
+        });
+    }
+
+    void OnTaskbarShown()
+    {
+        if (shell.TaskbarHidden) shell.Enforce();
+    }
 
     void OnReshaped()
     {
@@ -136,7 +164,6 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         Followed();
     }
 
-    // Rebuilds and shows the name when the environment of this dock really changed.
     void Followed()
     {
         var to = Active?.Id;
@@ -147,7 +174,6 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         Switched?.Invoke();
     }
 
-    // The wheel and the dock menu: the main dock switches the environment, the dock of another screen only its own.
     public async Task SwitchByAsync(int delta)
     {
         if (screen is null)
@@ -223,8 +249,6 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         var loose = new List<(string Key, List<AppWindow> Windows)>();
         foreach (var w in WindowsHere())
         {
-            // ponytail: the rest of a link's program (the Play Games client) joins the first pin it hosts; an unpinned
-            // Play Games game lights that pin too. Match the launcher window by its own title if that ever bothers.
             if ((pinned.FirstOrDefault(t => t.Matches(w)) ?? pinned.FirstOrDefault(t => t.Hosts(w))) is { } owner)
             {
                 assigned[owner].Add(w);
@@ -249,28 +273,25 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         }
 
         var env = Active;
-        // Music hides while nothing plays; its tile is still made so it keeps listening.
         var shown = VisibleWidgets(env?.Model.ShownWidgets ?? [new WidgetSpec()], SystemVisible)
             .Select(w => Widget(env?.Id ?? "", w.Index, w.Spec))
             .Where(w => !(w is MusicWidget && MusicHidden))
             .ToList();
         if (shown.Count > 0) desired.Add(Get("sep:widgets", () => new SeparatorTile("sep:widgets")));
         desired.AddRange(shown);
-        // A size picked on the environment card: the docks pick the widget templates again.
         var resized = shown.Count(w => w.TakeResize()) > 0;
 
         if (SystemVisible)
         {
-            // Start stays at the left end like on Windows; tray, quick settings and clock sit together at the right.
             desired.Add(Get("sep:system", () => new SeparatorTile("sep:system")));
             desired.Add(system);
         }
 
         Sync(desired);
         if (resized) Options.Retemplate();
+        if (shown.Any(w => !lastShown.Contains(w))) Wake();
     }
 
-    // The Windows badge (WhatsApp, Teams) or a "(3) ..." count in a window title, whichever is higher.
     static int BadgeOf(AppTile tile)
     {
         var stored = Badges.For(tile.BadgeIds);
@@ -278,7 +299,6 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         return Math.Max(stored, titled) is var count and > 0 ? count : stored;
     }
 
-    // One program split over several exes with the same icon (Google Play Games: client.exe and crosvm.exe) takes one slot.
     static void StackAlike(List<(string Key, List<AppWindow> Windows)> groups)
     {
         for (var i = groups.Count - 1; i > 0; i--)
@@ -354,6 +374,7 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         {
             widgets[key] = w = WidgetTile.Create(key, spec);
             w.Alert += Alert;
+            w.Woke += _ => Wake();
             w.Edited += OnEdited;
             w.Tick(DateTime.Now);
             w.RefreshFace();
@@ -414,23 +435,63 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     static string KeyOf(PinItem pin) =>
         "pin:" + (pin.IsRaw || pin.IsLauncher ? pin.AppId ?? pin.Name : pin.ResolvedTarget ?? pin.Name).ToLowerInvariant();
 
-    void Tick()
+    void Tick(bool all = false)
     {
         var now = DateTime.Now;
-        // Only widgets on the dock refresh (Claude, weather, activity and network cost work); hidden timers still ring.
-        var shown = Options.Enabled ? Tiles.OfType<WidgetTile>().ToHashSet() : [];
+        var shown = Options.Enabled && !offScreen ? Tiles.OfType<WidgetTile>().ToHashSet() : [];
+        var next = DateTime.MaxValue;
         foreach (var w in widgets.Values.ToList())
-            if (w.KeepsTime || shown.Contains(w)) w.Tick(now);
-        foreach (var w in shown) w.RefreshFace();
-        if (SystemVisible) system.Tick(now);
-        if (!owner) return;
-        if (shell.TaskbarHidden && ++enforce % 5 == 0) shell.Enforce();
-        if (now < nextTaskbarCheck) return;
-        nextTaskbarCheck = now.AddSeconds(2);
-        var hides = ShellGuard.TaskbarAutoHides();
-        if (hides == taskbarAutoHides) return;
-        taskbarAutoHides = hides;
-        Rebuild();
+        {
+            var visible = shown.Contains(w);
+            if (!w.KeepsTime && !visible) continue;
+            if (all || now >= w.DueAt || visible && !lastShown.Contains(w))
+            {
+                w.Tick(now);
+                w.DueAt = w.Due(now);
+                if (visible) w.RefreshFace();
+            }
+            if (w.DueAt < next) next = w.DueAt;
+        }
+        lastShown.Clear();
+        lastShown.UnionWith(shown);
+
+        if (SystemVisible && !offScreen)
+        {
+            if (all || now >= systemDue)
+            {
+                system.Tick(now);
+                systemDue = system.Due(now);
+            }
+            if (systemDue < next) next = systemDue;
+        }
+        else systemDue = DateTime.MinValue;
+
+        if (owner)
+        {
+            if (shell.TaskbarHidden && now >= nextEnforce)
+            {
+                nextEnforce = now.AddSeconds(30);
+                shell.Enforce();
+            }
+            if (now >= nextTaskbarCheck)
+            {
+                nextTaskbarCheck = now.AddSeconds(10);
+                var hides = ShellGuard.TaskbarAutoHides();
+                if (hides != taskbarAutoHides)
+                {
+                    taskbarAutoHides = hides;
+                    Rebuild();
+                }
+            }
+            var housekeeping = shell.TaskbarHidden && nextEnforce < nextTaskbarCheck ? nextEnforce : nextTaskbarCheck;
+            if (housekeeping < next) next = housekeeping;
+        }
+
+        tick.Stop();
+        if (next == DateTime.MaxValue) return;
+        var wait = next - DateTime.Now + TimeSpan.FromMilliseconds(15);
+        tick.Interval = wait < TimeSpan.FromMilliseconds(15) ? TimeSpan.FromMilliseconds(15) : wait > TimeSpan.FromHours(1) ? TimeSpan.FromHours(1) : wait;
+        tick.Start();
     }
 
     public void Pin(AppTile tile, bool everywhere)
@@ -450,7 +511,6 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         if (target is not null) main.AddPrograms(target, [item]);
     }
 
-    // Returns what puts the pin back where it was.
     public Action? Unpin(AppTile tile, bool everywhere)
     {
         var target = everywhere ? main.Always : Active;
@@ -460,8 +520,6 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         return () => target.InsertItem(pin.Model, at);
     }
 
-    // A pin dragged in front of another tile (null: past the last one). Pins stay in their list: always pinned first,
-    // then the environment's.
     public void Move(AppTile tile, AppTile? before)
     {
         var group = IsAlwaysPinned(tile) ? main.Always : Active;
@@ -479,6 +537,8 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         Persist();
         tick.Stop();
         musicGrace.Stop();
+        system.Woke -= Wake;
+        if (owner) tracker.TaskbarShown -= OnTaskbarShown;
         MediaSessions.Shared.Changed -= OnMedia;
         Badges.Changed -= Rebuild;
         tracker.Changed -= Rebuild;

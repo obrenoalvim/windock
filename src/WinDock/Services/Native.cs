@@ -132,6 +132,15 @@ static class Native
     [DllImport("kernel32.dll")] public static extern bool GetSystemTimes(out long idle, out long kernel, out long user);
     [DllImport("kernel32.dll")] public static extern bool GlobalMemoryStatusEx(ref MemoryStatus status);
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MemoryCounters
+    {
+        public uint Size, PageFaults;
+        public nuint PeakWorkingSet, WorkingSet, PeakPagedPool, PagedPool, PeakNonPagedPool, NonPagedPool, Pagefile, PeakPagefile, Private, PrivateWorkingSet, SharedCommit;
+    }
+
+    [DllImport("kernel32.dll", EntryPoint = "K32GetProcessMemoryInfo")] public static extern bool GetProcessMemoryInfo(nint process, ref MemoryCounters counters, uint size);
+
     public static string ClassOf(nint hwnd)
     {
         var name = new StringBuilder(256);

@@ -30,7 +30,7 @@ public sealed class WindowTracker : IDisposable
     readonly Native.WinEventProc proc;
     readonly List<nint> hooks = [];
     readonly DispatcherTimer debounce = new() { Interval = TimeSpan.FromMilliseconds(70) };
-    readonly DispatcherTimer safety = new() { Interval = TimeSpan.FromSeconds(5) };
+    readonly DispatcherTimer safety = new() { Interval = TimeSpan.FromSeconds(30) };
     readonly DispatcherTimer reshape = new() { Interval = TimeSpan.FromMilliseconds(120) };
     readonly Dictionary<int, string?> exeByPid = [];
     readonly Dictionary<nint, string?> appIdByWindow = [];
@@ -69,7 +69,8 @@ public sealed class WindowTracker : IDisposable
 
     public event Action? Changed;
 
-    // The window in front moved or changed size, like a video or a browser going full screen with F11.
+    public event Action? TaskbarShown;
+
     public event Action? Reshaped;
 
     void OnEvent(nint hook, uint ev, nint hwnd, int idObject, int idChild, uint thread, uint time)
@@ -78,6 +79,11 @@ public sealed class WindowTracker : IDisposable
         if (ev == EventLocationChange)
         {
             if (hwnd == Native.GetForegroundWindow() && !reshape.IsEnabled) reshape.Start();
+            return;
+        }
+        if (ev == 0x8002 && Native.ClassOf(hwnd) is "Shell_TrayWnd" or "Shell_SecondaryTrayWnd")
+        {
+            TaskbarShown?.Invoke();
             return;
         }
         if (ev == EventNameChange && Windows.Any(w => w.Handle == hwnd)) return;
@@ -161,8 +167,6 @@ public sealed class WindowTracker : IDisposable
 
     public static void Minimize(nint h) => Native.ShowWindowAsync(h, Native.SW_MINIMIZE);
 
-    // An admin window (Task Manager, apps run as administrator) refuses messages from WinDock; EndTask asks it to close
-    // the way the taskbar does, still letting it ask to save.
     public static void Close(nint h)
     {
         if (!Native.PostMessage(h, Native.WM_CLOSE, 0, 0)) Native.EndTask(h, false, false);

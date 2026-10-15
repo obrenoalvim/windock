@@ -3,13 +3,10 @@ using System.Runtime.InteropServices;
 
 namespace WinDock.Services;
 
-// Win+1..9 open the dock apps while the dock replaces the taskbar. Explorer owns those keys, so RegisterHotKey fails;
-// a low-level keyboard hook sees them first.
 public static class WinKeys
 {
     const int KeyboardLowLevel = 13, KeyDown = 0x100, SysKeyDown = 0x104;
     const int LeftWin = 0x5B, RightWin = 0x5C, Shift = 0x10, Control = 0x11, Alt = 0x12;
-    // An unassigned key, sent so that letting go of Win does not open Start (AutoHotkey's "menu mask" trick).
     const ushort Mask = 0xE8;
 
     delegate nint HookProc(int code, nint wParam, nint lParam);
@@ -17,7 +14,6 @@ public static class WinKeys
     static readonly HookProc Proc = Callback;
     static nint hook;
 
-    // Digit 1..9 and whether Shift is down (new window); returns whether the dock took the keys.
     public static Func<int, bool, bool>? Pressed { get; set; }
 
     public static void Enable(bool on)
@@ -69,7 +65,6 @@ public static class WinKeys
         public nint Extra;
     }
 
-    // INPUT is a union sized for MOUSEINPUT, the largest member.
     [StructLayout(LayoutKind.Explicit, Size = 40)]
     struct Input
     {

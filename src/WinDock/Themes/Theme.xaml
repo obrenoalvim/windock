@@ -5,7 +5,6 @@
 
     <FontFamily x:Key="Display">pack://application:,,,/Assets/Fonts/#Michroma</FontFamily>
     <FontFamily x:Key="Mono">pack://application:,,,/Assets/Fonts/#Space Mono</FontFamily>
-    <!-- The dock reads at a glance in the Windows font; the settings keep Space Mono. -->
     <FontFamily x:Key="DockFont">Segoe UI Variable Text, Segoe UI</FontFamily>
 
     <SolidColorBrush x:Key="Ink" Color="#F4EFE7"/>

@@ -10,7 +10,6 @@ namespace WinDock.ViewModels;
 
 public sealed record SizeOption(string Value, string Label)
 {
-    // The closed combo box shows the item itself, not DisplayMemberPath.
     public override string ToString() => Label;
 }
 
@@ -28,7 +27,6 @@ public sealed partial class WidgetChoice(string kind, bool isOn, Action<WidgetCh
         OnPropertyChanged(nameof(Size));
     }
 
-    // "" follows the default of the Dock tab.
     public IReadOnlyList<SizeOption> Sizes =>
         (Kind == WidgetSpec.Music
             ? new[] { "", WidgetSpec.SquareSize, WidgetSpec.WideSize, WidgetSpec.FullSize, WidgetSpec.BackdropSize }
@@ -139,7 +137,6 @@ public sealed partial class PresetViewModel : ObservableObject
         }
     }
 
-    // An environment that never chose widgets shows the clock; its list is made real the first time it is sized.
     WidgetSpec? FindWidget(string kind) => (Model.Widgets ??= Model.ShownWidgets.ToList()).FirstOrDefault(w => w.Kind == kind);
 
     void ToggleWidget(WidgetChoice choice)
@@ -188,7 +185,6 @@ public sealed partial class PresetViewModel : ObservableObject
         ItemsChanged();
     }
 
-    // Moves a pin in front of another one, or to the start or the end.
     public void Place(PinItem item, PinItem? before, bool atStart)
     {
         var from = Model.Items.IndexOf(item);

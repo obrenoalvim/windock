@@ -61,7 +61,6 @@ public static class ShellIcons
 
     static readonly Dictionary<string, string?> Prints = new(StringComparer.OrdinalIgnoreCase);
 
-    // A hash of the small icon, to tell when two exes show the very same picture.
     public static string? Fingerprint(string path)
     {
         if (Prints.TryGetValue(path, out var hit)) return hit;
@@ -114,8 +113,6 @@ public static class ShellIcons
         catch (Exception e) when (e is IOException or NotSupportedException or UriFormatException) { return null; }
     }
 
-    // An icon without a large size comes back at its own size (32 or 48 px) in the middle of the canvas, inside a faint
-    // square frame. Crop to the real icon so the dock scales it up like the others, without the frame.
     public static BitmapSource Trim(BitmapSource source)
     {
         var bgra = source.Format == PixelFormats.Bgra32 ? source : new FormatConvertedBitmap(source, PixelFormats.Bgra32, null, 0);

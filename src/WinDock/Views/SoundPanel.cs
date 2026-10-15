@@ -85,7 +85,6 @@ public sealed class SoundPanel : Flyout
         Closed += (_, _) => poll.Stop();
     }
 
-    // Every output is one row here, so switching happens in this panel, on the screen it was opened on.
     void FillOutputs()
     {
         outputs.Children.Clear();

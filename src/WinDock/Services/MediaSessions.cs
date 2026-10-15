@@ -19,7 +19,6 @@ public sealed class MediaSessions
 
     public static MediaSessions Shared { get; } = new();
 
-    // The session Windows treats as current (what the tile shows), else the first one playing.
     public MediaInfo? Current { get; private set; }
 
     public IReadOnlyList<MediaInfo> All { get; private set; } = [];
@@ -64,7 +63,8 @@ public sealed class MediaSessions
 
     void OnSessionChanged(Session sender, object args) => Later(() => _ = Refresh());
 
-    // ponytail: rereads every session and cover on any change; cache covers per session if many players get chatty
+    static readonly Dictionary<string, ImageSource?> Covers = [];
+
     async Task Refresh()
     {
         var mine = ++version;
@@ -88,7 +88,13 @@ public sealed class MediaSessions
             var playback = s.GetPlaybackInfo();
             var title = props.Title?.Trim() ?? "";
             if (title.Length == 0) return null;
-            var cover = props.Thumbnail is { } thumb ? await Cover(thumb) : null;
+            var key = $"{s.SourceAppUserModelId}|{title}|{props.Artist}|{props.AlbumTitle}";
+            if (!Covers.TryGetValue(key, out var cover))
+            {
+                cover = props.Thumbnail is { } thumb ? await Cover(thumb) : null;
+                if (Covers.Count > 8) Covers.Clear();
+                if (cover is not null) Covers[key] = cover;
+            }
             return new MediaInfo(title, (props.Artist ?? props.AlbumArtist ?? "").Trim(), s.SourceAppUserModelId,
                 playback.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing, cover,
                 playback.Controls.IsPreviousEnabled, playback.Controls.IsNextEnabled, s);
@@ -117,7 +123,6 @@ public sealed class MediaSessions
         catch (Exception e) when (e is System.Runtime.InteropServices.COMException or IOException or NotSupportedException or InvalidOperationException) { return null; }
     }
 
-    // How far the track is, 0..1, or -1 when the player does not say (some browsers, radio).
     public static double Progress(MediaInfo? media)
     {
         if (media?.Session is not { } s) return -1;
@@ -129,7 +134,6 @@ public sealed class MediaSessions
         catch (Exception e) when (e is System.Runtime.InteropServices.COMException or InvalidOperationException) { return -1; }
     }
 
-    // Players report the position when it last changed, so a playing track moves on by the time since.
     public static double Fraction(TimeSpan start, TimeSpan end, TimeSpan position, DateTimeOffset updated, bool playing, DateTimeOffset now)
     {
         var length = (end - start).TotalSeconds;
@@ -139,7 +143,6 @@ public sealed class MediaSessions
         return Math.Clamp(at / length, 0, 1);
     }
 
-    // No target means the current session, the one the tile shows.
     public async Task Toggle(MediaInfo? target = null)
     {
         if ((target ?? Current)?.Session is { } s) await Safe(s.TryTogglePlayPauseAsync().AsTask());

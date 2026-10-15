@@ -365,6 +365,8 @@
                         <Run Text="{Binding NextText, Mode=OneWay}"/>
                         <Run Text="   ·   "/>
                         <Run Text="{Binding Status, Mode=OneWay}"/>
+                        <Run Text="   ·   "/>
+                        <Run x:Name="Usage"/>
                     </TextBlock>
                 </StackPanel>
             </Grid>

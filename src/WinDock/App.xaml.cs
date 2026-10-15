@@ -73,7 +73,6 @@ public partial class App : System.Windows.Application
         }) { IsBackground = true }.Start();
     }
 
-    // The hook runs only while the dock stands in for the taskbar.
     void SyncKeys() => WinKeys.Enable(main!.Dock.Enabled && main.Dock.ReplaceTaskbar);
 
     void OnCrash(object sender, DispatcherUnhandledExceptionEventArgs e)

@@ -48,7 +48,6 @@ public abstract class Flyout : Window
             var ex = (long)Native.GetWindowLongPtr(hwnd, Native.GWL_EXSTYLE);
             Native.SetWindowLongPtr(hwnd, Native.GWL_EXSTYLE, (nint)(ex | Native.WS_EX_TOOLWINDOW));
         };
-        // Content that grows while open (a new player in the music panel) stays centered on its tile.
         SizeChanged += (_, _) => Place();
         Deactivated += (_, _) => SafeClose();
         KeyDown += (_, e) =>

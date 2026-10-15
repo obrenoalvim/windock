@@ -44,7 +44,6 @@ public sealed class DockOptions : ObservableObject
 
     string? newVersion;
 
-    // The newer release on GitHub, if any; shown in the Dock tab and the tray menu.
     public string? NewVersion
     {
         get => newVersion;
@@ -65,7 +64,6 @@ public sealed class DockOptions : ObservableObject
 
     public bool CanReserve => !AutoHide;
 
-    // One widget changed size: every dock picks its widget templates again.
     public void Retemplate() => Changed?.Invoke(nameof(CompactWidgets));
 
     public bool StartWithWindows

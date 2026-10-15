@@ -25,7 +25,6 @@ public static class Launcher
 
     public static bool OpenFile(string path) => Shell(path);
 
-    // Files dropped on a dock icon open in that program, after the shortcut's own arguments.
     public static bool OpenWith(string exe, string? args, IEnumerable<string> files) =>
         Shell(exe, string.Join(' ', files.Select(f => $"\"{f}\"").Prepend(args ?? "").Where(a => a.Length > 0)));
 

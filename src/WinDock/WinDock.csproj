@@ -17,7 +17,12 @@
     <Product>WinDock</Product>
     <Company>Breno Alvim</Company>
     <Description>A dock for Windows with environments, widgets and a magnifying lens</Description>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
   </PropertyGroup>
+
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="5" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />

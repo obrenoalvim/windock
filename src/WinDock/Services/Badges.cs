@@ -5,11 +5,8 @@ using System.Windows.Threading;
 
 namespace WinDock.Services;
 
-// The unread counts apps put on their taskbar icon (WhatsApp, Teams, Mail...). Windows keeps them in its notification
-// database; it is read with the SQLite that ships with Windows, read only, and only the badge rows (never toast text).
 public static partial class Badges
 {
-    // A badge without a number (a glyph such as "newMessage") shows as a dot.
     public const int Dot = -1;
 
     static readonly string Folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\Windows\Notifications");
@@ -52,7 +49,6 @@ public static partial class Badges
         return best;
     }
 
-    // "(3) WhatsApp" in a browser tab, "(12) Discord": a count at the start of the window title.
     public static int FromTitle(string title) =>
         TitleCount().Match(title) is { Success: true } m && int.TryParse(m.Groups[1].Value, out var n) ? n : 0;
 

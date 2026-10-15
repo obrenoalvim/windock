@@ -43,7 +43,6 @@ public sealed class MusicPanel : Flyout
             return;
         }
 
-        // Every player side by side, three per row.
         var row = new WrapPanel { MaxWidth = 3 * (CardWidth + 24 + 10), Margin = new Thickness(-5) };
         foreach (var now in all)
             row.Children.Add(new Border

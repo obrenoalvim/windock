@@ -13,7 +13,6 @@ public sealed class Settings
     public bool SyncTaskbar { get; set; }
     public Dictionary<string, DateTime> FolderSeen { get; set; } = [];
     public bool CheckUpdates { get; set; } = true;
-    // The newest version already announced, so each one is announced once.
     public string? UpdateSeen { get; set; }
     public bool TourSeen { get; set; }
 

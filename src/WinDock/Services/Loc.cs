@@ -89,6 +89,7 @@ public sealed class Loc : INotifyPropertyChanged
         ["screen"] = ("Screen", "Monitor"),
         ["allScreens"] = ("All screens", "Todas as telas"),
         ["widgets"] = ("WIDGETS", "WIDGETS"),
+        ["usageNow"] = ("WinDock now: {0} MB · CPU {1}%", "WinDock agora: {0} MB · CPU {1}%"),
         ["countdownDate"] = ("Date", "Data"),
         ["countdownLabel"] = ("Name", "Nome"),
         ["countdownHint"] = ("2026-12-25 for a fixed day, 12-25 to repeat every year.", "2026-12-25 para um dia fixo, 25/12 para repetir todo ano."),

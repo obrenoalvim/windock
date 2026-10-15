@@ -5,7 +5,6 @@ using WinDock.ViewModels;
 
 namespace WinDock.Views;
 
-// Picks the square template for widgets set to square (or, unset, when square is the default); the rest keep their own.
 public sealed class FaceSelector : DataTemplateSelector
 {
     public DataTemplate? Compact { get; set; }

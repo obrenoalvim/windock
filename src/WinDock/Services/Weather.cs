@@ -12,15 +12,12 @@ public sealed record WeatherHour(DateTime Time, double Temp, int Code, bool Day)
 public sealed record WeatherReport(string Place, double Temp, double Feels, int Code, bool Day, double High, double Low,
     IReadOnlyList<WeatherHour> Hours, DateTime FetchedAt);
 
-// Open-Meteo: free, no key. Only the city name (or the Windows location, when allowed) leaves the PC.
 public sealed class Weather
 {
-    // ponytail: Open-Meteo's free tier allows under 10,000 calls a day (8.64 s each); 9 s stays under it. Its current
-    // conditions only change every 15 minutes, so most calls bring the same numbers; raise this if the IP is shared.
-    public static readonly TimeSpan Fresh = TimeSpan.FromSeconds(9);
+    public static readonly TimeSpan Fresh = TimeSpan.FromMinutes(10);
+    static readonly TimeSpan Gap = TimeSpan.FromSeconds(9);
     static readonly TimeSpan Retry = TimeSpan.FromMinutes(2);
     static readonly TimeSpan Limited = TimeSpan.FromHours(1);
-    // One gate for every weather widget (a dock per screen can show two), so together they keep to the limit.
     static DateTime nextCall = DateTime.MinValue;
     static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(15) };
 
@@ -34,6 +31,9 @@ public sealed class Weather
     public string? Place => place;
 
     public event Action? Updated;
+
+    public DateTime Due => running is not null ? DateTime.MaxValue
+        : new[] { nextCall, lastTry + (Status == WeatherStatus.Ok ? Fresh : Retry) }.Max();
 
     public static bool Fahrenheit => !RegionInfo.CurrentRegion.IsMetric;
 
@@ -62,7 +62,7 @@ public sealed class Weather
     async Task Fetch(DateTime now)
     {
         lastTry = now;
-        nextCall = now + Fresh;
+        nextCall = now + Gap;
         var asked = place;
         try
         {
@@ -109,7 +109,6 @@ public sealed class Weather
             first.TryGetProperty("name", out var name) ? name.GetString() ?? city : city);
     }
 
-    // Only when no city is typed, and only if Windows lets desktop apps read the location.
     static async Task<(double, double, string)?> Here()
     {
         try
@@ -157,7 +156,6 @@ public sealed class Weather
 
     static DateTime Time(JsonElement e) => DateTime.Parse(e.GetString()!, CultureInfo.InvariantCulture);
 
-    // WMO weather codes, as Open-Meteo sends them. Glyphs are Segoe UI Symbol.
     public static (string Glyph, string Key) Describe(int code, bool day) => code switch
     {
         0 => (day ? "☀" : "\U0001F319", "weatherClear"),

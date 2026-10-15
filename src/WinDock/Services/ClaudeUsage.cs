@@ -17,10 +17,10 @@ public sealed class ClaudeUsage
 {
     public static readonly TimeSpan SessionWindow = TimeSpan.FromHours(5);
     public static readonly TimeSpan WeekWindow = TimeSpan.FromDays(7);
-    static readonly TimeSpan Fresh = TimeSpan.FromMinutes(5);
+    static readonly TimeSpan Fresh = TimeSpan.FromMinutes(1);
+    static readonly TimeSpan Slack = TimeSpan.FromSeconds(5);
     static readonly TimeSpan Manual = TimeSpan.FromSeconds(60);
     static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(15) };
-    // Same sign-in app and endpoint Claude Code renews with.
     const string TokenUrl = "https://platform.claude.com/v1/oauth/token";
     const string ClientId = "9d1c250a-e61b-44d9-88ed-5944d1962f5e";
 
@@ -46,7 +46,6 @@ public sealed class ClaudeUsage
     FileSystemWatcher? watcher;
     volatile bool loginChanged;
 
-    // Claude Code renews its sign-in only when it is used; ask again as soon as it writes the new one.
     void Watch()
     {
         if (watcher is not null || Path.GetDirectoryName(CredentialsPath) is not { } dir || !Directory.Exists(dir)) return;
@@ -66,8 +65,8 @@ public sealed class ClaudeUsage
             lastTry = DateTime.MinValue;
         }
         if (running is not null || now < retryAfter) return;
-        if (Last is not null && Status == ClaudeStatus.Ok && now - Last.FetchedAt < Fresh) return;
-        if (now - lastTry < (Status == ClaudeStatus.Ok ? Fresh : Manual)) return;
+        if (Last is not null && Status == ClaudeStatus.Ok && now - Last.FetchedAt < Fresh - Slack) return;
+        if (now - lastTry < (Status == ClaudeStatus.Ok ? Fresh : Manual) - Slack) return;
         running = Fetch(now);
     }
 
@@ -90,7 +89,6 @@ public sealed class ClaudeUsage
                 Status = ClaudeStatus.NoLogin;
                 return;
             }
-            // Claude Code renews only while it runs, so after a night off the sign-in has expired; renew it the same way.
             if (login.Expires is { } expires && expires <= DateTime.UtcNow)
             {
                 if (!await Renew(login) || ReadLogin(CredentialsPath) is not { } renewed)
@@ -145,7 +143,6 @@ public sealed class ClaudeUsage
         }
     }
 
-    // Only after the sign-in expired, so a running Claude Code (which renews five minutes early) is never raced.
     async Task<bool> Renew(ClaudeLogin login)
     {
         if (login.RefreshToken is not { } refresh || refresh == deadRefresh) return false;
@@ -160,7 +157,6 @@ public sealed class ClaudeUsage
         if (!response.IsSuccessStatusCode) return false;
         var answer = await response.Content.ReadAsStringAsync();
         var current = File.ReadAllText(CredentialsPath);
-        // Claude Code renewed meanwhile: its file wins.
         if (ParseLogin(current)?.RefreshToken != refresh) return true;
         if (ApplyRenewal(current, answer, DateTime.UtcNow) is not { } updated) return false;
         var temp = CredentialsPath + ".windock";
@@ -169,7 +165,6 @@ public sealed class ClaudeUsage
         return true;
     }
 
-    // Rewrites only the renewed fields and keeps everything else Claude Code stores in the file.
     public static string? ApplyRenewal(string credentials, string response, DateTime nowUtc)
     {
         try

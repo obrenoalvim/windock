@@ -4,7 +4,6 @@ using WinDock.Services;
 
 namespace WinDock.Views;
 
-// A few cards over the dock on first run, for the gestures nobody finds alone. Closing it anyhow counts as seen.
 public sealed class TourPanel : Flyout
 {
     static readonly (string Glyph, string Key)[] Steps =

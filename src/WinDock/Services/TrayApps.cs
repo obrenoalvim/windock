@@ -8,8 +8,6 @@ namespace WinDock.Services;
 
 public sealed record TrayApp(string Name, string Exe, IReadOnlyList<int> Pids, string? AppId);
 
-// Apps with an icon in the notification area. Windows 11 lists every program that ever showed a tray icon under
-// NotifyIconSettings; the ones running now are the ones in the tray. Windows 10 keeps no such list, so it shows none.
 public static class TrayApps
 {
     const string SettingsKey = @"Control Panel\NotifyIconSettings";
@@ -24,8 +22,6 @@ public static class TrayApps
     {
         var known = Registered();
         if (known.Count == 0) return [];
-        // A tray icon talks to a window of its process, so console shells (PowerShell, Python) that once showed an
-        // icon do not count unless they own a window now.
         var windowed = new HashSet<int>();
         Native.EnumWindows((h, _) =>
         {
@@ -66,7 +62,6 @@ public static class TrayApps
         return paths;
     }
 
-    // "{F38BF404-...}\explorer.exe" starts with a known folder id.
     public static string? Resolve(string raw)
     {
         if (!raw.StartsWith('{')) return raw;
@@ -77,7 +72,6 @@ public static class TrayApps
         finally { Marshal.FreeCoTaskMem(ptr); }
     }
 
-    // Brings a window of the app forward, or starts it again, which wakes most tray apps up.
     public static void Open(TrayApp app)
     {
         nint found = 0;
@@ -94,7 +88,6 @@ public static class TrayApps
         else Launcher.OpenFile(app.Exe);
     }
 
-    // Like "End task" in Task Manager. Returns false when Windows refuses (an app running as administrator).
     public static bool End(TrayApp app)
     {
         var ok = true;

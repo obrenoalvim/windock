@@ -30,7 +30,6 @@ public sealed class DockHost : IDisposable
         vm.Main.Settings.Save();
     }
 
-    // Win+n goes to the dock on the screen of the pointer, else the main one.
     public bool OpenNth(int n, bool fresh)
     {
         var screen = Forms.Screen.FromPoint(Forms.Cursor.Position).DeviceName;
@@ -57,7 +56,6 @@ public sealed class DockHost : IDisposable
         var screens = Forms.Screen.AllScreens.Select(s => s.DeviceName).ToList();
         var primary = Forms.Screen.PrimaryScreen?.DeviceName ?? screens.FirstOrDefault() ?? "";
         var wanted = Targets(vm.Options.Enabled, vm.Options.AllScreens, vm.Options.Screen, screens, primary);
-        // With "each screen its own dock", the main dock stays on the main screen and the others get docks of their own.
         var perScreen = vm.Options.PerScreen && wanted.Count > 1;
         var home = wanted.Contains(primary) ? primary : wanted.FirstOrDefault();
         vm.OnlyScreen = perScreen ? home : null;

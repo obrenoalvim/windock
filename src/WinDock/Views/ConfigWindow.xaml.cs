@@ -14,6 +14,8 @@ public partial class ConfigWindow : Window
 
     readonly MainViewModel vm;
     readonly HwndSource source;
+    readonly System.Windows.Threading.DispatcherTimer usageTimer = new() { Interval = TimeSpan.FromSeconds(2) };
+    readonly SelfUsage usage = new();
 
     public ConfigWindow(MainViewModel vm)
     {
@@ -30,6 +32,17 @@ public partial class ConfigWindow : Window
         for (var i = 0; i < 9; i++) Native.RegisterHotKey(handle, PresetBaseId + i, mods, (uint)(0x31 + i));
 
         KeyDown += (_, e) => { if (e.Key == Key.Escape) Hide(); };
+        usageTimer.Tick += (_, _) => ShowUsage();
+        IsVisibleChanged += (_, _) =>
+        {
+            if (!IsVisible)
+            {
+                usageTimer.Stop();
+                return;
+            }
+            ShowUsage();
+            usageTimer.Start();
+        };
         Loc.Instance.PropertyChanged += (_, _) => ShowLanguage();
         ShowLanguage();
     }
@@ -153,6 +166,13 @@ public partial class ConfigWindow : Window
         FillThemes();
         EnChip.IsChecked = Loc.Instance.Language == Loc.English;
         PtChip.IsChecked = Loc.Instance.Language == Loc.Portuguese;
+    }
+
+    void ShowUsage()
+    {
+        var (mb, cpu) = usage.Sample(DateTime.Now);
+        var culture = Loc.Instance.Culture;
+        Usage.Text = Loc.F("usageNow", mb.ToString("0", culture), cpu.ToString("0.0", culture));
     }
 
     void OnEnglish(object sender, RoutedEventArgs e) => vm.SetLanguage(Loc.English);

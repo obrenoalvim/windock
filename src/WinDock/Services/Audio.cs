@@ -23,6 +23,77 @@ public static class Audio
     {
         [PreserveSig] int EnumAudioEndpoints(int flow, int mask, out IMMDeviceCollection devices);
         [PreserveSig] int GetDefaultAudioEndpoint(int flow, int role, out IMMDevice device);
+        [PreserveSig] int GetDevice([MarshalAs(UnmanagedType.LPWStr)] string id, out IMMDevice device);
+        [PreserveSig] int RegisterEndpointNotificationCallback(IMMNotificationClient client);
+        [PreserveSig] int UnregisterEndpointNotificationCallback(IMMNotificationClient client);
+    }
+
+    [ComImport, Guid("7991EEC9-7E89-4D85-8390-6C703CEC60C0"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IMMNotificationClient
+    {
+        [PreserveSig] int OnDeviceStateChanged([MarshalAs(UnmanagedType.LPWStr)] string id, int state);
+        [PreserveSig] int OnDeviceAdded([MarshalAs(UnmanagedType.LPWStr)] string id);
+        [PreserveSig] int OnDeviceRemoved([MarshalAs(UnmanagedType.LPWStr)] string id);
+        [PreserveSig] int OnDefaultDeviceChanged(int flow, int role, [MarshalAs(UnmanagedType.LPWStr)] string? id);
+        [PreserveSig] int OnPropertyValueChanged([MarshalAs(UnmanagedType.LPWStr)] string id, PropertyKey key);
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct PropertyKey
+    {
+        public Guid Format;
+        public int Id;
+    }
+
+    [ComImport, Guid("657804FA-D6AD-4496-8A60-352752AF4F89"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IAudioEndpointVolumeCallback
+    {
+        [PreserveSig] int OnNotify(IntPtr data);
+    }
+
+    sealed class Listener : IMMNotificationClient, IAudioEndpointVolumeCallback
+    {
+        public int OnDeviceStateChanged(string id, int state) => Devices();
+        public int OnDeviceAdded(string id) => 0;
+        public int OnDeviceRemoved(string id) => 0;
+        public int OnDefaultDeviceChanged(int flow, int role, string? id) => Devices();
+        public int OnPropertyValueChanged(string id, PropertyKey key) => 0;
+        public int OnNotify(IntPtr data) => Raise();
+
+        static int Devices()
+        {
+            dispatcher?.BeginInvoke(() =>
+            {
+                Speaker.Reset();
+                Microphone.Reset();
+            });
+            return Raise();
+        }
+
+        static int Raise()
+        {
+            dispatcher?.BeginInvoke(() => Changed?.Invoke());
+            return 0;
+        }
+    }
+
+    static System.Windows.Threading.Dispatcher? dispatcher;
+    static Listener? listener;
+    static IMMDeviceEnumerator? watching;
+
+    public static event Action? Changed;
+
+    public static void Watch()
+    {
+        if (listener is not null) return;
+        dispatcher = System.Windows.Threading.Dispatcher.CurrentDispatcher;
+        listener = new Listener();
+        try
+        {
+            watching = (IMMDeviceEnumerator)new DeviceEnumerator();
+            watching.RegisterEndpointNotificationCallback(listener);
+        }
+        catch (Exception e) when (e is COMException or InvalidCastException) { watching = null; }
     }
 
     [ComImport, Guid("D666063F-1587-4E43-81F1-B948E807363F"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
@@ -40,7 +111,6 @@ public static class Audio
         [PreserveSig] int Item(uint index, out IMMDevice device);
     }
 
-    // Not documented, but it is how the Windows sound settings set the default device, unchanged since Windows 7.
     [ComImport, Guid("870AF99C-171D-4F9E-AF0D-E63DF40C2BC9")]
     class PolicyConfigClient;
 
@@ -63,8 +133,8 @@ public static class Audio
     [ComImport, Guid("5CDF2C82-841E-4546-9722-0CF74078229A"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     interface IAudioEndpointVolume
     {
-        [PreserveSig] int RegisterControlChangeNotify(IntPtr notify);
-        [PreserveSig] int UnregisterControlChangeNotify(IntPtr notify);
+        [PreserveSig] int RegisterControlChangeNotify(IAudioEndpointVolumeCallback notify);
+        [PreserveSig] int UnregisterControlChangeNotify(IAudioEndpointVolumeCallback notify);
         [PreserveSig] int GetChannelCount(out uint count);
         [PreserveSig] int SetMasterVolumeLevel(float db, ref Guid context);
         [PreserveSig] int SetMasterVolumeLevelScalar(float level, ref Guid context);
@@ -107,7 +177,6 @@ public static class Audio
         if (Read() is { } now) SetVolume(Math.Round(now.Volume + steps * 0.02, 2));
     }
 
-    // The default recording device; null when the PC has no microphone.
     public static AudioState? ReadMic() => Microphone.Use(volume =>
     {
         volume.GetMasterVolumeLevelScalar(out var level);
@@ -122,7 +191,6 @@ public static class Audio
         return new AudioState(0, !muted, null);
     })?.Muted;
 
-    // The speakers and headphones that are plugged in, the default one marked.
     public static List<AudioDevice> Outputs()
     {
         var list = new List<AudioDevice>();
@@ -164,7 +232,6 @@ public static class Audio
         return list;
     }
 
-    // Makes the device the default for everything (console, multimedia, communications), like the Windows sound flyout.
     public static bool SetOutput(string id)
     {
         try
@@ -201,13 +268,17 @@ public static class Audio
 
         public string? Name { get; private set; }
 
-        public void Reset() => Drop();
+        public void Reset()
+        {
+            Drop();
+            connectedAt = DateTime.MinValue;
+        }
 
         public AudioState? Use(Func<IAudioEndpointVolume, AudioState?> action)
         {
             try
             {
-                if (endpoint is null || DateTime.UtcNow - connectedAt > Reconnect) Connect();
+                if (endpoint is null || listener is null && DateTime.UtcNow - connectedAt > Reconnect) Connect();
                 return endpoint is null ? null : action(endpoint);
             }
             catch (Exception e) when (e is COMException or InvalidCastException)
@@ -230,6 +301,7 @@ public static class Audio
                 var iid = VolumeIid;
                 if (device.Activate(ref iid, InProcess, IntPtr.Zero, out var activated) != 0) return;
                 endpoint = (IAudioEndpointVolume)activated;
+                if (listener is not null) endpoint.RegisterControlChangeNotify(listener);
                 if (device.OpenPropertyStore(0, out var store) != 0) return;
                 try { Name = PropertyStores.ReadString(store, DeviceFormat, FriendlyName); }
                 finally { Marshal.ReleaseComObject(store); }
@@ -243,7 +315,13 @@ public static class Audio
 
         void Drop()
         {
-            if (endpoint is not null) Marshal.ReleaseComObject(endpoint);
+            if (endpoint is not null)
+            {
+                if (listener is not null)
+                    try { endpoint.UnregisterControlChangeNotify(listener); }
+                    catch (COMException) { }
+                Marshal.ReleaseComObject(endpoint);
+            }
             endpoint = null;
             Name = null;
         }
