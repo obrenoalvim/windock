@@ -16,6 +16,114 @@ public class WidgetTests
         Assert.Equal(now.AddSeconds(1), WidgetTile.NextSecond(now, TimeSpan.FromSeconds(2)));
     }
 
+    [Fact]
+    public void Rigdeck_scenes_survive_a_round_trip()
+    {
+        var scene = new RigAction { Name = "Game night", Parallel = true, Icon = @"C:\icons\s.png", Steps = [
+            new RigStepSpec { Target = @"C:\Games\game.exe", Monitor = 1, Fullscreen = true },
+            new RigStepSpec { Type = RigStep.Keys, Target = "ctrl+shift+m" }] };
+        var back = RigStore.Parse(RigStore.Format([scene]));
+        Assert.Single(back);
+        Assert.Equal(scene.Id, back[0].Id);
+        Assert.Equal("Game night", back[0].Name);
+        Assert.True(back[0].Parallel);
+        Assert.Equal(2, back[0].Steps.Count);
+        Assert.Equal(1, back[0].Steps[0].Monitor);
+        Assert.True(back[0].Steps[0].Fullscreen);
+        Assert.Null(back[0].Steps[1].Monitor);
+        Assert.Null(RigStore.Format([]));
+    }
+
+    [Fact]
+    public void Rigdeck_reads_the_first_line_format_and_drops_bad_lines()
+    {
+        var old = RigStore.Parse("""
+            Steam|C:\icons\s.png|C:\Games\steam.exe
+            Old|C:\old.exe
+            no separator
+            |no name
+            no target|
+            """);
+        Assert.Equal(2, old.Count);
+        Assert.Equal(@"C:\Games\steam.exe", old[0].Steps[0].Target);
+        Assert.Equal(@"C:\icons\s.png", old[0].Icon);
+        Assert.Equal(@"C:\old.exe", old[1].Steps[0].Target);
+        Assert.Empty(RigStore.Parse("[not json"));
+    }
+
+    [Fact]
+    public void Rigdeck_pins_launch_by_link_when_they_have_one_and_by_path_otherwise()
+    {
+        var icon = Path.GetTempFileName();
+        var steam = RigStore.FromPin(new PinItem { Name = "Game", Target = "explorer.exe", Args = "steam://rungameid/730", AppId = "WinDock.Steam.730", Icon = icon });
+        Assert.Equal("steam://rungameid/730", steam.Steps[0].Target);
+        Assert.Equal(icon, steam.Icon);
+        File.Delete(icon);
+
+        var program = RigStore.FromPin(new PinItem { Name = "Tool", Target = @"C:\Tools\tool.exe" });
+        Assert.Equal(@"C:\Tools\tool.exe", program.Steps[0].Target);
+        Assert.Equal(@"C:\Tools\tool.exe", program.Icon);
+    }
+
+    [Fact]
+    public void Rigdeck_drops_nameless_scenes_and_survives_broken_json()
+    {
+        Assert.Empty(RigStore.Parse("""[{"name":"","steps":[{"target":"x"}]},{"name":"No steps","steps":[]}]"""));
+        Assert.Empty(RigStore.Parse("""[{"name":"cut off"""));
+    }
+
+    [Fact]
+    public async Task A_combo_set_to_run_together_does_not_add_up_its_waits()
+    {
+        RigAction Combo(bool together) => new()
+        {
+            Parallel = together,
+            Steps = [new RigStepSpec { Type = RigStep.Wait, Target = "0.3" }, new RigStepSpec { Type = RigStep.Wait, Target = "0.3" }]
+        };
+
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        await RigRunner.Run(Combo(false));
+        var inOrder = watch.Elapsed;
+        watch.Restart();
+        await RigRunner.Run(Combo(true));
+        var together = watch.Elapsed;
+
+        Assert.True(inOrder >= TimeSpan.FromMilliseconds(580), $"in order took {inOrder}");
+        Assert.True(together < TimeSpan.FromMilliseconds(500), $"together took {together}");
+    }
+
+    [Fact]
+    public void Steam_library_and_login_files_are_read()
+    {
+        var library = Games.ParseSteamLibrary("<gamesList><games><game><appID>730</appID><name>CS2</name></game><game><appID>1</appID></game></games></gamesList>");
+        Assert.Equal([("730", "CS2")], library);
+        Assert.Empty(Games.ParseSteamLibrary("<response><error>private</error></response>"));
+        Assert.Empty(Games.ParseSteamLibrary("not xml"));
+
+        const string users = """
+            "users"
+            {
+                "76561198000000001" { "AccountName" "old" "MostRecent" "0" }
+                "76561198000000002" { "AccountName" "now" "MostRecent" "1" }
+            }
+            """;
+        Assert.Equal("76561198000000002", Games.ParseRecentSteamUser(users));
+        Assert.Null(Games.ParseRecentSteamUser("\"users\" { }"));
+    }
+
+    [Theory]
+    [InlineData("ctrl+shift+m", new byte[] { 0x11, 0x10, 0x4D })]
+    [InlineData("Win + D", new byte[] { 0x5B, 0x44 })]
+    [InlineData("f13", new byte[] { 0x7C })]
+    [InlineData("volumemute", new byte[] { 0xAD })]
+    public void Key_combos_become_virtual_keys(string text, byte[] expected) => Assert.Equal(expected, RigStore.Chord(text));
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("ctrl+banana")]
+    [InlineData("f99")]
+    public void Unknown_key_combos_are_ignored(string text) => Assert.Null(RigStore.Chord(text));
+
     [Theory]
     [InlineData(0, "0 B/s")]
     [InlineData(512, "512 B/s")]

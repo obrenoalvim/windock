@@ -11,12 +11,14 @@ public sealed class StackWindow : Flyout
     const int Columns = 4, Max = 16;
     const double Cell = 92;
 
-    readonly FolderStack folder;
+    readonly string path;
     Point? pressed;
 
-    public StackWindow(FolderStack folder, bool dark) : base(dark)
+    public StackWindow(FolderStack folder, bool dark) : this(folder.Path, dark) { }
+
+    public StackWindow(string path, bool dark) : base(dark)
     {
-        this.folder = folder;
+        this.path = path;
         SetBody(Build());
     }
 
@@ -29,17 +31,17 @@ public sealed class StackWindow : Flyout
         open.MouseLeave += (_, _) => open.Foreground = Muted;
         open.MouseLeftButtonUp += (_, _) =>
         {
-            Launcher.OpenFile(folder.Path);
+            Launcher.OpenFile(path);
             SafeClose();
         };
         DockPanel.SetDock(open, Dock.Right);
         header.Children.Add(open);
-        var title = Text(folder.Name, 13, font: Display);
+        var title = Text(System.IO.Path.GetFileName(path.TrimEnd('\\')) is { Length: > 0 } name ? name : path, 13, font: Display);
         title.Margin = new Thickness(0, 0, 18, 0);
         header.Children.Add(title);
 
         var grid = new WrapPanel { Width = Columns * Cell };
-        var entries = FolderStack.Entries(folder.Path, Max);
+        var entries = FolderStack.Entries(path, Max);
         foreach (var entry in entries) grid.Children.Add(Tile(entry));
         if (entries.Count == 0)
         {

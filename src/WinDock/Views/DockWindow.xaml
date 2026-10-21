@@ -82,6 +82,10 @@
             <GradientStop Color="#3CC98F" Offset="0"/>
             <GradientStop Color="#1E8E62" Offset="1"/>
         </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WRigdeck" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#1D2126" Offset="0"/>
+            <GradientStop Color="#0A0B0D" Offset="1"/>
+        </LinearGradientBrush>
         <LinearGradientBrush x:Key="WClaude" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#E58A68" Offset="0"/>
             <GradientStop Color="#C4603E" Offset="1"/>
@@ -782,6 +786,47 @@
                     <Setter TargetName="Icon" Property="Opacity" Value="0.4"/>
                 </DataTrigger>
             </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:RigdeckWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
+                <Viewbox>
+                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WRigdeck}" BorderBrush="#55FF8A1E">
+                        <Grid Margin="8,0,6,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Image Source="{Binding Logo}" Width="30" Height="30" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="6,0,0,0">
+                                <TextBlock Text="RigDeck" Style="{StaticResource Caption}" FontSize="10" FontWeight="Bold" Foreground="#EAE7DE"/>
+                                <TextBlock Text="{Binding Count}" Style="{StaticResource Caption}" FontSize="7.5" Foreground="#FF8A1E" Margin="0,1,0,0" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Viewbox>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:GamesWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
+                <Viewbox>
+                    <Border Style="{StaticResource WidgetFace}" Background="{Binding Back}" BorderBrush="{Binding Accent}">
+                        <Grid Margin="8,0,6,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE7FC;" FontFamily="{StaticResource Glyphs}" FontSize="24" Foreground="{Binding Accent}" VerticalAlignment="Center"/>
+                            <Image Source="{Binding Logo}" Width="30" Height="30" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
+                                <TextBlock Text="{Binding Count}" Style="{StaticResource Caption}" FontSize="9" FontWeight="Bold" Foreground="#E6EEF5" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding Name}" Style="{StaticResource Caption}" FontSize="7.5" Foreground="{Binding Accent}" Margin="0,1,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Viewbox>
+            </Grid>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:NetworkWidget}">

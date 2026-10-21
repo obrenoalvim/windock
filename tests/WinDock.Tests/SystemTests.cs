@@ -111,6 +111,8 @@ public class SystemTests
         Assert.Equal(crossings.Count, crossings.Select(c => c.Key).Distinct().Count());
         var nextWindow = ClaudeWidget.Crossings(limits with { SessionReset = reset.AddHours(5) }).ToList();
         Assert.NotEqual(crossings.First().Key, nextWindow.First().Key);
+        var jittered = ClaudeWidget.Crossings(limits with { SessionReset = reset.AddMilliseconds(-37) }).ToList();
+        Assert.Equal(crossings.First().Key, jittered.First().Key);
     }
 
     [Theory]

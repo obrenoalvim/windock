@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using WinDock.Services;
+using WinDock.ViewModels;
 
 namespace WinDock.Views;
 
@@ -39,25 +40,46 @@ public sealed class MusicPanel : Flyout
         body.Width = double.NaN;
         if (all.Count == 1)
         {
-            body.Children.Add(Card(all[0]));
+            // the one card bleeds over the flyout padding so the cover fills the whole panel
+            body.Children.Add(all[0].Cover is null ? Card(all[0]) : Framed(all[0], new Thickness(-16, -14, -16, -14), new Thickness(16, 14, 16, 14), 17));
             return;
         }
 
         var row = new WrapPanel { MaxWidth = 3 * (CardWidth + 24 + 10), Margin = new Thickness(-5) };
-        foreach (var now in all)
-            row.Children.Add(new Border
-            {
-                Padding = new Thickness(12),
-                Margin = new Thickness(5),
-                CornerRadius = new CornerRadius(14),
-                Background = Hover,
-                Child = Card(now)
-            });
+        foreach (var now in all) row.Children.Add(Framed(now, new Thickness(5), new Thickness(12), 14));
         body.Children.Add(row);
     }
 
+    // Same look as the wide "cover as background" widget: the blurred cover under a shade, light text on top.
+    Grid Framed(MediaInfo now, Thickness margin, Thickness padding, double radius)
+    {
+        var corner = new CornerRadius(radius);
+        var frame = new Grid { Margin = margin };
+        if (MusicWidget.Smear(now.Cover) is { } smear)
+        {
+            frame.Children.Add(new Border { CornerRadius = corner, Background = new ImageBrush(smear) { Stretch = Stretch.Fill } });
+            frame.Children.Add(new Border { CornerRadius = corner, Background = Shade });
+        }
+        else frame.Children.Add(new Border { CornerRadius = corner, Background = Hover });
+        frame.Children.Add(new Border { Padding = padding, Child = Card(now) });
+        return frame;
+    }
+
+    static readonly Brush Shade = Paint("#66000000");
+    static readonly Brush CoverInk = Paint("#F4EFE7");
+    static readonly Brush CoverMuted = Paint("#CCF4EFE7");
+    static readonly Brush CoverHover = Paint("#2EFFFFFF");
+    static readonly Brush CoverTrack = Paint("#4DFFFFFF");
+
     StackPanel Card(MediaInfo now)
     {
+        var lit = now.Cover is not null;
+        TextBlock Lit(TextBlock text, bool muted = false)
+        {
+            if (lit) text.Foreground = muted ? CoverMuted : CoverInk;
+            return text;
+        }
+
         var card = new StackPanel { Width = CardWidth };
         var art = new Border
         {
@@ -69,13 +91,13 @@ public sealed class MusicPanel : Flyout
         };
         if (now.Cover is { } cover) art.Background = new ImageBrush(cover) { Stretch = Stretch.UniformToFill };
 
-        var title = Text(now.Title, 13);
+        var title = Lit(Text(now.Title, 13));
         title.FontWeight = FontWeights.Bold;
         title.TextWrapping = TextWrapping.Wrap;
         title.MaxHeight = 36;
         var info = new StackPanel { Margin = new Thickness(14, 2, 0, 0), VerticalAlignment = VerticalAlignment.Center, Children = { title } };
-        if (now.Artist.Length > 0) info.Children.Add(Spaced(Text(now.Artist, 11, muted: true), 3));
-        if (Source(now.AppId) is { } app) info.Children.Add(Spaced(Text(app, 10, muted: true), 6));
+        if (now.Artist.Length > 0) info.Children.Add(Spaced(Lit(Text(now.Artist, 11, muted: true), true), 3));
+        if (Source(now.AppId) is { } app) info.Children.Add(Spaced(Lit(Text(app, 10, muted: true), true), 6));
 
         var top = new DockPanel();
         DockPanel.SetDock(art, Dock.Left);
@@ -84,9 +106,9 @@ public sealed class MusicPanel : Flyout
         card.Children.Add(top);
 
         var controls = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 16, 0, 2) };
-        controls.Children.Add(Round("\uE892", () => _ = media.Previous(now), now.CanPrevious, 38));
-        controls.Children.Add(Round(now.Playing ? "\uE769" : "\uE768", () => _ = media.Toggle(now), true, 48));
-        controls.Children.Add(Round("\uE893", () => _ = media.Next(now), now.CanNext, 38));
+        controls.Children.Add(Round("\uE892", () => _ = media.Previous(now), now.CanPrevious, 38, lit));
+        controls.Children.Add(Round(now.Playing ? "\uE769" : "\uE768", () => _ = media.Toggle(now), true, 48, lit));
+        controls.Children.Add(Round("\uE893", () => _ = media.Next(now), now.CanNext, 38, lit));
         card.Children.Add(controls);
         return card;
     }
@@ -103,17 +125,19 @@ public sealed class MusicPanel : Flyout
         return text;
     }
 
-    Border Round(string glyph, Action click, bool enabled, double size)
+    Border Round(string glyph, Action click, bool enabled, double size, bool lit)
     {
         var icon = Glyph(glyph, size * 0.36);
         icon.HorizontalAlignment = HorizontalAlignment.Center;
+        var (rest, hover) = lit ? (CoverHover, CoverTrack) : (Hover, Track);
+        if (lit) icon.Foreground = CoverInk;
         var button = new Border
         {
             Width = size,
             Height = size,
             CornerRadius = new CornerRadius(size / 2),
             Margin = new Thickness(8, 0, 8, 0),
-            Background = Hover,
+            Background = rest,
             Cursor = enabled ? Cursors.Hand : Cursors.Arrow,
             Opacity = enabled ? 1 : 0.35,
             VerticalAlignment = VerticalAlignment.Center,
@@ -121,8 +145,8 @@ public sealed class MusicPanel : Flyout
         };
         if (enabled)
         {
-            button.MouseEnter += (_, _) => button.Background = Track;
-            button.MouseLeave += (_, _) => button.Background = Hover;
+            button.MouseEnter += (_, _) => button.Background = hover;
+            button.MouseLeave += (_, _) => button.Background = rest;
             button.MouseLeftButtonUp += (_, e) =>
             {
                 e.Handled = true;

@@ -93,15 +93,26 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         }
     }
 
-    public bool OffScreen
+    // Windows sharing this vm each report their own state; ticking stops only when none is on screen.
+    readonly Dictionary<object, bool> windowsOff = [];
+
+    public void SetOffScreen(object window, bool off)
     {
-        get => offScreen;
-        set
-        {
-            if (offScreen == value) return;
-            offScreen = value;
-            if (!value) Tick(all: true);
-        }
+        windowsOff[window] = off;
+        Recount();
+    }
+
+    public void ForgetWindow(object window)
+    {
+        if (windowsOff.Remove(window)) Recount();
+    }
+
+    void Recount()
+    {
+        var all = windowsOff.Count > 0 && windowsOff.Values.All(v => v);
+        if (offScreen == all) return;
+        offScreen = all;
+        if (!all) Tick(all: true);
     }
 
     public event Action? Switched;
@@ -273,8 +284,9 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         }
 
         var env = Active;
+        var count = new Dictionary<string, int>();
         var shown = VisibleWidgets(env?.Model.ShownWidgets ?? [new WidgetSpec()], SystemVisible)
-            .Select(w => Widget(env?.Id ?? "", w.Index, w.Spec))
+            .Select(w => Widget(env?.Id ?? "", count[w.Spec.Kind] = count.GetValueOrDefault(w.Spec.Kind) + 1, w.Spec))
             .Where(w => !(w is MusicWidget && MusicHidden))
             .ToList();
         if (shown.Count > 0) desired.Add(Get("sep:widgets", () => new SeparatorTile("sep:widgets")));
@@ -366,9 +378,10 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         return fresh;
     }
 
-    WidgetTile Widget(string env, int index, WidgetSpec spec)
+    // keyed by kind (and nth of that kind), not position, so moving a widget keeps its running state
+    WidgetTile Widget(string env, int nth, WidgetSpec spec)
     {
-        var key = $"widget:{env}:{index}:{spec.Kind}";
+        var key = $"widget:{env}:{spec.Kind}:{nth}";
         if (widgets.TryGetValue(key, out var w)) w.Apply(spec);
         else
         {
@@ -380,6 +393,39 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
             w.RefreshFace();
         }
         return w;
+    }
+
+    // Where the widget would land when moved one place left (-1) or right (1); null at the ends.
+    public int? Neighbor(WidgetTile widget, int delta)
+    {
+        if (Active?.Model.Widgets is not { } list) return null;
+        var at = list.IndexOf(widget.Spec);
+        if (at < 0) return null;
+        var to = at + delta;
+        while (to >= 0 && to < list.Count && SystemVisible && list[to].Kind == WidgetSpec.Clock) to += delta;
+        return to >= 0 && to < list.Count ? to : null;
+    }
+
+    public void MoveWidget(WidgetTile widget, int delta)
+    {
+        if (Neighbor(widget, delta) is not { } to) return;
+        var list = Active!.Model.Widgets!;
+        var at = list.IndexOf(widget.Spec);
+        (list[at], list[to]) = (list[to], list[at]);
+        OnEdited(widget);
+        Rebuild();
+    }
+
+    // Dropped before another widget, or at the end when there is none.
+    public void PlaceWidget(WidgetTile widget, WidgetTile? before)
+    {
+        if (Active?.Model.Widgets is not { } list || list.IndexOf(widget.Spec) is var at && at < 0) return;
+        var order = list.ToList();
+        list.RemoveAt(at);
+        list.Insert(before is not null && list.IndexOf(before.Spec) is >= 0 and var to ? to : list.Count, widget.Spec);
+        if (list.SequenceEqual(order)) return;
+        OnEdited(widget);
+        Rebuild();
     }
 
     void OnEdited(WidgetTile widget)

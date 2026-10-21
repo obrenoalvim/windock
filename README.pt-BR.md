@@ -41,7 +41,7 @@ Para remover: clique com o botão direito no dock, escolha **Sair** e apague o `
 
 1. Abra as configurações (botão direito no dock, ícone da bandeja ou `Ctrl+Alt+W`). O app abre em inglês: clique em **PT** no canto superior direito. A aba **Ambientes** tem um cartão por ambiente.
 2. Clique em **+ Programa** em um cartão e escolha apps, apps da Microsoft Store, jogos da Steam e da Epic, ou uma **Pasta...** para empilhar no dock (a de Downloads é uma boa).
-3. Ligue os **widgets** que quiser naquele ambiente: relógio, clima, música, uso do Claude, Pomodoro, cronômetro, timer, contagem regressiva, progresso, atividade, velocidade da rede, bateria, microfone, nota, tarefas.
+3. Ligue os **widgets** que quiser naquele ambiente: relógio, clima, música, uso do Claude, Pomodoro, cronômetro, timer, contagem regressiva, progresso, atividade, velocidade da rede, bateria, microfone, nota, tarefas, RigDeck, jogos da Steam, jogos da Epic.
 4. Em **Agenda**, escolha os dias e horários em que o ambiente fica ativo. Ou pule isso e troque na mão: role a roda do mouse sobre o dock, use `Ctrl+Alt+1..9` ou escolha no menu do dock (botão direito no vidro).
 
 Os programas do cartão **Sempre fixos** aparecem em todos os ambientes, antes dos outros.
@@ -83,8 +83,13 @@ Os programas do cartão **Sempre fixos** aparecem em todos os ambientes, antes d
 | Nota | Um recado curto que fica no dock; quadrada, um post-it com o texto | Abre um editor | Salva junto com o ambiente |
 | Microfone | Se o microfone está ligado | Muta ou desmuta | Fica vermelho quando mutado |
 | Tarefas | Quantas faltam e a próxima; quadrado, o número com um anel do que já foi feito | Painel para adicionar (digite e Enter), concluir e remover tarefas, e limpar as concluídas | Salvas junto com o ambiente |
+| RigDeck | A marca do RigDeck e quantos atalhos você tem | Painel com os controles do PC (microfone, volume, mídia, bloquear, captura de tela) e seus atalhos: um app, um site, um comando, uma combinação de teclas, um som, ou um combo que faz várias coisas de uma vez, cada app no monitor que você escolher ou em tela cheia | O [RigDeck](https://github.com/obrenoalvim/rigdeck) como widget, sem precisar de servidor. Botão direito num atalho fecha o que ele abriu; um atalho para uma pasta lista os arquivos dela; salvo junto com o ambiente |
+| Jogos da Steam | A logo da Steam e quantos jogos estão instalados | Painel com busca; clique num jogo para abrir | **Instalados** ou **Todos**: Todos lista também os jogos que você tem e não instalou (o clique instala; precisa dos detalhes dos jogos públicos na Steam) |
+| Jogos da Epic | A logo da Epic e quantos jogos estão instalados | Painel com busca; clique num jogo para abrir | Só os instalados, porque a Epic guarda o resto da biblioteca atrás do login |
 
 **Quadrado ou largo, por widget.** Clique com o botão direito num widget da dock e escolha **Quadrado** ou **Largo**. O quadrado tem o tamanho de um ícone: o valor principal, um anel para progresso e timers, dois anéis para o Claude (a sessão de 5h por fora, a semana por dentro), a capa para a música. O largo mostra mais detalhes. A música tem três versões largas: **Largo, só pausa**, **Largo com controles** e **Capa de fundo**. Os widgets que você nunca ajustou seguem **Widgets quadrados por padrão**, na aba **Dock** (ligado por padrão; a nota fica larga, a não ser que você escolha quadrado). O card do ambiente também mostra o tamanho de cada widget.
+
+**Reorganizar.** Arraste um widget pelo dock para mudar de lugar, ou clique nele com o botão direito e escolha **Mover para a esquerda** ou **Mover para a direita**. A ordem é salva junto com o ambiente.
 
 Os widgets continuam rodando quando você troca de ambiente, então um Pomodoro iniciado no trabalho termina na hora certa.
 
@@ -138,7 +143,7 @@ Os ambientes ficam em `%APPDATA%\WinDock\presets` como JSON, e as configuraçõe
 }
 ```
 
-`days` aceita `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. O `end` é exclusivo e `24:00` é meia-noite. Vale o primeiro ambiente (pelo nome do arquivo) que combinar com o horário. `target` é um `.exe`, `.lnk` ou pasta (variáveis de ambiente funcionam). Apps da Loja e jogos são salvos como um launcher (`target` mais `args`, `icon` e um `appId`), por exemplo `steam://rungameid/1243130`. Tipos de widget: `clock`, `weather` (`label` é a cidade), `music`, `claude`, `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `network`, `battery`, `mic`, `note`, `todo` (`text` é a nota), `todo` (`text` guarda uma tarefa por linha, com `[x] ` na frente das concluídas). `size` é `square` ou `wide` (a música aceita também `full` e `backdrop`); sem ele, vale o padrão. A `date` da contagem é `yyyy-MM-dd` para um dia fixo ou `MM-dd` para repetir todo ano.
+`days` aceita `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. O `end` é exclusivo e `24:00` é meia-noite. Vale o primeiro ambiente (pelo nome do arquivo) que combinar com o horário. `target` é um `.exe`, `.lnk` ou pasta (variáveis de ambiente funcionam). Apps da Loja e jogos são salvos como um launcher (`target` mais `args`, `icon` e um `appId`), por exemplo `steam://rungameid/1243130`. Tipos de widget: `clock`, `weather` (`label` é a cidade), `music`, `claude`, `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `network`, `battery`, `mic`, `note` (`text` é a nota), `todo` (`text` guarda uma tarefa por linha, com `[x] ` na frente das concluídas), `rigdeck` (`text` guarda os atalhos em JSON, feitos no painel), `steam` (`text` com `all` lista também os jogos não instalados) e `epic`. `size` é `square` ou `wide` (a música aceita também `full` e `backdrop`); sem ele, vale o padrão. A `date` da contagem é `yyyy-MM-dd` para um dia fixo ou `MM-dd` para repetir todo ano.
 
 ### O modo antigo da taskbar
 
@@ -152,7 +157,7 @@ Antes do dock, o WinDock trocava os apps fixados na barra de tarefas de verdade.
 
 **O widget de uso do Claude lê minhas conversas?** Não. Ele lê só as duas porcentagens de uso e os horários de renovação, no mesmo endereço da Anthropic que o Claude Code usa, com o login que o Claude Code já guarda neste PC. O WinDock consulta no máximo a cada cinco minutos. O Claude Code só renova esse login enquanto está aberto, então quando ele expira (depois de uma noite com o PC desligado) o WinDock renova do mesmo jeito que o Claude Code e grava o novo no mesmo arquivo, e o Claude Code continua funcionando. O login não vai para lugar nenhum além da Anthropic (api.anthropic.com e platform.claude.com).
 
-**O que o widget de clima envia?** Só a cidade que você digitou, para o Open-Meteo (grátis, sem conta), e depois as coordenadas dela para buscar a previsão, a cada 9 segundos enquanto o widget está no dock (logo abaixo do limite grátis de 10.000 chamadas por dia). Com a cidade vazia ele pede a localização ao Windows, o que só funciona se apps da área de trabalho puderem usá-la nas configurações de privacidade do Windows.
+**O que o widget de clima envia?** Só a cidade que você digitou, para o Open-Meteo (grátis, sem conta), e depois as coordenadas dela para buscar a previsão, a cada 10 minutos enquanto o widget está no dock (bem abaixo do limite grátis de 10.000 chamadas por dia). Com a cidade vazia ele pede a localização ao Windows, o que só funciona se apps da área de trabalho puderem usá-la nas configurações de privacidade do Windows.
 
 **Ambientes são áreas de trabalho virtuais?** Não, eles funcionam na área de trabalho em que você está. Com **Janelas seguem o ambiente** ligado, as janelas dos outros ambientes ficam escondidas e voltam quando você volta. Janelas que rodam como administrador (como o Gerenciador de Tarefas) não podem ser escondidas por um app comum e ficam onde estão.
 

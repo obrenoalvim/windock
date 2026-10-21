@@ -36,12 +36,15 @@ public sealed class WidgetSpec
     public const string Weather = "weather";
     public const string Mic = "mic";
     public const string Todo = "todo";
+    public const string Rigdeck = "rigdeck";
+    public const string Steam = "steam";
+    public const string Epic = "epic";
     public const string SquareSize = "square";
     public const string WideSize = "wide";
     public const string FullSize = "full";
     public const string BackdropSize = "backdrop";
 
-    public static readonly string[] Kinds = [Clock, Weather, Music, Claude, Pomodoro, Stopwatch, Timer, Countdown, Progress, Activity, Network, Battery, Mic, Note, Todo];
+    public static readonly string[] Kinds = [Clock, Weather, Music, Claude, Pomodoro, Stopwatch, Timer, Countdown, Progress, Activity, Network, Battery, Mic, Note, Todo, Rigdeck, Steam, Epic];
 
     public string Kind { get; set; } = Clock;
     public string? Label { get; set; }

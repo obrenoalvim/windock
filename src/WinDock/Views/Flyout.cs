@@ -66,6 +66,12 @@ public abstract class Flyout : Window
 
     protected void SetBody(UIElement body) => face.Child = body;
 
+    protected void Brand(string background, string border)
+    {
+        face.Background = Paint(background);
+        face.BorderBrush = Paint(border);
+    }
+
     public void ShowAt(double centerX, double barTop, Forms.Screen screen)
     {
         Opacity = 0;

@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- RigDeck widget: PC controls and shortcuts that open apps on the monitor you pick, run commands, press keys or play sounds, alone or as a combo that does several things at once. A shortcut to a folder lists its files.
+- Steam games and Epic games widgets, with the store logo, a search box and an Installed / All choice for Steam.
+- Rearrange widgets by dragging them along the dock, or with Move left / Move right in their menu. The order is kept when you turn widgets on or off.
+
+### Fixed
+- Moving a widget no longer resets a running timer or Pomodoro.
+
 ## [0.5.0] - 2026-10-14
 
 ### Changed

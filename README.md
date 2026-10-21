@@ -41,7 +41,7 @@ To remove it: right-click the dock and pick **Exit**, then delete `WinDock.exe` 
 
 1. Open the settings (right-click the dock, the tray icon, or `Ctrl+Alt+W`). The **Environments** tab has one card per environment.
 2. Click **+ Program** on a card and pick apps, Microsoft Store apps, Steam and Epic games, or a **Folder...** to stack in the dock (Downloads is a good one).
-3. Turn on the **widgets** you want for that environment: clock, weather, music, Claude usage, Pomodoro, stopwatch, timer, countdown, progress, activity, network speed, battery, microphone, note, to-do.
+3. Turn on the **widgets** you want for that environment: clock, weather, music, Claude usage, Pomodoro, stopwatch, timer, countdown, progress, activity, network speed, battery, microphone, note, to-do, RigDeck, Steam games, Epic games.
 4. Under **Schedule**, pick the days and hours the environment is active. Or skip it and switch by hand: scroll the mouse wheel over the dock, press `Ctrl+Alt+1..9`, or pick one in the menu of the dock (right-click the glass).
 
 Programs in the **Always pinned** card show in every environment, before the others.
@@ -83,8 +83,13 @@ Programs in the **Always pinned** card show in every environment, before the oth
 | Note | A short note that stays in the dock; square, a small post-it with the text | Opens an editor | Saved with the environment |
 | Microphone | Whether the microphone is on | Mutes or unmutes it | Red while muted |
 | To-do | How many tasks are left and the next one; square, the count with a ring of what is done | Panel to add (type and Enter), check off and remove tasks, and clear the done ones | Saved with the environment |
+| RigDeck | The RigDeck mark and how many shortcuts you have | Panel with PC controls (mic, volume, media, lock, screenshot) and your shortcuts: one app, a site, a command, a key combo, a sound, or a combo that does several at once, each app on the monitor you pick or in full screen | [RigDeck](https://github.com/obrenoalvim/rigdeck) as a widget, no server needed. Right-click a shortcut to close what it opened; a shortcut to a folder lists its files; saved with the environment |
+| Steam games | The Steam logo and how many games are installed | Panel with a search box; click a game to launch it | **Installed** or **All**: All also lists the games you own but have not installed (click installs; needs your Steam game details public) |
+| Epic games | The Epic logo and how many games are installed | Panel with a search box; click a game to launch it | Installed games only, because Epic keeps the rest of the library behind its login |
 
 **Square or wide, per widget.** Right-click a widget on the dock and pick **Square** or **Wide**. Square is the size of an icon: the main value, a ring for progress and timers, two rings for Claude (the 5-hour session outside, the week inside), the cover for music. Wide shows more detail. Music has three wide looks: **Wide, pause only**, **Wide with controls** and **Cover as background**. Widgets you never sized follow **Square widgets by default** in the **Dock** tab (on by default; the note stays wide unless you pick square). The environment card lists the size of each widget too.
+
+**Rearrange.** Drag a widget along the dock to move it, or right-click it and pick **Move left** or **Move right**. The order is saved with the environment.
 
 Widgets keep running when you switch environments, so a Pomodoro started at work still finishes on time.
 
@@ -138,7 +143,7 @@ Environments live in `%APPDATA%\WinDock\presets` as JSON, and the settings windo
 }
 ```
 
-`days` accepts `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. `end` is exclusive and `24:00` means midnight. The first environment (by file name) that matches the current time wins. `target` is an `.exe`, `.lnk` or folder (environment variables work). Store apps and games are saved as a launcher (`target` plus `args`, `icon` and an `appId`), for example `steam://rungameid/1243130`. Widget kinds: `clock`, `weather` (`label` is the city), `music`, `claude`, `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `network`, `battery`, `mic`, `note`, `todo` (`text` is the note), `todo` (`text` holds one task per line, `[x] ` in front of the done ones). `size` is `square` or `wide` (music also takes `full` and `backdrop`); leave it out to follow the default. A countdown `date` is `yyyy-MM-dd` for a fixed day or `MM-dd` to repeat every year.
+`days` accepts `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. `end` is exclusive and `24:00` means midnight. The first environment (by file name) that matches the current time wins. `target` is an `.exe`, `.lnk` or folder (environment variables work). Store apps and games are saved as a launcher (`target` plus `args`, `icon` and an `appId`), for example `steam://rungameid/1243130`. Widget kinds: `clock`, `weather` (`label` is the city), `music`, `claude`, `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `network`, `battery`, `mic`, `note` (`text` is the note), `todo` (`text` holds one task per line, `[x] ` in front of the done ones), `rigdeck` (`text` holds its shortcuts as JSON, made in the panel), `steam` (`text` set to `all` also lists the games you have not installed) and `epic`. `size` is `square` or `wide` (music also takes `full` and `backdrop`); leave it out to follow the default. A countdown `date` is `yyyy-MM-dd` for a fixed day or `MM-dd` to repeat every year.
 
 ### The old taskbar mode
 
@@ -152,7 +157,7 @@ Before the dock, WinDock swapped the pinned apps of the real Windows taskbar. Th
 
 **Does the Claude usage widget read my chats?** No. It reads only the two usage percentages and their reset times, from the same Anthropic endpoint Claude Code uses, with the sign-in Claude Code already keeps on this PC. WinDock asks every five minutes at most. Claude Code renews that sign-in only while it runs, so when it has expired (after the PC was off for the night) WinDock renews it the same way Claude Code does and saves the new one in the same file, so Claude Code keeps working. It sends the sign-in nowhere but Anthropic (api.anthropic.com and platform.claude.com).
 
-**What does the weather widget send?** Only the city you typed, to Open-Meteo (free, no account), and then its coordinates to get the forecast, every 9 seconds while the widget is on the dock (just under the free limit of 10,000 calls a day). With the city empty it asks Windows for the location, which works only if desktop apps may use it in the Windows privacy settings.
+**What does the weather widget send?** Only the city you typed, to Open-Meteo (free, no account), and then its coordinates to get the forecast, every 10 minutes while the widget is on the dock (far below the free limit of 10,000 calls a day). With the city empty it asks Windows for the location, which works only if desktop apps may use it in the Windows privacy settings.
 
 **Are environments virtual desktops?** No, they work on the desktop you are on. With **Windows follow the environment** on, the windows of other environments are hidden instead, and they return when you switch back. Windows that run as administrator (like Task Manager) cannot be hidden by a normal app and stay where they are.
 

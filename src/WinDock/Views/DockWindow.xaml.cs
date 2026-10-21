@@ -48,7 +48,7 @@ public partial class DockWindow : Window
     (object Item, Type Kind)? flyoutKey, closedKey;
     DateTime closedAt, menuClosedAt;
     FrameworkElement? pressedElement;
-    AppTile? pressed;
+    DockTile? pressed; // the pinned app or widget being dragged
     Point pressAt;
     bool dragging, dragOut;
     Action? undo;
@@ -77,6 +77,7 @@ public partial class DockWindow : Window
         vm.Options.Changed += OnOption;
         vm.Tracker.Changed += CheckFullscreen;
         vm.Tracker.Reshaped += CheckFullscreen;
+        vm.SetOffScreen(this, false);
         SystemParameters.StaticPropertyChanged += OnSystemParameter;
         poll.Tick += (_, _) => Poll();
         hover.Tick += (_, _) =>
@@ -338,7 +339,7 @@ public partial class DockWindow : Window
         shift.X = at.X - pressAt.X;
         shift.Y = Math.Min(0, at.Y - pressAt.Y);
         var barTop = panel.TranslatePoint(new Point(0, panel.Bar.Top), Root).Y;
-        var outside = at.Y < barTop - IconSize * 0.9;
+        var outside = pressed is AppTile && at.Y < barTop - IconSize * 0.9; // only apps can be dropped off the dock
         if (outside != dragOut)
         {
             dragOut = outside;
@@ -371,7 +372,7 @@ public partial class DockWindow : Window
 
     void EndDrag(Point? at)
     {
-        var app = pressed!;
+        var tile = pressed!;
         var element = pressedElement!;
         dragging = false;
         pressed = null;
@@ -385,6 +386,14 @@ public partial class DockWindow : Window
         HideName();
         if (panel is { IsMouseOver: true }) panel.BeginAnimation(LensPanel.AmplitudeProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(140)));
         if (at is not { } point) return;
+        if (tile is WidgetTile widget)
+        {
+            var siblings = vm.Tiles.OfType<WidgetTile>().Where(t => t != widget);
+            vm.PlaceWidget(widget, siblings.FirstOrDefault(t => Strip.ItemContainerGenerator.ContainerFromItem(t) is FrameworkElement box
+                                                              && box.TranslatePoint(new Point(box.ActualWidth / 2, 0), Root).X > point.X));
+            return;
+        }
+        var app = (AppTile)tile;
         if (dragOut)
         {
             Unpinned(app);
@@ -556,7 +565,7 @@ public partial class DockWindow : Window
         var element = (FrameworkElement)sender;
         element.Opacity = 0.72;
         pressedElement = element;
-        pressed = element.DataContext is AppTile { IsPinned: true } app ? app : null;
+        pressed = element.DataContext switch { AppTile { IsPinned: true } app => app, WidgetTile widget => widget, _ => null };
         pressAt = e.GetPosition(Root);
     }
 
@@ -708,9 +717,18 @@ public partial class DockWindow : Window
             WeatherWidget weather => new WeatherPanel(weather.Service, Dark),
             NoteWidget note => new NotePanel(note, Dark),
             TodoWidget todo => new TodoPanel(todo, Dark),
+            RigdeckWidget rigdeck => Rigdeck(rigdeck, element),
+            GamesWidget games => new GamesPanel(games, Dark),
             _ => null
         };
         if (next is not null) ShowFlyout(next, element);
+    }
+
+    RigdeckPanel Rigdeck(RigdeckWidget widget, FrameworkElement element)
+    {
+        var rigdeck = new RigdeckPanel(widget);
+        rigdeck.Browse += path => ShowFlyout(new StackWindow(path, Dark), element);
+        return rigdeck;
     }
 
     void OnMediaToggle(object sender, MouseButtonEventArgs e)
@@ -891,7 +909,8 @@ public partial class DockWindow : Window
 
     void Conceal()
     {
-        concealed = vm.OffScreen = true;
+        concealed = true;
+        vm.SetOffScreen(this, true);
         preview?.Hide();
         var distance = BarHeight + BottomGap + 16;
         Slide.BeginAnimation(TranslateTransform.YProperty,
@@ -901,7 +920,7 @@ public partial class DockWindow : Window
     void Reveal()
     {
         concealed = false;
-        vm.OffScreen = fullscreen;
+        vm.SetOffScreen(this, fullscreen);
         away = 0;
         Slide.BeginAnimation(TranslateTransform.YProperty,
             new DoubleAnimation(0, TimeSpan.FromMilliseconds(200)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
@@ -912,7 +931,7 @@ public partial class DockWindow : Window
         var now = IsFullscreen(Native.GetForegroundWindow());
         if (now == fullscreen) return;
         fullscreen = now;
-        vm.OffScreen = fullscreen || concealed;
+        vm.SetOffScreen(this, fullscreen || concealed);
         if (!vm.Options.Enabled) return;
         if (fullscreen)
         {
@@ -1018,6 +1037,9 @@ public partial class DockWindow : Window
             menu.Items.Add(Item(Loc.T("musicBackdrop"), () => Resize(widget, WidgetSpec.BackdropSize), size == WidgetSpec.BackdropSize));
         }
         else menu.Items.Add(Item(Loc.T("widgetWide"), () => Resize(widget, WidgetSpec.WideSize), !square));
+        menu.Items.Add(new Separator());
+        menu.Items.Add(Item(Loc.T("widgetLeft"), () => vm.MoveWidget(widget, -1), enabled: vm.Neighbor(widget, -1) is not null));
+        menu.Items.Add(Item(Loc.T("widgetRight"), () => vm.MoveWidget(widget, 1), enabled: vm.Neighbor(widget, 1) is not null));
         menu.Items.Add(new Separator());
         menu.Items.Add(Item(Loc.T("editWidgets"), openSettings));
         Open(menu);
@@ -1128,6 +1150,7 @@ public partial class DockWindow : Window
         vm.Options.Changed -= OnOption;
         vm.Tracker.Changed -= CheckFullscreen;
         vm.Tracker.Reshaped -= CheckFullscreen;
+        vm.ForgetWindow(this);
         SystemParameters.StaticPropertyChanged -= OnSystemParameter;
         base.OnClosing(e);
     }

@@ -141,9 +141,10 @@ public sealed partial class PresetViewModel : ObservableObject
 
     void ToggleWidget(WidgetChoice choice)
     {
-        var current = Model.ShownWidgets.ToDictionary(w => w.Kind);
-        Model.Widgets = Widgets.Where(w => w.IsOn)
-            .Select(w => current.TryGetValue(w.Kind, out var spec) ? spec : new WidgetSpec { Kind = w.Kind })
+        var current = Model.ShownWidgets;
+        var on = Widgets.Where(w => w.IsOn).Select(w => w.Kind).ToList();
+        Model.Widgets = current.Where(s => on.Contains(s.Kind))
+            .Concat(on.Where(k => current.All(s => s.Kind != k)).Select(k => new WidgetSpec { Kind = k }))
             .ToList();
         OnPropertyChanged(nameof(HasCountdown));
         OnPropertyChanged(nameof(CountdownDate));

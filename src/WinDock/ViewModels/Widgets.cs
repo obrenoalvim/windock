@@ -115,6 +115,9 @@ public abstract partial class WidgetTile(string key, WidgetSpec spec) : DockTile
         WidgetSpec.Network => new NetworkWidget(key, spec),
         WidgetSpec.Note => new NoteWidget(key, spec),
         WidgetSpec.Todo => new TodoWidget(key, spec),
+        WidgetSpec.Rigdeck => new RigdeckWidget(key, spec),
+        WidgetSpec.Steam => new SteamWidget(key, spec),
+        WidgetSpec.Epic => new EpicWidget(key, spec),
         _ => new ClockWidget(key, spec)
     };
 }
@@ -563,8 +566,12 @@ public sealed partial class ClaudeWidget : WidgetTile
     {
         foreach (var (name, used, reset) in new[] { ("claudeSession", limits.Session, limits.SessionReset), ("claudeWeek", limits.Week, limits.WeekReset) })
             foreach (var t in Thresholds)
-                if (used >= t) yield return (name, t, $"{name}:{t}:{reset:O}");
+                if (used >= t) yield return (name, t, $"{name}:{t}:{Window(reset):O}");
     }
+
+    // resets_at carries sub-second jitter between fetches; round so one window is one alert key
+    static DateTime? Window(DateTime? reset) =>
+        reset is { } r ? new DateTime((r.Ticks + TimeSpan.TicksPerMinute * 30) / TimeSpan.TicksPerHour * TimeSpan.TicksPerHour, r.Kind) : null;
 
     void Warn(ClaudeLimits limits)
     {
@@ -643,7 +650,7 @@ public sealed partial class MusicWidget : WidgetTile
 
     static readonly System.Windows.Media.Brush Plate = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x2D, 0x2F, 0x3A));
 
-    static System.Windows.Media.ImageSource? Smear(System.Windows.Media.ImageSource? cover)
+    public static System.Windows.Media.ImageSource? Smear(System.Windows.Media.ImageSource? cover)
     {
         if (cover is null) return null;
         var visual = new System.Windows.Media.DrawingVisual();
@@ -862,5 +869,114 @@ public sealed partial class TodoWidget(string key, WidgetSpec spec) : WidgetTile
         Progress = items.Count == 0 ? 0 : (double)(items.Count - Left) / items.Count;
         Count = items.Count == 0 ? Loc.T("todoEmpty") : Left == 0 ? Loc.T("todoAllDone") : Loc.F(Left == 1 ? "todoLeftOne" : "todoLeft", Left);
         Tip = Next.Length > 0 ? $"{Count} · {Next}" : Count;
+    }
+}
+
+// The games one store has installed. The Steam widget can also list the rest of the library: Spec.Text "all" (anything else is installed only).
+public abstract partial class GamesWidget(string key, WidgetSpec spec, string platform) : WidgetTile(key, spec)
+{
+    protected override CompactFace Compact() => Logo is null ? new(Number, Glyph: "", Tip: Tip) : new("", Image: Logo, Tip: Tip);
+
+    public string Platform { get; } = platform;
+    public string Name => Platform;
+    public bool IsSteam => Platform == Games.Steam;
+    public System.Windows.Media.ImageSource? Logo { get; } = Games.Launcher(platform) is { } exe ? ShellIcons.ForPath(exe, 64) : null;
+    public override bool HasPanel => true;
+    public override DateTime Due(DateTime now) => DateTime.MaxValue;
+
+    public System.Windows.Media.Brush Back { get; } = Paint(platform == Games.Steam ? "#1B2838" : "#2A2D33");
+    public System.Windows.Media.Brush Accent { get; } = Paint(platform == Games.Steam ? "#66C0F4" : "#E6E8EB");
+
+    static System.Windows.Media.Brush Paint(string hex)
+    {
+        var brush = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex));
+        brush.Freeze();
+        return brush;
+    }
+
+    public bool ShowAll
+    {
+        get => IsSteam && Spec.Text == "all";
+        set
+        {
+            Spec.Text = value ? "all" : null;
+            Save();
+        }
+    }
+
+    [ObservableProperty] string tip = "";
+    [ObservableProperty] string count = "";
+    [ObservableProperty] string number = "";
+
+    public override void Tick(DateTime now)
+    {
+        var n = Games.Installed(Platform).Count;
+        Number = n.ToString();
+        Count = Loc.F(n == 1 ? "gamesCountOne" : "gamesCount", n);
+        Tip = $"{Name} · {Count}";
+    }
+}
+
+public sealed class SteamWidget(string key, WidgetSpec spec) : GamesWidget(key, spec, Games.Steam);
+
+public sealed class EpicWidget(string key, WidgetSpec spec) : GamesWidget(key, spec, Games.Epic);
+
+// RigDeck inside the dock: shortcuts that run one or more steps (open apps on a monitor, commands, key combos, PC controls...).
+// The tile is the brand mark; clicking it opens the panel with every shortcut.
+public sealed partial class RigdeckWidget(string key, WidgetSpec spec) : WidgetTile(key, spec)
+{
+    protected override CompactFace Compact() => new("", Image: Logo, Tip: Tip);
+
+    public override bool HasPanel => true;
+    public override DateTime Due(DateTime now) => DateTime.MaxValue;
+
+    public System.Windows.Media.ImageSource Logo => RigLogo.Image;
+
+    [ObservableProperty] string tip = "RigDeck";
+    [ObservableProperty] string count = "";
+
+    string? parsedFrom;
+    IReadOnlyList<RigAction> parsed = [];
+
+    // parsed once per saved text: the panel asks for the list several times each time it opens
+    public IReadOnlyList<RigAction> Actions
+    {
+        get
+        {
+            if (parsedFrom != Spec.Text || parsed.Count == 0 && Spec.Text is not null)
+            {
+                parsed = RigStore.Parse(Spec.Text);
+                parsedFrom = Spec.Text;
+            }
+            return parsed;
+        }
+    }
+
+    public void Set(IEnumerable<RigAction> actions)
+    {
+        Spec.Text = RigStore.Format(actions);
+        Save();
+        Tick(DateTime.Now);
+        RefreshFace();
+    }
+
+    static readonly Dictionary<string, System.Windows.Media.ImageSource> Icons = [];
+
+    // shell icons are slow to pull; keep the ones that resolved
+    public static System.Windows.Media.ImageSource? IconOf(RigAction action)
+    {
+        if ((action.Icon ?? action.FirstOpen?.Icon ?? action.FirstOpen?.Target) is not { } source) return null;
+        source = Environment.ExpandEnvironmentVariables(source);
+        if (Icons.TryGetValue(source, out var known)) return known;
+        var icon = ShellIcons.ForPath(source);
+        if (icon is not null) Icons[source] = icon;
+        return icon;
+    }
+
+    public override void Tick(DateTime now)
+    {
+        var n = Actions.Count;
+        Count = n == 0 ? Loc.T("rigdeckFirst") : Loc.F(n == 1 ? "rigdeckOne" : "rigdeckMany", n);
+        Tip = n == 0 ? "RigDeck" : $"RigDeck · {Count}";
     }
 }
