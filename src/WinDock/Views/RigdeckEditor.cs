@@ -9,7 +9,6 @@ using Forms = System.Windows.Forms;
 
 namespace WinDock.Views;
 
-// One RigDeck shortcut: a name and the steps it runs, in order.
 public sealed class RigdeckEditor : Window
 {
     readonly RigAction action;
@@ -167,7 +166,6 @@ public sealed class RigdeckEditor : Window
         _ => "rigStepWait"
     });
 
-    // the app's own icon for programs and games; a glyph for the other step types. The name of the type stays in the tooltip.
     FrameworkElement StepIcon(int index, RigStepSpec step)
     {
         var control = step.Type == RigStep.System ? RigRunner.Controls.FirstOrDefault(c => c.Id == step.Target) : null;
@@ -288,7 +286,6 @@ public sealed class RigdeckEditor : Window
         return row;
     }
 
-    // red text while a step could not run: unknown key combo, wait that is not a number
     static bool Valid(RigStepSpec step) => step.Type switch
     {
         RigStep.Keys => RigStore.Chord(step.Target) is not null,
@@ -296,7 +293,6 @@ public sealed class RigdeckEditor : Window
         _ => true
     };
 
-    // monitor and full screen only mean something for a program with a window we can follow, not a site or a launcher link
     static bool Placeable(RigStepSpec step) =>
         step.Type == RigStep.Open && !step.Target.Contains("://") && !step.Target.StartsWith("shell:", StringComparison.OrdinalIgnoreCase);
 

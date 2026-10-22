@@ -40,7 +40,6 @@ public sealed class MusicPanel : Flyout
         body.Width = double.NaN;
         if (all.Count == 1)
         {
-            // the one card bleeds over the flyout padding so the cover fills the whole panel
             body.Children.Add(all[0].Cover is null ? Card(all[0]) : Framed(all[0], new Thickness(-16, -14, -16, -14), new Thickness(16, 14, 16, 14), 17));
             return;
         }
@@ -50,7 +49,6 @@ public sealed class MusicPanel : Flyout
         body.Children.Add(row);
     }
 
-    // Same look as the wide "cover as background" widget: the blurred cover under a shade, light text on top.
     Grid Framed(MediaInfo now, Thickness margin, Thickness padding, double radius)
     {
         var corner = new CornerRadius(radius);

@@ -11,16 +11,13 @@ public sealed class RigdeckPanel : Flyout
 {
     const int Columns = 4;
 
-    // These steal the foreground or need it back (Win key combos, the lock screen): leave the flyout first.
     static readonly HashSet<string> NeedFocus = ["lock", "desktop", "shot", "tasks"];
 
-    // RigDeck palette (public/style.css of the rigdeck repo)
     static readonly Brush Raised = Paint("#1D2126"), Lit = Paint("#33FF8A1E"), Edge = Paint("#2B3038"), Orange = Paint("#FF8A1E");
 
     readonly RigdeckWidget deck;
     bool opening;
 
-    // Raised for folder shortcuts: the dock swaps this panel for the folder's contents.
     public event Action<string>? Browse;
     readonly WrapPanel grid = new() { Width = Columns * 84 };
     readonly Dictionary<string, Border> buttons = [];
@@ -97,7 +94,6 @@ public sealed class RigdeckPanel : Flyout
         return button;
     }
 
-    // microphone and sound turn red while muted
     void States()
     {
         Tint("mic", Audio.ReadMic()?.Muted == true);
@@ -136,7 +132,6 @@ public sealed class RigdeckPanel : Flyout
         return tile;
     }
 
-    // The windows below steal focus, which closes this flyout: close first, show them, then save.
     void AfterClose(Action show)
     {
         if (opening) return;

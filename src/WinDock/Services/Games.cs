@@ -6,8 +6,6 @@ namespace WinDock.Services;
 
 public sealed record GameEntry(string Platform, string Id, string Name, bool Installed, string Uri, string? Icon);
 
-// The game lists of the Steam and Epic widgets: what each store has installed on disk, plus (when asked) the whole Steam library.
-// ponytail: Epic keeps its library behind a login, so only installed Epic games show. Steam's list needs a public profile.
 public static partial class Games
 {
     public const string Steam = "Steam", Epic = "Epic";
@@ -32,7 +30,6 @@ public static partial class Games
         catch (System.Xml.XmlException) { return []; }
     }
 
-    // The launcher's own icon is the store logo.
     public static string? Launcher(string platform)
     {
         if (platform == Steam) return GameLibraries.SteamRoot() is { } root && Path.Combine(root, "steam.exe") is var steam && File.Exists(steam) ? steam : null;
@@ -54,7 +51,6 @@ public static partial class Games
         return games.OrderBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
     }
 
-    // Installed games plus the rest of the Steam library. Null library = profile private or offline: the caller says so.
     public static async Task<(List<GameEntry> Games, bool Complete)> All()
     {
         var games = Installed(Steam);

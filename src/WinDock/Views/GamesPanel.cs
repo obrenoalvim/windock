@@ -66,7 +66,6 @@ public sealed class GamesPanel : Flyout
         return chip;
     }
 
-    // Installed games are on disk and show at once. The rest of the Steam library comes over the network.
     async void Load()
     {
         var mine = ++loaded;

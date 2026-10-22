@@ -33,7 +33,6 @@ public sealed class RigAction
     [JsonIgnore]
     public RigStepSpec? FirstOpen => Steps.FirstOrDefault(s => s.Type == RigStep.Open && s.Target.Length > 0);
 
-    // A shortcut that is just a folder lists its contents instead of opening Explorer.
     [JsonIgnore]
     public string? Folder => Steps is [{ Type: RigStep.Open } step] && Directory.Exists(Environment.ExpandEnvironmentVariables(step.Target))
         ? Environment.ExpandEnvironmentVariables(step.Target) : null;
@@ -49,7 +48,6 @@ public sealed class RigAction
 
 public sealed record RigSystem(string Id, string Label, string Glyph);
 
-// RigDeck shortcuts live as JSON in the widget text. The first version stored one "name|icon|target" line per shortcut; those still load.
 public static class RigStore
 {
     static readonly JsonSerializerOptions Options = new()
@@ -90,14 +88,12 @@ public static class RigStore
         return list.Count == 0 ? null : JsonSerializer.Serialize(list, Options);
     }
 
-    // Store, Steam and Epic pins launch through Args (shell:AppsFolder, steam://, ...); plain programs, folders and files through Target.
     public static RigAction FromPin(PinItem pin) =>
         RigAction.Single(pin.Name, (pin.IsLauncher ? pin.Args : pin.ResolvedTarget) ?? pin.Target,
             pin.ResolvedIcon is { } icon && File.Exists(icon) ? icon
             : pin.IsLauncher && pin.Args!.StartsWith(@"shell:AppsFolder\", StringComparison.OrdinalIgnoreCase) ? pin.Args
             : pin.ResolvedTarget);
 
-    // "ctrl+shift+m" -> virtual keys, null when a part is unknown
     public static byte[]? Chord(string text)
     {
         var keys = new List<byte>();
@@ -151,7 +147,6 @@ public static class RigRunner
         catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException or IOException or UriFormatException or ArgumentException) { }
     }
 
-    // Closes the windows (or processes) this shortcut opened, not other windows of the same app that were already there.
     public static int Close(RigAction action)
     {
         List<(int Pid, nint Hwnd)> list;
@@ -252,7 +247,6 @@ public static class RigRunner
         if (step.Monitor is not null || step.Fullscreen) Place(hwnd, step);
     }
 
-    // Only programs have a process we can follow; sites, steam:// links and Store apps open and that is all.
     static string? ExeOf(string target)
     {
         if (target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase)) target = ShellLinks.ReadTarget(target) ?? "";
@@ -292,7 +286,6 @@ public static class RigRunner
     }
 }
 
-// The RigDeck mark (public/icon.svg of the rigdeck repo): four keys on a near-black tile.
 public static class RigLogo
 {
     public static readonly ImageSource Image = Build();
