@@ -16,7 +16,7 @@ A glass dock for Windows with environments, live widgets and a Mac-style magnify
 
 **English** · [Português](README.pt-BR.md)
 
-[Install](#install) · [Quick start](#quick-start) · [The dock](#the-dock) · [Widgets](#widgets) · [Shortcuts](#shortcuts) · [Environments](#environments) · [FAQ](#faq) · [Build](#build)
+[Install](#install) · [Quick start](#quick-start) · [The dock](#the-dock) · [Widgets](#widgets) · [Shortcuts](#shortcuts) · [Environments](#environments) · [FAQ](#faq) · [Build](#build) · [Landing page](https://windock-app.vercel.app)
 
 </div>
 

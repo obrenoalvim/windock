@@ -16,7 +16,7 @@ Um dock de vidro para o Windows com ambientes, widgets ao vivo e a lente de ampl
 
 [English](README.md) · **Português**
 
-[Instalar](#instalar) · [Primeiros passos](#primeiros-passos) · [O dock](#o-dock) · [Widgets](#widgets) · [Atalhos](#atalhos) · [Ambientes](#ambientes) · [FAQ](#faq) · [Compilar](#compilar)
+[Instalar](#instalar) · [Primeiros passos](#primeiros-passos) · [O dock](#o-dock) · [Widgets](#widgets) · [Atalhos](#atalhos) · [Ambientes](#ambientes) · [FAQ](#faq) · [Compilar](#compilar) · [Site](https://windock-app.vercel.app/pt-br/)
 
 </div>
 
