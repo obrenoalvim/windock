@@ -41,14 +41,16 @@ public sealed class WidgetSpec
     public const string Epic = "epic";
     public const string Uninstall = "uninstall";
     public const string Convert = "convert";
+    public const string Shelf = "shelf";
+    public const string Cleanup = "cleanup";
     public const string SquareSize = "square";
     public const string WideSize = "wide";
     public const string FullSize = "full";
     public const string BackdropSize = "backdrop";
 
-    public static readonly string[] SingleSize = [Battery, Mic, Uninstall, Convert];
+    public static readonly string[] SingleSize = [Battery, Mic, Uninstall, Convert, Shelf, Cleanup];
 
-    public static readonly string[] Kinds = [Clock, Weather, Music, Claude, Pomodoro, Stopwatch, Timer, Countdown, Progress, Activity, Network, Battery, Mic, Note, Todo, Rigdeck, Steam, Epic, Uninstall, Convert];
+    public static readonly string[] Kinds = [Clock, Weather, Music, Claude, Pomodoro, Stopwatch, Timer, Countdown, Progress, Activity, Network, Battery, Mic, Note, Todo, Rigdeck, Steam, Epic, Uninstall, Convert, Shelf, Cleanup];
 
     public string Kind { get; set; } = Clock;
     public string? Label { get; set; }

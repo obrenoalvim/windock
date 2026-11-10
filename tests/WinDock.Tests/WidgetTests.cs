@@ -360,6 +360,42 @@ public class WidgetTests
     }
 
     [Fact]
+    public void Shelf_keeps_each_existing_file_once_and_forgets_the_ones_that_vanish()
+    {
+        var dir = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), $"WinDockShelf{Guid.NewGuid():N}")).FullName;
+        try
+        {
+            var a = Path.Combine(dir, "a.jpg");
+            var b = Path.Combine(dir, "b.jpg");
+            File.WriteAllText(a, "a");
+            File.WriteAllText(b, "b");
+            var shelf = new ShelfWidget("s", new WidgetSpec { Kind = WidgetSpec.Shelf });
+            Assert.Equal(2, shelf.Add([a, b, a.ToUpperInvariant(), Path.Combine(dir, "missing.jpg")]));
+            Assert.Equal(0, shelf.Add([b]));
+            Assert.Equal([a, b], shelf.Files);
+            Assert.Equal(2, shelf.Count);
+            File.Delete(a);
+            shelf.Prune();
+            Assert.Equal([b], ShelfWidget.Parse(shelf.Spec.Text));
+            shelf.Clear();
+            Assert.Null(shelf.Spec.Text);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public void Cleanup_only_calls_a_shortcut_dead_when_its_drive_is_here()
+    {
+        Assert.True(Cleanup.Dead(Path.Combine(Path.GetTempPath(), $"gone{Guid.NewGuid():N}", "game.exe")));
+        Assert.False(Cleanup.Dead(Path.Combine(Environment.SystemDirectory, "cmd.exe")));
+        Assert.False(Cleanup.Dead(null));
+        Assert.False(Cleanup.Dead(@"\\server\share\app.exe"));
+        var missingDrive = Enumerable.Range('D', 23).Select(c => $"{(char)c}:\\").First(d => !Directory.Exists(d));
+        Assert.False(Cleanup.Dead(missingDrive + @"Games\game.exe"));
+        Assert.NotEmpty(Cleanup.Bytes(1536));
+    }
+
+    [Fact]
     public void Converter_never_offers_video_formats_for_text_files()
     {
         var file = Path.Combine(Path.GetTempPath(), $"WinDock{Guid.NewGuid():N}.txt");

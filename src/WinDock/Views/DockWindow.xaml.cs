@@ -341,6 +341,11 @@ public partial class DockWindow : Window
         shift.X = at.X - pressAt.X;
         shift.Y = Math.Min(0, at.Y - pressAt.Y);
         var barTop = panel.TranslatePoint(new Point(0, panel.Bar.Top), Root).Y;
+        if (pressed is ShelfWidget { Count: > 0 } shelf && at.Y < barTop - IconSize * 0.5)
+        {
+            PullFromShelf(shelf, pressedElement);
+            return;
+        }
         dragOut = pressed is AppTile { IsPinned: true } && at.Y < barTop - IconSize * 0.9;
         overBin = !dragOut && pressed is AppTile { IsFolder: false } ? BinAt(at) : null;
         var hint = dragOut ? "dropToUnpin" : overBin is not null ? "dropToUninstall" : null;
@@ -354,10 +359,17 @@ public partial class DockWindow : Window
         if (hint is not null) PlaceName();
     }
 
+    void PullFromShelf(ShelfWidget shelf, FrameworkElement element)
+    {
+        EndDrag(null);
+        shelf.Prune();
+        if (shelf.Files.Count > 0) DragDrop.DoDragDrop(element, ShelfPanel.Data(shelf.Files), DragDropEffects.Copy | DragDropEffects.Link);
+    }
+
     UninstallWidget? BinAt(Point at) => DropWidgetAt(at) as UninstallWidget;
 
     WidgetTile? DropWidgetAt(Point at) =>
-        vm.Tiles.OfType<WidgetTile>().Where(w => w is UninstallWidget or ConvertWidget)
+        vm.Tiles.OfType<WidgetTile>().Where(w => w is UninstallWidget or ConvertWidget or ShelfWidget)
             .FirstOrDefault(w => Strip.ItemContainerGenerator.ContainerFromItem(w) is FrameworkElement box
                                  && new Rect(box.TranslatePoint(new Point(), Root), box.RenderSize).Contains(at));
 
@@ -837,6 +849,8 @@ public partial class DockWindow : Window
             GamesWidget games => new GamesPanel(games, Dark),
             UninstallWidget uninstall => new UninstallPanel(uninstall, Dark),
             ConvertWidget convert => new ConvertPanel(convert, Dark),
+            ShelfWidget shelf => new ShelfPanel(shelf, Dark, vm.Main.Notify),
+            CleanupWidget cleanup => new CleanupPanel(cleanup, Dark),
             _ => null
         };
         if (next is not null) ShowFlyout(next, element);
@@ -1205,7 +1219,7 @@ public partial class DockWindow : Window
             if (hovered != box)
             {
                 hovered = box;
-                ShowName(Loc.T(target is ConvertWidget ? "dropToConvert" : "dropToUninstall"));
+                ShowName(Loc.T(target switch { ConvertWidget => "dropToConvert", ShelfWidget => "dropToShelf", _ => "dropToUninstall" }));
             }
             return;
         }
@@ -1220,7 +1234,7 @@ public partial class DockWindow : Window
             }
             return;
         }
-        if (hovered is not null && hovered.DataContext is AppTile or UninstallWidget or ConvertWidget) HideName();
+        if (hovered is not null && hovered.DataContext is AppTile or UninstallWidget or ConvertWidget or ShelfWidget) HideName();
         hovered = null;
         e.Effects = files && vm.Active is not null ? DragDropEffects.Link : DragDropEffects.None;
     }
@@ -1248,6 +1262,9 @@ public partial class DockWindow : Window
                 return;
             case ConvertWidget converter:
                 Convert(converter, files);
+                return;
+            case ShelfWidget shelf:
+                shelf.Add(files);
                 return;
         }
         if (DropTarget(e) is (var app, var element))

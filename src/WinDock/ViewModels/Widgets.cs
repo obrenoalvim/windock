@@ -120,6 +120,8 @@ public abstract partial class WidgetTile(string key, WidgetSpec spec) : DockTile
         WidgetSpec.Epic => new EpicWidget(key, spec),
         WidgetSpec.Uninstall => new UninstallWidget(key, spec),
         WidgetSpec.Convert => new ConvertWidget(key, spec),
+        WidgetSpec.Shelf => new ShelfWidget(key, spec),
+        WidgetSpec.Cleanup => new CleanupWidget(key, spec),
         _ => new ClockWidget(key, spec)
     };
 }
@@ -1306,6 +1308,176 @@ public sealed partial class ConvertWidget(string key, WidgetSpec spec) : WidgetT
             cancel = null;
             job.Finished = DateTime.Now;
         }
+    }
+
+    void Refresh()
+    {
+        Tick(DateTime.Now);
+        RefreshFace();
+        Changed?.Invoke();
+    }
+}
+
+public sealed partial class ShelfWidget(string key, WidgetSpec spec) : WidgetTile(key, spec)
+{
+    public const string ShelfGlyph = "";
+
+    protected override CompactFace Compact() => new(Count > 0 ? Count.ToString(CultureInfo.InvariantCulture) : "", Glyph: ShelfGlyph, Tip: Tip);
+
+    public override bool HasPanel => true;
+    public override DateTime Due(DateTime now) => DateTime.MaxValue;
+
+    [ObservableProperty] int count;
+    [ObservableProperty] string tip = "";
+
+    public event Action? Changed;
+
+    public IReadOnlyList<string> Files => Parse(Spec.Text);
+
+    public static List<string> Parse(string? text) =>
+        (text ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+    static bool Exists(string path) => File.Exists(path) || Directory.Exists(path);
+
+    public int Add(IEnumerable<string> paths)
+    {
+        var files = Files.ToList();
+        var fresh = paths.Where(p => Exists(p) && !files.Contains(p, StringComparer.OrdinalIgnoreCase)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        if (fresh.Count > 0) Set(files.Concat(fresh));
+        return fresh.Count;
+    }
+
+    public void Remove(IEnumerable<string> paths) => Set(Files.Except(paths, StringComparer.OrdinalIgnoreCase));
+
+    public void Clear() => Set([]);
+
+    public void Prune()
+    {
+        var files = Files;
+        if (files.Any(f => !Exists(f))) Set(files.Where(Exists));
+    }
+
+    void Set(IEnumerable<string> files)
+    {
+        var list = files.ToList();
+        Spec.Text = list.Count == 0 ? null : string.Join('\n', list);
+        Save();
+        Tick(DateTime.Now);
+        RefreshFace();
+        Changed?.Invoke();
+    }
+
+    public override void Tick(DateTime now)
+    {
+        Count = Files.Count;
+        Tip = Count == 0 ? Loc.T("shelfHint") : Loc.F(Count == 1 ? "shelfOne" : "shelfMany", Count);
+    }
+}
+
+public sealed partial class CleanupWidget(string key, WidgetSpec spec) : WidgetTile(key, spec)
+{
+    public const string BroomGlyph = "";
+    static readonly TimeSpan Fresh = TimeSpan.FromMinutes(5);
+
+    protected override CompactFace Compact() => new("", Glyph: BroomGlyph, Alert: Busy, Tip: Tip);
+
+    public override bool HasPanel => true;
+    public override DateTime Due(DateTime now) => DateTime.MaxValue;
+
+    [ObservableProperty] bool busy;
+    [ObservableProperty] string tip = "";
+
+    public event Action? Changed;
+
+    public IReadOnlyList<CleanupCategory> Categories { get; private set; } = [];
+    public HashSet<string> Selected { get; } = [];
+    public bool Scanning { get; private set; }
+    public bool Cleaning { get; private set; }
+    public CleanupResult? Last { get; private set; }
+    DateTime scannedAt;
+
+    public long SelectedSize => Categories.Where(c => Selected.Contains(c.Id) && c.Method != CleanupMethod.Recycle).Sum(c => c.Size);
+
+    public override void Tick(DateTime now)
+    {
+        Busy = Scanning || Cleaning;
+        var total = Categories.Sum(c => c.Size);
+        Tip = Busy ? Loc.T(Scanning ? "cleanupScanning" : "cleanupCleaning")
+            : Categories.Count == 0 ? Loc.T("cleanupHint")
+            : Loc.F("cleanupFound", Cleanup.Bytes(total));
+    }
+
+    public async Task Scan(bool force = false)
+    {
+        if (Busy || !force && Categories.Count > 0 && DateTime.Now - scannedAt < Fresh) return;
+        Scanning = true;
+        Refresh();
+        try
+        {
+            Categories = await Task.Run(Cleanup.Scan);
+            scannedAt = DateTime.Now;
+            Selected.Clear();
+            Selected.UnionWith(Categories.Where(c => c.Suggested && !c.IsEmpty).Select(c => c.Id));
+        }
+        catch (Exception e)
+        {
+            App.Log(e);
+            Raise($"{Loc.T("cleanupFailed")}: {e.Message}");
+        }
+        finally
+        {
+            Scanning = false;
+            Refresh();
+        }
+    }
+
+    public void Toggle(string id)
+    {
+        if (!Selected.Remove(id)) Selected.Add(id);
+        Refresh();
+    }
+
+    public async Task Clean()
+    {
+        if (Busy) return;
+        var chosen = Categories.Where(c => Selected.Contains(c.Id) && !c.IsEmpty).ToList();
+        if (chosen.Count == 0) return;
+        Cleaning = true;
+        Refresh();
+        long freed = 0, left = 0;
+        var recycled = 0;
+        try
+        {
+            foreach (var category in chosen)
+            {
+                var result = await Task.Run(() => Cleanup.Clean(category));
+                freed += result.Freed;
+                left += result.Left;
+                recycled += result.Recycled;
+            }
+            Last = new CleanupResult(freed, recycled, left);
+            Raise(Summary(Last));
+        }
+        catch (Exception e)
+        {
+            App.Log(e);
+            Raise($"{Loc.T("cleanupFailed")}: {e.Message}");
+        }
+        finally
+        {
+            Cleaning = false;
+            Categories = [];
+            Refresh();
+        }
+        await Scan(force: true);
+    }
+
+    public static string Summary(CleanupResult result)
+    {
+        var parts = new List<string> { Loc.F("cleanupFreed", Cleanup.Bytes(result.Freed)) };
+        if (result.Recycled > 0) parts.Add(Loc.F("cleanupRecycled", result.Recycled));
+        if (result.Left > 0) parts.Add(Loc.F("cleanupLeft", Cleanup.Bytes(result.Left)));
+        return string.Join(" · ", parts);
     }
 
     void Refresh()

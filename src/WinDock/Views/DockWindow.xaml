@@ -834,6 +834,37 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:ShelfWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource IconSize}" ToolTip="{Binding Tip}">
+                <Border x:Name="Face" CornerRadius="13" Background="{DynamicResource TileFace}"/>
+                <TextBlock Text="&#xE7B8;" FontFamily="{StaticResource Glyphs}" FontSize="19" Foreground="{DynamicResource DockInk}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Border x:Name="Count" CornerRadius="7" MinWidth="14" Height="14" Padding="3,0" Background="#4C8DFF"
+                        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,2,0">
+                    <TextBlock Text="{Binding Count}" FontSize="9" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Count}" Value="0">
+                    <Setter TargetName="Count" Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:CleanupWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource IconSize}" ToolTip="{Binding Tip}">
+                <Border x:Name="Face" CornerRadius="13" Background="{DynamicResource TileFace}"/>
+                <TextBlock x:Name="Icon" Text="&#xEA99;" FontFamily="{StaticResource Glyphs}" FontSize="19" Foreground="{DynamicResource DockInk}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Busy}" Value="True">
+                    <Setter TargetName="Face" Property="Background" Value="#E62FB37A"/>
+                    <Setter TargetName="Icon" Property="Foreground" Value="White"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:RigdeckWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
                 <Viewbox>
