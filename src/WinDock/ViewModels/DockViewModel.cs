@@ -93,7 +93,6 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         }
     }
 
-    // Windows sharing this vm each report their own state; ticking stops only when none is on screen.
     readonly Dictionary<object, bool> windowsOff = [];
 
     public void SetOffScreen(object window, bool off)
@@ -220,7 +219,7 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
 
     public void RefreshMic()
     {
-        foreach (var mic in widgets.Values.OfType<MicWidget>()) mic.Refresh(DateTime.Now);
+        foreach (var mic in widgets.Values.OfType<MicWidget>()) mic.Refresh();
     }
 
     bool MusicHidden => MediaSessions.Shared.Current is null && !musicGrace.IsEnabled;
@@ -378,7 +377,6 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         return fresh;
     }
 
-    // keyed by kind (and nth of that kind), not position, so moving a widget keeps its running state
     WidgetTile Widget(string env, int nth, WidgetSpec spec)
     {
         var key = $"widget:{env}:{spec.Kind}:{nth}";
@@ -395,7 +393,6 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         return w;
     }
 
-    // Where the widget would land when moved one place left (-1) or right (1); null at the ends.
     public int? Neighbor(WidgetTile widget, int delta)
     {
         if (Active?.Model.Widgets is not { } list) return null;
@@ -416,7 +413,6 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         Rebuild();
     }
 
-    // Dropped before another widget, or at the end when there is none.
     public void PlaceWidget(WidgetTile widget, WidgetTile? before)
     {
         if (Active?.Model.Widgets is not { } list || list.IndexOf(widget.Spec) is var at && at < 0) return;

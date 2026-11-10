@@ -166,7 +166,7 @@ public sealed class RigdeckEditor : Window
         _ => "rigStepWait"
     });
 
-    FrameworkElement StepIcon(int index, RigStepSpec step)
+    FrameworkElement StepIcon(RigStepSpec step)
     {
         var control = step.Type == RigStep.System ? RigRunner.Controls.FirstOrDefault(c => c.Id == step.Target) : null;
         var source = step.Icon ?? (action.FirstOpen == step ? action.Icon : null) ?? step.Target;
@@ -222,7 +222,7 @@ public sealed class RigdeckEditor : Window
     Grid Row(int index, RigStepSpec step)
     {
         var ink = Res<Brush>("Ink");
-        var kind = StepIcon(index, step);
+        var kind = StepIcon(step);
 
         var options = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
         UIElement middle;

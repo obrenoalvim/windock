@@ -129,9 +129,8 @@ public static partial class TaskbarBlob
     static byte[] BuildLinkInfo(string linkPath)
     {
         var label = new StringBuilder(261);
-        uint serial = 0;
         var root = Path.GetPathRoot(linkPath) ?? @"C:\";
-        if (!GetVolumeInformationW(root, label, label.Capacity, out serial, out _, out _, new StringBuilder(32), 32)) label.Clear();
+        if (!GetVolumeInformationW(root, label, label.Capacity, out var serial, out _, out _, new StringBuilder(32), 32)) label.Clear();
         var ansi = Encoding.GetEncoding(System.Globalization.CultureInfo.CurrentCulture.TextInfo.ANSICodePage);
         var labelBytes = ansi.GetBytes(label.ToString() + "\0");
         var pathBytes = ansi.GetBytes(linkPath + "\0");
@@ -167,7 +166,7 @@ public static partial class TaskbarBlob
     {
         var fileItem = reuse is null
             ? BuildFileItem(linkName, linkSize, appId, shortName, rng, favoriteOrder)
-            : ReorderTrail(reuse.FileItem, linkName, appId, shortName);
+            : ReorderTrail(reuse.FileItem, shortName);
 
         var ms = new MemoryStream();
         ms.Write(Root);
@@ -177,7 +176,7 @@ public static partial class TaskbarBlob
         return new IdList(ms.ToArray(), fileItem);
     }
 
-    static byte[] ReorderTrail(byte[] favoriteItem, string linkName, string appId, byte[] shortName)
+    static byte[] ReorderTrail(byte[] favoriteItem, byte[] shortName)
     {
         var extStart = 14 + shortName.Length;
         var extSize = BitConverter.ToUInt16(favoriteItem, extStart);

@@ -62,7 +62,11 @@ public sealed class TaskbarCover
                 return cover;
             });
         }
-        catch (Exception) { return null; }
+        catch (Exception e)
+        {
+            App.Log(e);
+            return null;
+        }
     }
 
     public void Release(int ticket)

@@ -572,7 +572,6 @@ public sealed partial class ClaudeWidget : WidgetTile
                 if (used >= t) yield return (name, t, $"{name}:{t}:{Window(reset):O}");
     }
 
-    // resets_at carries sub-second jitter between fetches; round so one window is one alert key
     static DateTime? Window(DateTime? reset) =>
         reset is { } r ? new DateTime((r.Ticks + TimeSpan.TicksPerMinute * 30) / TimeSpan.TicksPerHour * TimeSpan.TicksPerHour, r.Kind) : null;
 
@@ -746,9 +745,9 @@ public sealed partial class MicWidget : WidgetTile
     [ObservableProperty] bool present;
     [ObservableProperty] string tip = "";
 
-    public override void Tick(DateTime now) => Refresh(now);
+    public override void Tick(DateTime now) => Refresh();
 
-    public void Refresh(DateTime now)
+    public void Refresh()
     {
         var mic = Audio.ReadMic();
         Present = mic is not null;
@@ -760,7 +759,7 @@ public sealed partial class MicWidget : WidgetTile
     public override void Click(DateTime now)
     {
         Audio.ToggleMic();
-        Refresh(now);
+        Refresh();
     }
 }
 
@@ -874,7 +873,6 @@ public sealed partial class TodoWidget(string key, WidgetSpec spec) : WidgetTile
     }
 }
 
-// The games one store has installed. The Steam widget can also list the rest of the library: Spec.Text "all" (anything else is installed only).
 public abstract partial class GamesWidget(string key, WidgetSpec spec, string platform) : WidgetTile(key, spec)
 {
     protected override CompactFace Compact() => Logo is null ? new(Number, Glyph: "", Tip: Tip) : new("", Image: Logo, Tip: Tip);
@@ -1488,8 +1486,6 @@ public sealed partial class CleanupWidget(string key, WidgetSpec spec) : WidgetT
     }
 }
 
-// RigDeck inside the dock: shortcuts that run one or more steps (open apps on a monitor, commands, key combos, PC controls...).
-// The tile is the brand mark; clicking it opens the panel with every shortcut.
 public sealed partial class RigdeckWidget(string key, WidgetSpec spec) : WidgetTile(key, spec)
 {
     protected override CompactFace Compact() => new("", Image: Logo, Tip: Tip);
@@ -1505,7 +1501,6 @@ public sealed partial class RigdeckWidget(string key, WidgetSpec spec) : WidgetT
     string? parsedFrom;
     IReadOnlyList<RigAction> parsed = [];
 
-    // parsed once per saved text: the panel asks for the list several times each time it opens
     public IReadOnlyList<RigAction> Actions
     {
         get
@@ -1529,7 +1524,6 @@ public sealed partial class RigdeckWidget(string key, WidgetSpec spec) : WidgetT
 
     static readonly Dictionary<string, System.Windows.Media.ImageSource> Icons = [];
 
-    // shell icons are slow to pull; keep the ones that resolved
     public static System.Windows.Media.ImageSource? IconOf(RigAction action)
     {
         if ((action.Icon ?? action.FirstOpen?.Icon ?? action.FirstOpen?.Target) is not { } source) return null;

@@ -48,7 +48,7 @@ public partial class DockWindow : Window
     (object Item, Type Kind)? flyoutKey, closedKey;
     DateTime closedAt, menuClosedAt;
     FrameworkElement? pressedElement;
-    DockTile? pressed; // the pinned app or widget being dragged
+    DockTile? pressed;
     Point pressAt;
     bool dragging, dragOut;
     string? dragHint;

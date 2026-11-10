@@ -23,7 +23,10 @@ public sealed class PresetStore
                 if (p.Name == "") p.Name = p.Id;
                 list.Add(p);
             }
-            catch (Exception e) when (e is JsonException or IOException or FormatException) { }
+            catch (Exception e) when (e is JsonException or IOException or FormatException)
+            {
+                App.Log(new InvalidDataException($"Preset {file} could not be read", e));
+            }
         }
         return list;
     }
