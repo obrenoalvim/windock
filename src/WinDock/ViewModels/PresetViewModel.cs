@@ -25,7 +25,10 @@ public sealed partial class WidgetChoice(string kind, bool isOn, Action<WidgetCh
     {
         toggled(this);
         OnPropertyChanged(nameof(Size));
+        OnPropertyChanged(nameof(ShowsSize));
     }
+
+    public bool ShowsSize => IsOn && !WidgetSpec.SingleSize.Contains(Kind);
 
     public IReadOnlyList<SizeOption> Sizes =>
         (Kind == WidgetSpec.Music

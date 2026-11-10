@@ -257,4 +257,162 @@ public class WidgetTests
         var back = JsonSerializer.Deserialize<Preset>(JsonSerializer.Serialize(preset, Json.Options), Json.Options)!;
         Assert.Equal("linha 1\nlinha 2", Assert.Single(back.Widgets!).Text);
     }
+
+    [Fact]
+    public void Uninstaller_finds_the_program_and_its_command()
+    {
+        var code = new InstalledApp("Visual Studio Code", "Microsoft", @"D:\Apps\Microsoft VS Code", @"""D:\Apps\Microsoft VS Code\unins000.exe""");
+        var nested = new InstalledApp("Code Helper", null, @"D:\Apps\Microsoft VS Code\helper", "helper.exe /uninstall");
+        var msi = new InstalledApp("7-Zip 24.08 (x64)", "Igor Pavlov", null, "MsiExec.exe /I{23170F69-40C1-2702-2408-000001000000}");
+        InstalledApp[] apps = [code, nested, msi];
+
+        Assert.Equal(code, Uninstaller.Match(apps, @"D:\Apps\Microsoft VS Code\Code.exe", "Code"));
+        Assert.Equal(nested, Uninstaller.Match(apps, @"D:\Apps\Microsoft VS Code\helper\h.exe", null));
+        Assert.Equal(msi, Uninstaller.Match(apps, null, "7-Zip"));
+        Assert.Null(Uninstaller.Match(apps, @"D:\Other\tool.exe", "zz"));
+
+        Assert.Equal(("msiexec.exe", "/x {23170F69-40C1-2702-2408-000001000000} /passive /norestart", true), Uninstaller.Command(msi));
+        Assert.Equal((@"D:\Apps\Microsoft VS Code\unins000.exe", "/SILENT /SUPPRESSMSGBOXES /NORESTART", true), Uninstaller.Command(code));
+        Assert.Equal((@"C:\Program Files\App\uninstall.exe", "--force"), Uninstaller.Split(@"C:\Program Files\App\uninstall.exe --force"));
+
+        Assert.True(Uninstaller.Broken(@"C:\WinDockNoSuchFolder\unins000.exe"));
+        Assert.False(Uninstaller.Broken("msiexec.exe"));
+        Assert.False(Uninstaller.Broken(Path.Combine(Environment.SystemDirectory, "cmd.exe")));
+
+        Assert.True(Uninstaller.Related("Microsoft VS Code", code));
+        Assert.False(Uninstaller.Related("Games", code));
+        Assert.Null(Uninstaller.Specific(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)));
+        Assert.Null(Uninstaller.Specific(@"C:\"));
+        Assert.Null(Uninstaller.Specific(Environment.GetFolderPath(Environment.SpecialFolder.Windows) + @"\Installer\x"));
+    }
+
+    [Fact]
+    public async Task Uninstaller_treats_a_vanished_folder_as_removed_and_drops_the_orphan_entry()
+    {
+        var id = $"WinDockOrphan{Guid.NewGuid():N}";
+        var regPath = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\" + id;
+        var folder = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), id)).FullName.TrimEnd('\\');
+        try
+        {
+            using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(regPath)) key.SetValue("DisplayName", id);
+            var app = new InstalledApp(id, null, folder, "steam.exe steam://uninstall/1", Hive: Microsoft.Win32.RegistryHive.CurrentUser, Id: id);
+            Assert.False(Uninstaller.Gone(app with { Command = "x.exe" }, hadFolder: true));
+            Directory.Delete(folder);
+            Assert.True(Uninstaller.Gone(app with { Command = "x.exe" }, hadFolder: true));
+            Assert.False(Uninstaller.Gone(app with { Command = "x.exe" }, hadFolder: false));
+            Assert.Equal(0, await Uninstaller.Clean([], app));
+            Assert.False(Uninstaller.StillInstalled(app));
+            using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(regPath)) key.SetValue("Other", "x");
+            Assert.False(Uninstaller.StillInstalled(app));
+        }
+        finally
+        {
+            Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(regPath, false);
+            if (Directory.Exists(folder)) Directory.Delete(folder);
+        }
+    }
+
+    [Fact]
+    public void Uninstaller_finds_the_folder_of_a_program_without_an_uninstaller()
+    {
+        var root = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), $"WinDockGames{Guid.NewGuid():N}")).FullName;
+        try
+        {
+            var game = Path.Combine(root, "Days Gone");
+            var exe = Path.Combine(game, "BendGame", "Win64", "DaysGone.exe");
+            var hidden = Path.Combine(root, ".claude", "claude.exe");
+            foreach (var file in new[] { exe, hidden })
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+                File.WriteAllText(file, "x");
+            }
+            Assert.Equal(game, Uninstaller.PortableFolder(exe, []));
+            Assert.Null(Uninstaller.PortableFolder(hidden, []));
+            Assert.Null(Uninstaller.PortableFolder(exe, [new InstalledApp("Other", null, Path.Combine(game, "BendGame"))]));
+            Assert.Equal([game], Uninstaller.Remnants(game, exe));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void Converter_tells_images_animations_videos_and_audio_apart()
+    {
+        Assert.Equal(MediaKind.Image, Converter.Classify("""{"streams":[{"codec_name":"png","codec_type":"video","disposition":{"attached_pic":0}}],"format":{"format_name":"png_pipe"}}""").Kind);
+        Assert.Equal(MediaKind.Animation, Converter.Classify("""{"streams":[{"codec_name":"gif","codec_type":"video","nb_frames":"20","disposition":{"attached_pic":0}}],"format":{"format_name":"gif","duration":"2.000000"}}""").Kind);
+        var video = Converter.Classify("""{"streams":[{"codec_name":"h264","codec_type":"video","disposition":{"attached_pic":0}},{"codec_name":"aac","codec_type":"audio","disposition":{"attached_pic":0}}],"format":{"format_name":"mov,mp4","duration":"3.000000"}}""");
+        Assert.Equal((MediaKind.Video, 3.0), (video.Kind, video.Duration));
+        Assert.Equal(MediaKind.Audio, Converter.Classify("""{"streams":[{"codec_name":"mp3","codec_type":"audio"},{"codec_name":"mjpeg","codec_type":"video","disposition":{"attached_pic":1}}],"format":{"format_name":"mp3","duration":"2.0"}}""").Kind);
+        Assert.Equal(MediaKind.Unknown, Converter.Classify("not json").Kind);
+
+        var forPng = Converter.TargetsFor(MediaKind.Image, @"C:\a\photo.png").Select(t => t.Id).ToList();
+        Assert.DoesNotContain("png", forPng);
+        Assert.Contains("jpg", forPng);
+        Assert.DoesNotContain("mp3", forPng);
+        Assert.Contains("mp4small", Converter.TargetsFor(MediaKind.Video, @"C:\a\clip.mp4").Select(t => t.Id));
+
+        Assert.Equal(MediaKind.Document, Converter.KindByExtension(@"C:\a\notes.TXT"));
+        Assert.Equal(MediaKind.Pdf, Converter.KindByExtension(@"C:\a\cv.pdf"));
+        Assert.Equal(MediaKind.Unknown, Converter.KindByExtension(@"C:\a\setup.exe"));
+        var forTxt = Converter.TargetsFor(MediaKind.Document, @"C:\a\notes.txt").Select(t => t.Id).ToList();
+        Assert.Equal(["pdf", "docx", "odt", "rtf"], forTxt);
+        Assert.Contains("txt", Converter.TargetsFor(MediaKind.Document, @"C:\a\cv.docx").Select(t => t.Id));
+        Assert.Equal(["pdftxt", "pdfdocx", "pdfpng"], Converter.TargetsFor(MediaKind.Pdf, @"C:\a\cv.pdf").Select(t => t.Id));
+    }
+
+    [Fact]
+    public void Converter_never_offers_video_formats_for_text_files()
+    {
+        var file = Path.Combine(Path.GetTempPath(), $"WinDock{Guid.NewGuid():N}.txt");
+        File.WriteAllText(file, string.Concat(Enumerable.Repeat("linha de texto comum\n", 400)));
+        try { Assert.Equal(MediaKind.Document, Converter.Probe(file).Kind); }
+        finally { File.Delete(file); }
+    }
+
+    [Fact]
+    public async Task Converter_creates_the_copy_next_to_the_source_without_overwriting()
+    {
+        if (Converter.Ffmpeg() is null) return;
+        var dir = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), $"WinDockConvert{Guid.NewGuid():N}")).FullName;
+        try
+        {
+            var source = Path.Combine(dir, "clip.wav");
+            var mp3 = Converter.Targets.Single(t => t.Id == "mp3");
+            File.WriteAllText(Path.Combine(dir, "clip.mp3"), "taken");
+            var output = Converter.OutputFor(source, mp3);
+            Assert.Equal(Path.Combine(dir, "clip (1).mp3"), output);
+
+            var make = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Converter.Ffmpeg()!, $"-v error -f lavfi -i sine=d=2 \"{source}\"") { CreateNoWindow = true })!;
+            await make.WaitForExitAsync();
+            var info = Converter.Probe(source);
+            Assert.Equal(MediaKind.Audio, info.Kind);
+            var reports = new List<double>();
+            var error = await Converter.Run(source, output, mp3, info.Duration, new SyncProgress(reports.Add), CancellationToken.None);
+            Assert.Null(error);
+            Assert.True(new FileInfo(output).Length > 0);
+            Assert.Equal(1, reports[^1]);
+            Assert.Equal("taken", File.ReadAllText(Path.Combine(dir, "clip.mp3")));
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    sealed class SyncProgress(Action<double> report) : IProgress<double>
+    {
+        public void Report(double value) => report(value);
+    }
+
+    [Fact]
+    public void Uninstaller_sends_plain_files_to_the_bin_instead_of_matching_a_program()
+    {
+        var file = Path.Combine(Path.GetTempPath(), $"Steam-{Guid.NewGuid():N}.txt");
+        File.WriteAllText(file, "x");
+        try
+        {
+            InstalledApp[] apps = [new("Steam", "Valve", Path.GetTempPath().TrimEnd('\\'))];
+            Assert.Null(Uninstaller.Find(file, null, null, apps));
+            Assert.True(Uninstaller.Trashable(file));
+            Assert.False(Uninstaller.Trashable(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)));
+            Assert.False(Uninstaller.Trashable(file + ".missing"));
+        }
+        finally { File.Delete(file); }
+    }
 }

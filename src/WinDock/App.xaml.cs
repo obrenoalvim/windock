@@ -77,13 +77,18 @@ public partial class App : System.Windows.Application
 
     void OnCrash(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
+        Log(e.Exception);
+        e.Handled = true;
+    }
+
+    public static void Log(Exception error)
+    {
         try
         {
             Directory.CreateDirectory(Settings.Dir);
-            File.AppendAllText(Path.Combine(Settings.Dir, "error.log"), $"{DateTime.Now:O}  {e.Exception}{Environment.NewLine}{Environment.NewLine}");
+            File.AppendAllText(Path.Combine(Settings.Dir, "error.log"), $"{DateTime.Now:O}  {error}{Environment.NewLine}{Environment.NewLine}");
         }
         catch (Exception log) when (log is IOException or UnauthorizedAccessException) { }
-        e.Handled = true;
     }
 
     protected override void OnExit(ExitEventArgs e)

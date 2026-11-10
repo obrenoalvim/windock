@@ -51,6 +51,8 @@ public partial class DockWindow : Window
     DockTile? pressed; // the pinned app or widget being dragged
     Point pressAt;
     bool dragging, dragOut;
+    string? dragHint;
+    UninstallWidget? overBin;
     Action? undo;
     readonly DispatcherTimer toastTimer = new() { Interval = TimeSpan.FromSeconds(6) };
 
@@ -339,21 +341,126 @@ public partial class DockWindow : Window
         shift.X = at.X - pressAt.X;
         shift.Y = Math.Min(0, at.Y - pressAt.Y);
         var barTop = panel.TranslatePoint(new Point(0, panel.Bar.Top), Root).Y;
-        var outside = pressed is AppTile && at.Y < barTop - IconSize * 0.9; // only apps can be dropped off the dock
-        if (outside != dragOut)
+        dragOut = pressed is AppTile { IsPinned: true } && at.Y < barTop - IconSize * 0.9;
+        overBin = !dragOut && pressed is AppTile { IsFolder: false } ? BinAt(at) : null;
+        var hint = dragOut ? "dropToUnpin" : overBin is not null ? "dropToUninstall" : null;
+        if (hint != dragHint)
         {
-            dragOut = outside;
-            pressedElement.Opacity = outside ? 0.45 : 0.9;
-            if (outside) ShowName(Loc.T("dropToUnpin"));
-            else HideName();
+            dragHint = hint;
+            pressedElement.Opacity = hint is null ? 0.9 : 0.45;
+            if (hint is null) HideName();
+            else ShowName(Loc.T(hint));
         }
-        if (dragOut) PlaceName();
+        if (hint is not null) PlaceName();
+    }
+
+    UninstallWidget? BinAt(Point at) => DropWidgetAt(at) as UninstallWidget;
+
+    WidgetTile? DropWidgetAt(Point at) =>
+        vm.Tiles.OfType<WidgetTile>().Where(w => w is UninstallWidget or ConvertWidget)
+            .FirstOrDefault(w => Strip.ItemContainerGenerator.ContainerFromItem(w) is FrameworkElement box
+                                 && new Rect(box.TranslatePoint(new Point(), Root), box.RenderSize).Contains(at));
+
+    async void Convert(ConvertWidget widget, IReadOnlyList<string> files)
+    {
+        try
+        {
+            var probed = await Task.Run(() => files.Where(File.Exists).Select(f => (File: f, Info: Converter.Probe(f))).ToList());
+            var known = probed.Where(p => p.Info.Kind != MediaKind.Unknown).ToList();
+            var unknown = files.Except(known.Select(p => p.File)).Select(Path.GetFileName).ToList();
+            if (unknown.Count > 0) vm.Main.Notify(Loc.F("convertUnsupported", string.Join(", ", unknown)));
+            var groups = known.GroupBy(p => p.Info.Kind).ToList();
+            if (groups.Count == 0) return;
+            var menu = new ContextMenu();
+            foreach (var group in groups)
+            {
+                if (menu.Items.Count > 0) menu.Items.Add(new Separator());
+                var title = groups.Count > 1 || group.Count() > 1 ? $"{Loc.T("convertKind_" + group.Key)} ({group.Count()})" : Loc.T("convertTo");
+                menu.Items.Add(new MenuItem { Header = title, IsEnabled = false });
+                var targets = Converter.Targets.Where(t => group.Any(p => Converter.TargetsFor(group.Key, p.File).Contains(t))).ToList();
+                foreach (var target in targets.Where(t => Converter.Has(t.Engine)))
+                {
+                    var jobs = group.Where(p => Converter.TargetsFor(group.Key, p.File).Contains(target)).Select(p => new ConvertJob(p.File, target, p.Info.Duration)).ToList();
+                    menu.Items.Add(Item(target.Label, () => _ = widget.Add(jobs)));
+                }
+                foreach (var engine in targets.Select(t => t.Engine).Distinct().Where(e => !Converter.Has(e) && e != ConvertEngine.PdfText))
+                    menu.Items.Add(Item(Loc.T("convertInstall_" + engine), () => Converter.Install(engine)));
+            }
+            Open(menu);
+        }
+        catch (Exception e)
+        {
+            vm.Main.Notify($"{Loc.F("convertFailed", string.Join(", ", files.Select(Path.GetFileName)))}: {e.Message}");
+            throw;
+        }
+    }
+
+    async void Uninstall(UninstallWidget bin, IReadOnlyList<UninstallRequest> requests)
+    {
+        try
+        {
+            await bin.Add(requests, ConfirmUninstall);
+        }
+        catch (Exception e)
+        {
+            vm.Main.Notify($"{Loc.F("uninstallFailed", string.Join(", ", requests.Select(r => r.Label)))}: {e.Message}");
+            throw;
+        }
+    }
+
+    UninstallRequest Request(AppTile app) =>
+        new(app.RevealPath, app.AppId ?? app.Pin?.AppId, app.Name, () =>
+        {
+            if (app.IsPinned) vm.Unpin(app, vm.IsAlwaysPinned(app));
+        });
+
+    bool ConfirmUninstall(IReadOnlyList<UninstallJob> jobs)
+    {
+        const int shown = 8;
+        var lines = new List<string>();
+        if (jobs is [{ IsTrash: true } trash])
+        {
+            lines.Add(Loc.F("uninstallTrashAsk", trash.Name));
+            lines.Add("");
+            lines.AddRange(trash.Leftovers.Take(shown).Select(l => "• " + l));
+            if (trash.Leftovers.Count > shown) lines.Add(Loc.F("uninstallMore", trash.Leftovers.Count - shown));
+        }
+        else if (jobs is [{ App: { } single } job])
+        {
+            lines.Add(Loc.F("uninstallAsk", single.Name));
+            if (single.Publisher is { Length: > 0 } publisher) lines.Add(publisher);
+            if (job.Leftovers.Count > 0)
+            {
+                lines.Add("");
+                lines.Add(Loc.T("uninstallLeftovers"));
+                lines.AddRange(job.Leftovers.Take(shown).Select(l => "• " + l));
+                if (job.Leftovers.Count > shown) lines.Add(Loc.F("uninstallMore", job.Leftovers.Count - shown));
+            }
+        }
+        else
+        {
+            var programs = jobs.Count(j => !j.IsTrash);
+            lines.Add(programs == jobs.Count ? Loc.F("uninstallAskMany", jobs.Count) : Loc.F("uninstallAskMixed", jobs.Count));
+            lines.Add("");
+            lines.AddRange(jobs.Take(shown * 2).Select(j => "• " + (j.IsTrash
+                ? Loc.F("uninstallLineTrash", j.Name)
+                : Loc.F("uninstallLineApp", j.Leftovers.Count == 0 ? j.Name : $"{j.Name} ({Loc.F("uninstallLeftoverCount", j.Leftovers.Count)})"))));
+            if (jobs.Count > shown * 2) lines.Add(Loc.F("uninstallMore", jobs.Count - shown * 2));
+        }
+        if (jobs.Any(j => j.IsTrash && Directory.Exists(j.Trash)))
+        {
+            lines.Add("");
+            lines.Add(Loc.T("uninstallTooBig"));
+        }
+        return MessageBox.Show(this, string.Join('\n', lines), "WinDock", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes;
     }
 
     void StartDrag()
     {
         dragging = true;
         dragOut = false;
+        dragHint = null;
+        overBin = null;
         hover.Stop();
         preview?.Hide();
         HideName();
@@ -374,6 +481,9 @@ public partial class DockWindow : Window
     {
         var tile = pressed!;
         var element = pressedElement!;
+        var bin = overBin;
+        overBin = null;
+        dragHint = null;
         dragging = false;
         pressed = null;
         element.LostMouseCapture -= OnDragLost;
@@ -394,11 +504,17 @@ public partial class DockWindow : Window
             return;
         }
         var app = (AppTile)tile;
+        if (bin is not null)
+        {
+            Uninstall(bin, [Request(app)]);
+            return;
+        }
         if (dragOut)
         {
             Unpinned(app);
             return;
         }
+        if (!app.IsPinned) return;
         var pins = vm.Tiles.OfType<AppTile>().Where(t => t.IsPinned).ToList();
         var others = pins.Where(t => t != app).ToList();
         var before = others.FirstOrDefault(t => Strip.ItemContainerGenerator.ContainerFromItem(t) is FrameworkElement box
@@ -565,7 +681,7 @@ public partial class DockWindow : Window
         var element = (FrameworkElement)sender;
         element.Opacity = 0.72;
         pressedElement = element;
-        pressed = element.DataContext switch { AppTile { IsPinned: true } app => app, WidgetTile widget => widget, _ => null };
+        pressed = element.DataContext switch { AppTile app when app.IsPinned || !app.IsFolder => app, WidgetTile widget => widget, _ => null };
         pressAt = e.GetPosition(Root);
     }
 
@@ -719,6 +835,8 @@ public partial class DockWindow : Window
             TodoWidget todo => new TodoPanel(todo, Dark),
             RigdeckWidget rigdeck => Rigdeck(rigdeck, element),
             GamesWidget games => new GamesPanel(games, Dark),
+            UninstallWidget uninstall => new UninstallPanel(uninstall, Dark),
+            ConvertWidget convert => new ConvertPanel(convert, Dark),
             _ => null
         };
         if (next is not null) ShowFlyout(next, element);
@@ -1026,23 +1144,29 @@ public partial class DockWindow : Window
             widget.Reset();
             widget.Poke();
         }));
-        var square = widget.Square(vm.Options.CompactWidgets);
-        menu.Items.Add(Item(Loc.T("widgetSquare"), () => Resize(widget, WidgetSpec.SquareSize), square));
-        if (widget is MusicWidget)
-        {
-            var size = widget.Spec.Size;
-            menu.Items.Add(Item(Loc.T("musicPause"), () => Resize(widget, WidgetSpec.WideSize),
-                !square && size is not (WidgetSpec.FullSize or WidgetSpec.BackdropSize)));
-            menu.Items.Add(Item(Loc.T("musicFull"), () => Resize(widget, WidgetSpec.FullSize), size == WidgetSpec.FullSize));
-            menu.Items.Add(Item(Loc.T("musicBackdrop"), () => Resize(widget, WidgetSpec.BackdropSize), size == WidgetSpec.BackdropSize));
-        }
-        else menu.Items.Add(Item(Loc.T("widgetWide"), () => Resize(widget, WidgetSpec.WideSize), !square));
-        menu.Items.Add(new Separator());
+        if (widget.Wide) AddSizes(menu, widget);
+        if (menu.Items.Count > 0) menu.Items.Add(new Separator());
         menu.Items.Add(Item(Loc.T("widgetLeft"), () => vm.MoveWidget(widget, -1), enabled: vm.Neighbor(widget, -1) is not null));
         menu.Items.Add(Item(Loc.T("widgetRight"), () => vm.MoveWidget(widget, 1), enabled: vm.Neighbor(widget, 1) is not null));
         menu.Items.Add(new Separator());
         menu.Items.Add(Item(Loc.T("editWidgets"), openSettings));
         Open(menu);
+    }
+
+    void AddSizes(ContextMenu menu, WidgetTile widget)
+    {
+        var square = widget.Square(vm.Options.CompactWidgets);
+        menu.Items.Add(Item(Loc.T("widgetSquare"), () => Resize(widget, WidgetSpec.SquareSize), square));
+        if (widget is not MusicWidget)
+        {
+            menu.Items.Add(Item(Loc.T("widgetWide"), () => Resize(widget, WidgetSpec.WideSize), !square));
+            return;
+        }
+        var size = widget.Spec.Size;
+        menu.Items.Add(Item(Loc.T("musicPause"), () => Resize(widget, WidgetSpec.WideSize),
+            !square && size is not (WidgetSpec.FullSize or WidgetSpec.BackdropSize)));
+        menu.Items.Add(Item(Loc.T("musicFull"), () => Resize(widget, WidgetSpec.FullSize), size == WidgetSpec.FullSize));
+        menu.Items.Add(Item(Loc.T("musicBackdrop"), () => Resize(widget, WidgetSpec.BackdropSize), size == WidgetSpec.BackdropSize));
     }
 
     void Resize(WidgetTile widget, string size)
@@ -1075,6 +1199,16 @@ public partial class DockWindow : Window
     {
         e.Handled = true;
         var files = e.Data.GetDataPresent(DataFormats.FileDrop);
+        if (files && DropWidgetAt(e.GetPosition(Root)) is { } target && Strip.ItemContainerGenerator.ContainerFromItem(target) is FrameworkElement box)
+        {
+            e.Effects = target is ConvertWidget ? DragDropEffects.Copy : DragDropEffects.Link;
+            if (hovered != box)
+            {
+                hovered = box;
+                ShowName(Loc.T(target is ConvertWidget ? "dropToConvert" : "dropToUninstall"));
+            }
+            return;
+        }
         if (files && DropTarget(e) is (var app, var element))
         {
             var opens = app.Opener() is not null;
@@ -1086,7 +1220,7 @@ public partial class DockWindow : Window
             }
             return;
         }
-        if (hovered is not null && hovered.DataContext is AppTile) HideName();
+        if (hovered is not null && hovered.DataContext is AppTile or UninstallWidget or ConvertWidget) HideName();
         hovered = null;
         e.Effects = files && vm.Active is not null ? DragDropEffects.Link : DragDropEffects.None;
     }
@@ -1107,6 +1241,15 @@ public partial class DockWindow : Window
         if (e.Data.GetData(DataFormats.FileDrop) is not string[] files) return;
         HideName();
         hovered = null;
+        switch (DropWidgetAt(e.GetPosition(Root)))
+        {
+            case UninstallWidget bin:
+                Uninstall(bin, files.Select(f => new UninstallRequest(f, null, null, CanTrash: true)).ToList());
+                return;
+            case ConvertWidget converter:
+                Convert(converter, files);
+                return;
+        }
         if (DropTarget(e) is (var app, var element))
         {
             if (app.Opener() is not (var exe, var args)) return;

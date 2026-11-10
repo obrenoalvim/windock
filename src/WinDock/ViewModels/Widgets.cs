@@ -50,7 +50,7 @@ public abstract partial class WidgetTile(string key, WidgetSpec spec) : DockTile
     public override string Key { get; } = key;
     public WidgetSpec Spec { get; private set; } = spec;
     public string Kind => Spec.Kind;
-    public virtual bool Wide => true;
+    public bool Wide => !WidgetSpec.SingleSize.Contains(Kind);
     public virtual bool CanReset => false;
     public virtual bool HasPanel => false;
     public virtual bool KeepsTime => false;
@@ -118,6 +118,8 @@ public abstract partial class WidgetTile(string key, WidgetSpec spec) : DockTile
         WidgetSpec.Rigdeck => new RigdeckWidget(key, spec),
         WidgetSpec.Steam => new SteamWidget(key, spec),
         WidgetSpec.Epic => new EpicWidget(key, spec),
+        WidgetSpec.Uninstall => new UninstallWidget(key, spec),
+        WidgetSpec.Convert => new ConvertWidget(key, spec),
         _ => new ClockWidget(key, spec)
     };
 }
@@ -495,7 +497,6 @@ public sealed partial class BatteryWidget : WidgetTile
 
     public bool Present { get; private set; }
 
-    public override bool Wide => false;
 
     [ObservableProperty] string text = "";
     [ObservableProperty] string glyph = "";
@@ -737,7 +738,6 @@ public sealed partial class MicWidget : WidgetTile
 
     public override DateTime Due(DateTime now) => DateTime.MaxValue;
 
-    public override bool Wide => false;
 
     [ObservableProperty] string glyph = "";
     [ObservableProperty] bool muted;
@@ -920,6 +920,401 @@ public abstract partial class GamesWidget(string key, WidgetSpec spec, string pl
 public sealed class SteamWidget(string key, WidgetSpec spec) : GamesWidget(key, spec, Games.Steam);
 
 public sealed class EpicWidget(string key, WidgetSpec spec) : GamesWidget(key, spec, Games.Epic);
+
+public sealed record UninstallRequest(string? Path, string? AppId, string? Name, Action? Removed = null, bool CanTrash = false)
+{
+    public string Label => Name ?? System.IO.Path.GetFileName(Path?.TrimEnd('\\')) ?? "";
+}
+
+public enum UninstallStage { Waiting, Running, Cleaning, Done, Partial, Failed }
+
+public sealed class UninstallJob
+{
+    UninstallJob(InstalledApp? app, string? trash, IReadOnlyList<string> leftovers, Action? removed)
+    {
+        App = app;
+        Trash = trash;
+        Leftovers = leftovers;
+        Removed = removed;
+        Silent = app is not null && Uninstaller.Silent(app);
+    }
+
+    public static UninstallJob Program(InstalledApp app, IReadOnlyList<string> leftovers, Action? removed, string? dropped = null) =>
+        new(app, null, leftovers, removed) { Dropped = dropped };
+
+    public string? Dropped { get; private init; }
+    public static UninstallJob Recycle(string path, string? folder = null) =>
+        folder is null ? new(null, path, [path], null) : new(null, folder, Uninstaller.Remnants(folder, path), null);
+
+    public InstalledApp? App { get; }
+    public string? Trash { get; }
+    public IReadOnlyList<string> Leftovers { get; }
+    public Action? Removed { get; }
+    public bool Silent { get; }
+    public bool IsTrash => App is null;
+    public string Name => App?.Name ?? Path.GetFileName(Trash!.TrimEnd('\\'));
+    public UninstallStage Stage { get; set; }
+    public DateTime? Started { get; set; }
+    public DateTime? Finished { get; set; }
+    public int Stuck { get; set; }
+    public string? Error { get; set; }
+
+    public bool Same(UninstallJob other) => App is not null
+        ? App == other.App
+        : Trash is not null && Trash.Equals(other.Trash, StringComparison.OrdinalIgnoreCase);
+}
+
+public sealed partial class UninstallWidget(string key, WidgetSpec spec) : WidgetTile(key, spec)
+{
+    public const string TrashGlyph = "";
+    const int HistoryLimit = 20;
+
+    protected override CompactFace Compact() => new(queue.Count > 0 ? queue.Count.ToString(CultureInfo.InvariantCulture) : "", Glyph: TrashGlyph, Alert: Busy, Tip: Tip);
+
+    public override bool HasPanel => true;
+    public override DateTime Due(DateTime now) => DateTime.MaxValue;
+
+    [ObservableProperty] bool busy;
+    [ObservableProperty] int waiting;
+    [ObservableProperty] string tip = "";
+
+    readonly List<UninstallJob> queue = [];
+    readonly List<UninstallJob> history = [];
+    readonly List<UninstallJob> batch = [];
+    int searching;
+    bool draining;
+
+    public event Action? Changed;
+
+    public IReadOnlyList<UninstallJob> Queue => queue;
+    public IReadOnlyList<UninstallJob> History => history;
+    public UninstallJob? Current => draining ? queue.FirstOrDefault() : null;
+    public bool Searching => searching > 0;
+    public int BatchDone => batch.Count;
+    public int BatchTotal => batch.Count + queue.Count;
+
+    public double Progress
+    {
+        get
+        {
+            if (BatchTotal == 0) return 0;
+            var partial = Current?.Stage switch { UninstallStage.Cleaning => 0.75, UninstallStage.Running => 0.35, _ => 0 };
+            return (batch.Count + partial) / BatchTotal;
+        }
+    }
+
+    public override void Tick(DateTime now)
+    {
+        Busy = draining || searching > 0;
+        Waiting = Math.Max(0, queue.Count - (draining ? 1 : 0));
+        var status = Current is { } job ? Loc.F("uninstalling", job.Name) : Loc.T(Busy ? "uninstallSearching" : "uninstallHint");
+        Tip = Waiting > 0 ? $"{status} · {Loc.F("uninstallQueued", Waiting)}" : status;
+    }
+
+    public async Task Add(IReadOnlyList<UninstallRequest> requests, Func<IReadOnlyList<UninstallJob>, bool> confirm)
+    {
+        if (requests.Count == 0) return;
+        searching++;
+        Refresh();
+        List<UninstallJob> found = [];
+        List<string> missing = [];
+        try
+        {
+            await Task.Run(() =>
+            {
+                var apps = Uninstaller.Installed();
+                foreach (var request in requests)
+                {
+                    var trashable = request.CanTrash && Uninstaller.Trashable(request.Path);
+                    var job = Uninstaller.Find(request.Path, request.AppId, request.Name, apps) is { } app
+                        ? UninstallJob.Program(app, WithDropped(Uninstaller.Leftovers(app, apps), trashable ? request.Path : null), request.Removed, trashable ? request.Path : null)
+                        : trashable ? UninstallJob.Recycle(request.Path!, Uninstaller.PortableFolder(request.Path!, apps)) : null;
+                    if (job is null) missing.Add(request.Label);
+                    else if (!found.Any(job.Same)) found.Add(job);
+                }
+            });
+        }
+        finally
+        {
+            searching--;
+            Refresh();
+        }
+        if (missing.Count > 0) Raise(Loc.F("uninstallNotFound", string.Join(", ", missing)));
+        found.RemoveAll(j => queue.Any(j.Same));
+        if (found.Count == 0 || !confirm(found)) return;
+        found.RemoveAll(j => queue.Any(j.Same));
+        queue.AddRange(found);
+        Refresh();
+        if (!draining) await Drain();
+    }
+
+    static IReadOnlyList<string> WithDropped(List<string> leftovers, string? dropped)
+    {
+        if (dropped is not null && !leftovers.Any(l => dropped.StartsWith(l.TrimEnd('\\') + '\\', StringComparison.OrdinalIgnoreCase) || dropped.Equals(l, StringComparison.OrdinalIgnoreCase)))
+            leftovers.Add(dropped);
+        return leftovers;
+    }
+
+    public void Cancel(UninstallJob job)
+    {
+        if (job == Current) return;
+        queue.Remove(job);
+        Refresh();
+    }
+
+    public void ClearHistory()
+    {
+        history.Clear();
+        Refresh();
+    }
+
+    async Task Drain()
+    {
+        draining = true;
+        batch.Clear();
+        try
+        {
+            while (queue.Count > 0)
+            {
+                var job = queue[0];
+                await Run(job);
+                queue.Remove(job);
+                batch.Add(job);
+                history.Insert(0, job);
+                if (history.Count > HistoryLimit) history.RemoveAt(history.Count - 1);
+                Refresh();
+            }
+        }
+        finally
+        {
+            draining = false;
+            Refresh();
+        }
+        Raise(Summary(batch));
+    }
+
+    static string Summary(IReadOnlyList<UninstallJob> jobs)
+    {
+        if (jobs is [var job]) return Message(job);
+        var failed = jobs.Count(j => j.Stage == UninstallStage.Failed);
+        return failed == 0 ? Loc.F("uninstallBatch", jobs.Count) : Loc.F("uninstallBatchFailed", jobs.Count - failed, failed);
+    }
+
+    public static string Message(UninstallJob job) => (job.IsTrash, job.Stage) switch
+    {
+        (true, UninstallStage.Done) => Loc.F("uninstallTrashed", job.Name),
+        (true, _) => Loc.F("uninstallTrashFailed", job.Name),
+        (false, UninstallStage.Done) => Loc.F("uninstallDone", job.Name),
+        (false, UninstallStage.Partial) => Loc.F("uninstallDoneLeft", job.Name, job.Stuck),
+        _ => job.Error is { } error ? $"{Loc.F("uninstallFailed", job.Name)}: {error}" : Loc.F("uninstallFailed", job.Name)
+    };
+
+    async Task Run(UninstallJob job)
+    {
+        job.Started = DateTime.Now;
+        job.Stage = job.IsTrash ? UninstallStage.Cleaning : UninstallStage.Running;
+        using var skip = new CancellationTokenSource();
+        skipping = skip;
+        Refresh();
+        try
+        {
+            if (job.App is { } app && !await Uninstaller.Remove(app, skip.Token))
+            {
+                job.Stage = UninstallStage.Failed;
+                if (job.Dropped is { } dropped && await Task.Run(() => Uninstaller.Clean([dropped])) == 0)
+                    job.Error = Loc.T("uninstallOnlyDropped");
+                return;
+            }
+            skipping = null;
+            job.Stage = UninstallStage.Cleaning;
+            Refresh();
+            job.Stuck = await Task.Run(() => Uninstaller.Clean(job.Leftovers, job.App));
+            if (!job.IsTrash) job.Removed?.Invoke();
+            job.Stage = job.Stuck == 0 ? UninstallStage.Done : job.IsTrash ? UninstallStage.Failed : UninstallStage.Partial;
+        }
+        catch (OperationCanceledException)
+        {
+            job.Error = Loc.T("uninstallSkipped");
+            job.Stage = UninstallStage.Failed;
+        }
+        catch (Exception e)
+        {
+            App.Log(e);
+            job.Error = e.Message;
+            job.Stage = UninstallStage.Failed;
+        }
+        finally
+        {
+            skipping = null;
+            job.Finished = DateTime.Now;
+        }
+    }
+
+    CancellationTokenSource? skipping;
+
+    public bool CanSkip => skipping is not null;
+
+    public void Skip() => skipping?.Cancel();
+
+    void Refresh()
+    {
+        Tick(DateTime.Now);
+        RefreshFace();
+        Changed?.Invoke();
+    }
+}
+
+public enum ConvertStage { Waiting, Running, Done, Failed }
+
+public sealed class ConvertJob(string source, ConvertTarget target, double duration)
+{
+    public string Source { get; } = source;
+    public ConvertTarget Target { get; } = target;
+    public double Duration { get; } = duration;
+    public string? Output { get; set; }
+    public string Name => Path.GetFileName(Source);
+    public ConvertStage Stage { get; set; }
+    public double Progress { get; set; }
+    public DateTime? Started { get; set; }
+    public DateTime? Finished { get; set; }
+    public string? Error { get; set; }
+}
+
+public sealed partial class ConvertWidget(string key, WidgetSpec spec) : WidgetTile(key, spec)
+{
+    public const string ConvertGlyph = "";
+    const int HistoryLimit = 20;
+
+    protected override CompactFace Compact() => new(Waiting > 0 ? Waiting.ToString(CultureInfo.InvariantCulture) : "", Glyph: ConvertGlyph, Ring: Busy ? Percent : -1, Tip: Tip);
+
+    public override bool HasPanel => true;
+    public override DateTime Due(DateTime now) => DateTime.MaxValue;
+
+    [ObservableProperty] bool busy;
+    [ObservableProperty] int waiting;
+    [ObservableProperty] double percent;
+    [ObservableProperty] string tip = "";
+
+    readonly List<ConvertJob> queue = [];
+    readonly List<ConvertJob> history = [];
+    int batchDone;
+    bool draining;
+    CancellationTokenSource? cancel;
+
+    public event Action? Changed;
+
+    public IReadOnlyList<ConvertJob> Queue => queue;
+    public IReadOnlyList<ConvertJob> History => history;
+    public ConvertJob? Current => draining ? queue.FirstOrDefault() : null;
+    public int BatchDone => batchDone;
+    public int BatchTotal => batchDone + queue.Count;
+
+    public override void Tick(DateTime now)
+    {
+        Busy = draining;
+        Waiting = Math.Max(0, queue.Count - (draining ? 1 : 0));
+        Percent = Current?.Progress ?? 0;
+        var status = Current is { } job ? Loc.F("converting", job.Name, (int)(job.Progress * 100)) : Loc.T("convertHint");
+        Tip = Waiting > 0 ? $"{status} · {Loc.F("uninstallQueued", Waiting)}" : status;
+    }
+
+    public async Task Add(IEnumerable<ConvertJob> jobs)
+    {
+        var fresh = jobs.Where(j => !queue.Any(q => q.Source == j.Source && q.Target == j.Target)).ToList();
+        if (fresh.Count == 0) return;
+        queue.AddRange(fresh);
+        Refresh();
+        if (!draining) await Drain();
+    }
+
+    public void Cancel(ConvertJob job)
+    {
+        if (job == Current) cancel?.Cancel();
+        else queue.Remove(job);
+        Refresh();
+    }
+
+    public void ClearHistory()
+    {
+        history.Clear();
+        Refresh();
+    }
+
+    async Task Drain()
+    {
+        draining = true;
+        batchDone = 0;
+        var done = new List<ConvertJob>();
+        try
+        {
+            while (queue.Count > 0)
+            {
+                var job = queue[0];
+                await Run(job);
+                queue.Remove(job);
+                batchDone++;
+                done.Add(job);
+                history.Insert(0, job);
+                if (history.Count > HistoryLimit) history.RemoveAt(history.Count - 1);
+                Refresh();
+            }
+        }
+        finally
+        {
+            draining = false;
+            Refresh();
+        }
+        var failed = done.Count(j => j.Stage == ConvertStage.Failed);
+        Raise(done is [var only] ? Message(only) : failed == 0 ? Loc.F("convertBatch", done.Count) : Loc.F("uninstallBatchFailed", done.Count - failed, failed));
+    }
+
+    public static string Message(ConvertJob job) => job.Stage == ConvertStage.Done
+        ? Loc.F("convertDone", Path.GetFileName(job.Output ?? job.Source))
+        : $"{Loc.F("convertFailed", job.Name)}: {job.Error}";
+
+    async Task Run(ConvertJob job)
+    {
+        job.Started = DateTime.Now;
+        job.Stage = ConvertStage.Running;
+        using var token = new CancellationTokenSource();
+        cancel = token;
+        Refresh();
+        var progress = new Progress<double>(p =>
+        {
+            job.Progress = p;
+            Refresh();
+        });
+        try
+        {
+            job.Output = Converter.OutputFor(job.Source, job.Target);
+            job.Error = await Converter.Run(job.Source, job.Output, job.Target, job.Duration, progress, token.Token);
+            job.Stage = job.Error is null ? ConvertStage.Done : ConvertStage.Failed;
+        }
+        catch (OperationCanceledException)
+        {
+            job.Error = Loc.T("convertCancelled");
+            job.Stage = ConvertStage.Failed;
+        }
+        catch (Exception e)
+        {
+            App.Log(e);
+            job.Error = e.Message;
+            job.Stage = ConvertStage.Failed;
+        }
+        finally
+        {
+            cancel = null;
+            job.Finished = DateTime.Now;
+        }
+    }
+
+    void Refresh()
+    {
+        Tick(DateTime.Now);
+        RefreshFace();
+        Changed?.Invoke();
+    }
+}
 
 // RigDeck inside the dock: shortcuts that run one or more steps (open apps on a monitor, commands, key combos, PC controls...).
 // The tile is the brand mark; clicking it opens the panel with every shortcut.

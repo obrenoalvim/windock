@@ -788,6 +788,52 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:UninstallWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource IconSize}" ToolTip="{Binding Tip}">
+                <Border x:Name="Face" CornerRadius="13" Background="{DynamicResource TileFace}"/>
+                <TextBlock x:Name="Icon" Text="&#xE74D;" FontFamily="{StaticResource Glyphs}" FontSize="19" Foreground="{DynamicResource DockInk}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Border x:Name="Queue" CornerRadius="7" MinWidth="14" Height="14" Padding="3,0" Background="White"
+                        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,2,0">
+                    <TextBlock Text="{Binding Waiting}" FontSize="9" FontWeight="Bold" Foreground="#E5483B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Waiting}" Value="0">
+                    <Setter TargetName="Queue" Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Busy}" Value="True">
+                    <Setter TargetName="Face" Property="Background" Value="#E6E5483B"/>
+                    <Setter TargetName="Icon" Property="Foreground" Value="White"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:ConvertWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource IconSize}" ToolTip="{Binding Tip}">
+                <Border x:Name="Face" CornerRadius="13" Background="{DynamicResource TileFace}"/>
+                <TextBlock x:Name="Icon" Text="&#xE8AB;" FontFamily="{StaticResource Glyphs}" FontSize="19" Foreground="{DynamicResource DockInk}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <ProgressBar x:Name="Bar" Value="{Binding Percent, Mode=OneWay}" Maximum="1" Height="4" Margin="9,0,9,7" VerticalAlignment="Bottom"
+                             Foreground="White" Background="#40FFFFFF" BorderThickness="0" Visibility="Collapsed"/>
+                <Border x:Name="Queue" CornerRadius="7" MinWidth="14" Height="14" Padding="3,0" Background="White"
+                        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,2,0">
+                    <TextBlock Text="{Binding Waiting}" FontSize="9" FontWeight="Bold" Foreground="#2F6FE0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Waiting}" Value="0">
+                    <Setter TargetName="Queue" Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Busy}" Value="True">
+                    <Setter TargetName="Face" Property="Background" Value="#E64C8DFF"/>
+                    <Setter TargetName="Icon" Property="Foreground" Value="White"/>
+                    <Setter TargetName="Icon" Property="Margin" Value="0,0,0,6"/>
+                    <Setter TargetName="Bar" Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:RigdeckWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
                 <Viewbox>

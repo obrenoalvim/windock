@@ -309,7 +309,7 @@
                                         <ItemsControl ItemsSource="{Binding Widgets}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6" Visibility="{Binding IsOn, Converter={StaticResource Show}}">
+                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6" Visibility="{Binding ShowsSize, Converter={StaticResource Show}}">
                                                         <TextBlock Text="{Binding Label}" Width="160" FontFamily="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink}"
                                                                    VerticalAlignment="Center" Margin="2,0,8,0" TextTrimming="CharacterEllipsis"/>
                                                         <ComboBox Style="{StaticResource FlatCombo}" Width="220" ItemsSource="{Binding Sizes}" DisplayMemberPath="Label"

@@ -14,7 +14,7 @@ public sealed class FaceSelector : DataTemplateSelector
     public bool On { get; set; } = true;
 
     public override DataTemplate? SelectTemplate(object item, DependencyObject container) =>
-        item is WidgetTile w && w.Square(On) ? Compact
+        item is WidgetTile { Wide: true } w && w.Square(On) ? Compact
         : item is MusicWidget music ? music.Spec.Size switch
         {
             WidgetSpec.FullSize => MusicFull,
