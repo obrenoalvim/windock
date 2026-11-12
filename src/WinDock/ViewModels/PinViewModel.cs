@@ -11,7 +11,7 @@ public sealed partial class PinViewModel : CommunityToolkit.Mvvm.ComponentModel.
     public PinViewModel(PinItem model, Action<PinViewModel> remove, Action<PinViewModel, int> move)
     {
         Model = model;
-        Icon = ShellIcons.ForPin(model);
+        icon = new(() => ShellIcons.ForPin(model));
         Initial = model.Name.Length > 0 ? model.Name[..1].ToUpperInvariant() : "?";
         RemoveCommand = new RelayCommand(() => remove(this));
         MoveLeftCommand = new RelayCommand(() => move(this, -1));
@@ -22,7 +22,8 @@ public sealed partial class PinViewModel : CommunityToolkit.Mvvm.ComponentModel.
 
     public PinItem Model { get; }
     public string Name => Model.Name;
-    public ImageSource? Icon { get; }
+    readonly Lazy<ImageSource?> icon;
+    public ImageSource? Icon => icon.Value;
     public bool HasIcon => Icon is not null;
     public string Initial { get; }
     public double Fade => Model.Exists ? 1 : 0.35;
