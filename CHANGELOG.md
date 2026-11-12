@@ -6,13 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-12
+
 ### Added
 - RigDeck widget: PC controls and shortcuts that open apps on the monitor you pick, run commands, press keys or play sounds, alone or as a combo that does several things at once. A shortcut to a folder lists its files.
 - Steam games and Epic games widgets, with the store logo, a search box and an Installed / All choice for Steam.
 - Rearrange widgets by dragging them along the dock, or with Move left / Move right in their menu. The order is kept when you turn widgets on or off.
+- Uninstaller widget: drop dock apps, shortcuts or files on it. Programs are found in the registry, the Store or Steam and uninstalled through a queue, then their leftovers go to the Recycle Bin.
+- Converter widget: drop images, video, audio or documents on it and pick a format. FFmpeg, LibreOffice and pdftotext do the work in a queue with progress, and the copy lands next to the original.
+- Shelf widget: drop files from any folder on it, then drag them all out at once or copy them to paste with Ctrl+V. The files stay where they are.
+- Cleanup widget: scans the Recycle Bin, old temp files, dead shortcuts, crash dumps, browser and developer caches and old installers in Downloads, and cleans what you pick after a second click.
+
+### Changed
+- Faster start: the dock is on screen about 13% sooner. The settings window is built the first time it opens, and the icons of its lists load only then.
+- Widgets that have a single size no longer offer Square or Wide.
 
 ### Fixed
 - Moving a widget no longer resets a running timer or Pomodoro.
+- A preset file that cannot be read and a failed taskbar cover are now written to error.log instead of being ignored.
 
 ## [0.5.0] - 2026-10-14
 
