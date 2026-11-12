@@ -1,7 +1,6 @@
 using System.Drawing;
 using System.Windows;
 using WinDock.ViewModels;
-using WinDock.Views;
 using Forms = System.Windows.Forms;
 
 namespace WinDock.Services;
@@ -9,14 +8,14 @@ namespace WinDock.Services;
 public sealed class TrayService : IDisposable
 {
     readonly MainViewModel vm;
-    readonly ConfigWindow window;
+    readonly Action open;
     readonly DockViewModel dock;
     readonly Forms.NotifyIcon icon;
 
-    public TrayService(MainViewModel vm, ConfigWindow window, DockViewModel dock)
+    public TrayService(MainViewModel vm, Action open, Action toggle, DockViewModel dock)
     {
         this.vm = vm;
-        this.window = window;
+        this.open = open;
         this.dock = dock;
 
         using var stream = Application.GetResourceStream(new Uri("pack://application:,,,/Assets/app.ico")).Stream;
@@ -27,7 +26,7 @@ public sealed class TrayService : IDisposable
             Visible = true,
             ContextMenuStrip = new Forms.ContextMenuStrip()
         };
-        icon.MouseClick += (_, e) => { if (e.Button == Forms.MouseButtons.Left) window.Toggle(); };
+        icon.MouseClick += (_, e) => { if (e.Button == Forms.MouseButtons.Left) toggle(); };
         icon.ContextMenuStrip.Opening += (_, _) => Rebuild();
 
         vm.Notice += text => icon.ShowBalloonTip(2500, "WinDock", text, Forms.ToolTipIcon.None);
@@ -42,7 +41,7 @@ public sealed class TrayService : IDisposable
             menu.Add(Loc.F("updateDownload", version), null, (_, _) => Launcher.OpenFile(Updates.Page));
             menu.Add(new Forms.ToolStripSeparator());
         }
-        menu.Add(Loc.T("trayOpen"), null, (_, _) => window.Open());
+        menu.Add(Loc.T("trayOpen"), null, (_, _) => open());
         menu.Add(new Forms.ToolStripSeparator());
 
         foreach (var p in vm.Presets)

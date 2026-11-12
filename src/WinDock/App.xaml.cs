@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Threading;
 using WinDock.Models;
 using WinDock.Services;
@@ -11,12 +12,16 @@ public partial class App : System.Windows.Application
 {
     const string ShowSignal = "WinDock.Show";
     const string ExitSignal = "WinDock.Exit";
+    const int ToggleId = 1;
+    const int PresetBaseId = 10;
+    static readonly nint MessageOnly = new(-3);
 
     Mutex? instance;
     EventWaitHandle? showEvent;
     EventWaitHandle? exitEvent;
     TrayService? tray;
     ConfigWindow? window;
+    HwndSource? hotkeys;
     ShellGuard? shell;
     DockViewModel? dock;
     DockHost? docks;
@@ -50,22 +55,22 @@ public partial class App : System.Windows.Application
         if (firstRun) Autostart.Enabled = true;
         Loc.Instance.Set(settings.Language);
         main = new MainViewModel(new PresetStore(), new TaskbarService(), settings);
-        window = new ConfigWindow(main);
         main.Start();
+        RegisterHotkeys();
 
         shell = new ShellGuard();
         dock = new DockViewModel(main, shell);
-        docks = new DockHost(dock, () => window.Open());
+        docks = new DockHost(dock, OpenConfig);
         WinKeys.Pressed = (n, fresh) => docks.OpenNth(n, fresh);
         main.Dock.Changed += _ => SyncKeys();
         SyncKeys();
 
-        tray = new TrayService(main, window, dock);
-        if (!e.Args.Contains("--tray")) window.Open();
+        tray = new TrayService(main, OpenConfig, () => Config.Toggle(), dock);
+        if (!e.Args.Contains("--tray")) OpenConfig();
 
         new Thread(() =>
         {
-            while (showEvent.WaitOne()) Dispatcher.BeginInvoke(() => window.Open());
+            while (showEvent.WaitOne()) Dispatcher.BeginInvoke(OpenConfig);
         }) { IsBackground = true }.Start();
         new Thread(() =>
         {
@@ -74,6 +79,37 @@ public partial class App : System.Windows.Application
     }
 
     void SyncKeys() => WinKeys.Enable(main!.Dock.Enabled && main.Dock.ReplaceTaskbar);
+
+    ConfigWindow Config => window ??= new ConfigWindow(main!);
+
+    void OpenConfig() => Config.Open();
+
+    void RegisterHotkeys()
+    {
+        hotkeys = new HwndSource(new HwndSourceParameters("WinDock.Hotkeys") { ParentWindow = MessageOnly, WindowStyle = 0 });
+        hotkeys.AddHook(OnHotkey);
+        const uint mods = Native.MOD_CONTROL | Native.MOD_ALT | Native.MOD_NOREPEAT;
+        Native.RegisterHotKey(hotkeys.Handle, ToggleId, mods, 0x57);
+        for (var i = 0; i < 9; i++) Native.RegisterHotKey(hotkeys.Handle, PresetBaseId + i, mods, (uint)(0x31 + i));
+    }
+
+    nint OnHotkey(nint hwnd, int msg, nint wParam, nint lParam, ref bool handled)
+    {
+        if (msg != Native.WM_HOTKEY) return 0;
+        handled = true;
+        var id = (int)wParam;
+        if (id == ToggleId) Config.Toggle();
+        else _ = main!.ApplyIndexAsync(id - PresetBaseId);
+        return 0;
+    }
+
+    void ReleaseHotkeys()
+    {
+        if (hotkeys is null) return;
+        Native.UnregisterHotKey(hotkeys.Handle, ToggleId);
+        for (var i = 0; i < 9; i++) Native.UnregisterHotKey(hotkeys.Handle, PresetBaseId + i);
+        hotkeys.Dispose();
+    }
 
     void OnCrash(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
@@ -98,7 +134,7 @@ public partial class App : System.Windows.Application
         docks?.Dispose();
         dock?.Dispose();
         shell?.Dispose();
-        window?.Release();
+        ReleaseHotkeys();
         tray?.Dispose();
         instance?.Dispose();
         base.OnExit(e);
