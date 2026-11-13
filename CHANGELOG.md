@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-12
+
+### Added
+- Welcome tour on the first start: an interactive window that adapts to your PC. It shows the apps it brought from your taskbar, the game launchers it found and the widgets to try, changes the theme, hover effect and icon size on the dock as you pick them, and ticks each task as you do it. Replay it from the tray menu.
+- GOG, EA app, Ubisoft Connect and Battle.net: their games show in the program picker, and each launcher has a games widget like Steam and Epic.
+- Peripherals battery widget: Bluetooth devices and Logitech mice and keyboards (through their receiver) with charge, charging state and a notice when one runs low.
+- Quick settings panel: Wi-Fi, Bluetooth, night light, do not disturb, project and screen brightness, without opening the Windows settings.
+- Claude sessions: the Claude widget panel lists the open Claude Code sessions with their state. You can opt in to a notice when one waits for you or finishes; that adds four hooks to the Claude Code settings.json and can be turned off in the same panel.
+- Volume per app in the sound panel, plus the system sounds. Right-click an output to favorite it; double-clicking the volume icon swaps between favorites.
+- Icon styles (original, plate, squircle, glass, monochrome, duotone, gray) and widget styles (colorful, match the dock, environment color, graphite).
+- End process in the right-click menu of an app.
+- RigDeck shortcuts can save the screen, position and size of a window.
+- A dot on the icon of an app that asks for attention by flashing its taskbar button.
+- An environment with nothing pinned shows a "+" tile that opens the settings.
+- Report a problem in the tray menu opens a GitHub issue prefilled with your WinDock and Windows versions, screen sizes and language.
+
+### Changed
+- On the first run the apps of your taskbar go to Always pinned, so every environment shows them. They used to land in a single environment and the others looked empty.
+- The welcome tour replaces the four-step tip that appeared on the dock.
+
 ## [0.6.0] - 2026-11-12
 
 ### Added
