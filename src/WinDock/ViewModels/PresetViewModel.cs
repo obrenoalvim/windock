@@ -65,6 +65,14 @@ public sealed partial class WidgetChoice(string kind, bool isOn, Action<WidgetCh
     }
 }
 
+public sealed class WidgetGroup(string key, IReadOnlyList<WidgetChoice> items) : ObservableObject
+{
+    public IReadOnlyList<WidgetChoice> Items => items;
+    public string Title => Loc.T("widgetGroup_" + key).ToUpperInvariant();
+
+    public void RefreshText() => OnPropertyChanged(nameof(Title));
+}
+
 public sealed partial class PresetViewModel : ObservableObject
 {
     readonly Action<PresetViewModel> changed;
@@ -81,6 +89,11 @@ public sealed partial class PresetViewModel : ObservableObject
         var shown = model.ShownWidgets.Select(w => w.Kind).ToHashSet();
         Widgets = new ObservableCollection<WidgetChoice>(WidgetSpec.Kinds.Select(k =>
             new WidgetChoice(k, shown.Contains(k), ToggleWidget, FindWidget, () => changed(this))));
+        WidgetGroups = WidgetSpec.Groups
+            .Append((Key: "other", Kinds: WidgetSpec.Kinds.Except(WidgetSpec.Groups.SelectMany(g => g.Kinds)).ToArray()))
+            .Select(g => new WidgetGroup(g.Key, Widgets.Where(w => g.Kinds.Contains(w.Kind)).ToList()))
+            .Where(g => g.Items.Count > 0)
+            .ToList();
         AddSlotCommand = new RelayCommand(AddSlot);
     }
 
@@ -92,6 +105,7 @@ public sealed partial class PresetViewModel : ObservableObject
     public ObservableCollection<SlotViewModel> Slots { get; }
     public ObservableCollection<PinViewModel> Pins { get; }
     public ObservableCollection<WidgetChoice> Widgets { get; }
+    public IReadOnlyList<WidgetGroup> WidgetGroups { get; }
     public ICommand AddSlotCommand { get; }
     public bool HasItems => Model.Items.Count > 0;
     public string Count => Model.Items.Count == 1 ? Loc.T("countOne") : Loc.F("countMany", Model.Items.Count);
@@ -215,6 +229,7 @@ public sealed partial class PresetViewModel : ObservableObject
         foreach (var pin in Pins) pin.RefreshText();
         foreach (var slot in Slots) slot.RefreshText();
         foreach (var widget in Widgets) widget.RefreshText();
+        foreach (var group in WidgetGroups) group.RefreshText();
     }
 
     public void RemoveDuplicates()

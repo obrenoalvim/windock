@@ -344,13 +344,22 @@
 
                                         <TextBlock Text="{Binding [widgets], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" FontFamily="{StaticResource Mono}" FontSize="9" Foreground="{StaticResource Muted}"
                                                    Margin="2,16,0,8"/>
-                                        <ItemsControl ItemsSource="{Binding Widgets}">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
+                                        <ItemsControl ItemsSource="{Binding WidgetGroups}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <ToggleButton Content="{Binding Label}" Style="{StaticResource ChipToggle}" IsChecked="{Binding IsOn, Mode=TwoWay}" Margin="0,0,0,6"/>
+                                                    <StackPanel Margin="0,0,0,8">
+                                                        <TextBlock Text="{Binding Title}" FontFamily="{StaticResource Mono}" FontSize="9" Foreground="{StaticResource Muted}" Margin="2,0,0,6"/>
+                                                        <ItemsControl ItemsSource="{Binding Items}">
+                                                            <ItemsControl.ItemsPanel>
+                                                                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                                            </ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <ToggleButton Content="{Binding Label}" Style="{StaticResource ChipToggle}" IsChecked="{Binding IsOn, Mode=TwoWay}" Margin="0,0,0,6"/>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </StackPanel>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>

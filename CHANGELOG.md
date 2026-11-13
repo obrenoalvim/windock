@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- The widget list in the settings window is grouped by category (time and focus, day to day, system, tools, games), so a widget is easier to find.
+
 ## [0.7.0] - 2026-11-12
 
 ### Added

@@ -57,6 +57,15 @@ public sealed class WidgetSpec
 
     public static readonly string[] Kinds = [Clock, Weather, Music, Claude, Pomodoro, Stopwatch, Timer, Countdown, Progress, Activity, Network, Battery, Peripherals, Mic, Note, Todo, Rigdeck, Steam, Epic, Gog, Ea, Ubisoft, BattleNet, Uninstall, Convert, Shelf, Cleanup];
 
+    public static readonly (string Key, string[] Kinds)[] Groups =
+    [
+        ("time", [Clock, Pomodoro, Stopwatch, Timer, Countdown, Progress]),
+        ("daily", [Weather, Music, Mic, Note, Todo]),
+        ("system", [Activity, Network, Battery, Peripherals]),
+        ("tools", [Claude, Rigdeck, Convert, Shelf, Cleanup, Uninstall]),
+        ("games", [Steam, Epic, Gog, Ea, Ubisoft, BattleNet])
+    ];
+
     public string Kind { get; set; } = Clock;
     public string? Label { get; set; }
     public string? Date { get; set; }
