@@ -9,13 +9,15 @@ public sealed class TrayService : IDisposable
 {
     readonly MainViewModel vm;
     readonly Action open;
+    readonly Action welcome;
     readonly DockViewModel dock;
     readonly Forms.NotifyIcon icon;
 
-    public TrayService(MainViewModel vm, Action open, Action toggle, DockViewModel dock)
+    public TrayService(MainViewModel vm, Action open, Action toggle, DockViewModel dock, Action welcome)
     {
         this.vm = vm;
         this.open = open;
+        this.welcome = welcome;
         this.dock = dock;
 
         using var stream = Application.GetResourceStream(new Uri("pack://application:,,,/Assets/app.ico")).Stream;
@@ -74,6 +76,9 @@ public sealed class TrayService : IDisposable
         language.DropDownItems.Add(new Forms.ToolStripMenuItem("English", null, (_, _) => vm.SetLanguage(Loc.English)) { Checked = Loc.Instance.Language == Loc.English });
         language.DropDownItems.Add(new Forms.ToolStripMenuItem("Português", null, (_, _) => vm.SetLanguage(Loc.Portuguese)) { Checked = Loc.Instance.Language == Loc.Portuguese });
         menu.Add(language);
+        menu.Add(new Forms.ToolStripSeparator());
+        menu.Add(Loc.T("welcomeTour"), null, (_, _) => welcome());
+        menu.Add(Loc.T("reportProblem"), null, (_, _) => ProblemReport.Open(vm.Dock.ReplaceTaskbar));
         menu.Add(new Forms.ToolStripSeparator());
         menu.Add(Loc.T("trayExit"), null, (_, _) => Application.Current.Shutdown());
     }

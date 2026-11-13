@@ -15,6 +15,7 @@ public sealed class Settings
     public bool CheckUpdates { get; set; } = true;
     public string? UpdateSeen { get; set; }
     public bool TourSeen { get; set; }
+    public List<string> FavoriteOutputs { get; set; } = [];
 
     public static string Dir { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "WinDock");
@@ -66,6 +67,8 @@ public sealed class DockSettings
     public double LensWidth { get; set; } = 2.5;
     public double IconSize { get; set; } = 46;
     public string Theme { get; set; } = ThemeDark;
+    public string IconStyle { get; set; } = WinDock.Services.IconStyles.Original;
+    public string WidgetLook { get; set; } = WinDock.Services.WidgetLooks.Colorful;
     public bool AllScreens { get; set; } = true;
     public bool CompactWidgets { get; set; } = true;
     public bool PerScreen { get; set; }
@@ -79,6 +82,8 @@ public sealed class DockSettings
         IconSize = Math.Clamp(IconSize, 32, 72);
         if (Lens is not (LensNone or LensScale or LensMagnify)) Lens = LensMagnify;
         if (DockTheme.All.All(t => t.Id != Theme)) Theme = ThemeDark;
+        if (!WinDock.Services.IconStyles.All.Contains(IconStyle)) IconStyle = WinDock.Services.IconStyles.Original;
+        if (!WinDock.Services.WidgetLooks.All.Contains(WidgetLook)) WidgetLook = WinDock.Services.WidgetLooks.Colorful;
     }
 }
 

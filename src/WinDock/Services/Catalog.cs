@@ -24,7 +24,23 @@ public static class Catalog
             new CatalogEntry(g.Name, Steam, g.IconPath ?? SteamExe(), () => SteamItem(g)))));
         Safe(() => entries.AddRange(GameLibraries.Epic().Select(g =>
             new CatalogEntry(g.Name, Epic, g.Executable ?? Explorer, () => EpicItem(g)))));
+        foreach (var platform in Games.Platforms.Where(p => p is not (Games.Steam or Games.Epic)))
+            Safe(() => entries.AddRange(Games.Installed(platform).Select(g =>
+                new CatalogEntry(g.Name, platform, g.Icon ?? Games.Launcher(platform), () => LibraryItem(platform, g)))));
         return entries;
+    }
+
+    static PinItem LibraryItem(string platform, GameEntry game)
+    {
+        if (!game.Uri.Contains("://")) return new PinItem { Name = game.Name, Target = game.Uri };
+        return new PinItem
+        {
+            Name = game.Name,
+            Target = Explorer,
+            Args = game.Uri,
+            AppId = $"WinDock.{platform}.{game.Id}",
+            Icon = game.Icon is null ? null : IconFiles.FromParsingName($"{platform}-{game.Id}", game.Icon)
+        };
     }
 
     static PinItem StoreItem(StoreApp app) => new()

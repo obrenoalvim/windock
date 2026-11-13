@@ -36,6 +36,8 @@ public sealed class DockOptions : ObservableObject
     public double IconSize { get => D.IconSize; set => Set(() => D.IconSize = Math.Round(value)); }
     public string Lens { get => D.Lens; set => Set(() => D.Lens = value, nameof(LensNone), nameof(LensScale), nameof(LensMagnify)); }
     public string Theme { get => D.Theme; set => Set(() => D.Theme = value); }
+    public string IconStyle { get => D.IconStyle; set => Set(() => D.IconStyle = value); }
+    public string WidgetLook { get => D.WidgetLook; set => Set(() => D.WidgetLook = value); }
     public string? Screen { get => D.Screen; set => Set(() => D.Screen = value); }
     public bool AllScreens { get => D.AllScreens; set => Set(() => D.AllScreens = value); }
     public bool CompactWidgets { get => D.CompactWidgets; set => Set(() => D.CompactWidgets = value); }

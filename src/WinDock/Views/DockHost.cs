@@ -19,15 +19,6 @@ public sealed class DockHost : IDisposable
         vm.Options.Changed += OnOption;
         SystemEvents.DisplaySettingsChanged += OnDisplays;
         Sync();
-        if (!vm.Main.Settings.TourSeen) _ = TourAsync();
-    }
-
-    async Task TourAsync()
-    {
-        await Task.Delay(TimeSpan.FromSeconds(3));
-        if (windows.Values.FirstOrDefault().Window is not { } home || !home.ShowTour()) return;
-        vm.Main.Settings.TourSeen = true;
-        vm.Main.Settings.Save();
     }
 
     public bool OpenNth(int n, bool fresh)

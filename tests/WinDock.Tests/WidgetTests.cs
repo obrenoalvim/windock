@@ -35,6 +35,24 @@ public class WidgetTests
     }
 
     [Fact]
+    public void A_saved_scene_puts_each_window_back_where_it_was()
+    {
+        var screen = new System.Drawing.Rectangle(-1920, 0, 1920, 1040);
+        var browser = new System.Drawing.Rectangle(-1927, 0, 1294, 1047);
+        var area = RigLayout.Fractions(browser, screen);
+        Assert.Equal(browser, RigLayout.Pixels(area, screen));
+        Assert.Equal(new System.Drawing.Rectangle(-14, 0, 2588, 2094), RigLayout.Pixels(area, new System.Drawing.Rectangle(0, 0, 3840, 2080)));
+
+        var mail = new AppWindow(1, "Inbox - Gmail - Google Chrome", @"C:\Apps\chrome.exe", "Chrome", false);
+        var teams = new AppWindow(2, "Chat | Microsoft Teams - Google Chrome", @"C:\Apps\chrome.exe", "Chrome", false);
+        var step = new RigStepSpec { Target = @"C:\Apps\chrome.exe", App = "Chrome", Window = "Calendar | Microsoft Teams - Google Chrome" };
+        Assert.Equal(teams, RigLayout.Pick([mail, teams], step, step.Target, []));
+        Assert.Equal(mail, RigLayout.Pick([mail, teams], step, step.Target, [teams.Handle]));
+        Assert.Null(RigLayout.Pick([mail, teams], new RigStepSpec { Target = "https://example.com" }, "https://example.com", []));
+        Assert.False(RigLayout.Known(new RigStepSpec(), "https://example.com"));
+    }
+
+    [Fact]
     public void Rigdeck_reads_the_first_line_format_and_drops_bad_lines()
     {
         var old = RigStore.Parse("""
@@ -82,10 +100,10 @@ public class WidgetTests
         };
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
-        await RigRunner.Run(Combo(false));
+        await RigRunner.Run(Combo(false), () => []);
         var inOrder = watch.Elapsed;
         watch.Restart();
-        await RigRunner.Run(Combo(true));
+        await RigRunner.Run(Combo(true), () => []);
         var together = watch.Elapsed;
 
         Assert.True(inOrder >= TimeSpan.FromMilliseconds(580), $"in order took {inOrder}");
@@ -251,11 +269,63 @@ public class WidgetTests
     }
 
     [Fact]
+    public void The_network_list_manager_answers_through_its_typed_interface()
+    {
+        var ask = typeof(NetworkStatus).GetMethod("QueryInternet", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+        var answer = ask.Invoke(null, null);
+        Assert.IsType<bool>(answer);
+    }
+
+    [Fact]
+    public void Icon_styles_redraw_the_icon_and_keep_it_square()
+    {
+        const int size = 64;
+        var px = new byte[size * size * 4];
+        for (var i = 0; i < px.Length; i += 4) (px[i], px[i + 1], px[i + 2], px[i + 3]) = (0x20, 0x90, 0xF0, 0xFF);
+        var icon = System.Windows.Media.Imaging.BitmapSource.Create(size, size, 96, 96, System.Windows.Media.PixelFormats.Bgra32, null, px, size * 4);
+        var theme = DockTheme.Find("dark");
+
+        Assert.Same(icon, IconStyles.Apply(icon, IconStyles.Original, theme, "#FFB547"));
+        Assert.Same(icon, IconStyles.Apply(icon, "nope", theme, "#FFB547"));
+        Assert.Null(IconStyles.Apply(null, IconStyles.Mono, theme, "#FFB547"));
+        foreach (var style in IconStyles.All.Where(s => s != IconStyles.Original))
+        {
+            var styled = Assert.IsAssignableFrom<System.Windows.Media.Imaging.BitmapSource>(IconStyles.Apply(icon, style, theme, "#FFB547"));
+            Assert.NotSame(icon, styled);
+            Assert.Equal(styled.PixelWidth, styled.PixelHeight);
+            Assert.Same(styled, IconStyles.Apply(icon, style, theme, "#FFB547"));
+        }
+
+        var gray = (System.Windows.Media.Imaging.BitmapSource)IconStyles.Apply(icon, IconStyles.Gray, theme, "#FFB547")!;
+        var one = new byte[4];
+        gray.CopyPixels(new System.Windows.Int32Rect(10, 10, 1, 1), one, 4, 0);
+        Assert.True(one[0] == one[1] && one[1] == one[2], "gray has no color");
+    }
+
+    [Fact]
     public void Note_text_survives_the_preset_file()
     {
         var preset = new Preset { Widgets = [new WidgetSpec { Kind = WidgetSpec.Note, Text = "linha 1\nlinha 2" }] };
         var back = JsonSerializer.Deserialize<Preset>(JsonSerializer.Serialize(preset, Json.Options), Json.Options)!;
         Assert.Equal("linha 1\nlinha 2", Assert.Single(back.Widgets!).Text);
+    }
+
+    [Fact]
+    public void Peripherals_put_the_emptiest_awake_device_first_and_read_logitech_voltage()
+    {
+        Assert.Equal(26, LogitechHid.VoltagePercent(3738));
+        Assert.Equal(100, LogitechHid.VoltagePercent(4200));
+        Assert.Equal(0, LogitechHid.VoltagePercent(3400));
+        Assert.Equal("G915 TKL", LogitechHid.ShortName("G915 TKL LIGHTSPEED Wireless RGB Mechanical Gaming Keyboard"));
+
+        var widget = new PeripheralsWidget("w", new WidgetSpec { Kind = WidgetSpec.Peripherals });
+        var start = DateTime.Now;
+        widget.Show([new Peripheral("Mouse", PeripheralKind.Mouse, 8, false), new Peripheral("Teclado", PeripheralKind.Keyboard, 60, false)], start);
+        widget.Show([new Peripheral("Teclado", PeripheralKind.Keyboard, 55, false)], start.AddMinutes(5));
+
+        Assert.Equal(["Teclado", "Mouse"], widget.Rows.Select(r => r.Name));
+        Assert.True(widget.Rows[1].Asleep);
+        Assert.True(widget.Rows[1].Low);
     }
 
     [Fact]
@@ -357,6 +427,85 @@ public class WidgetTests
         Assert.Equal(["pdf", "docx", "odt", "rtf"], forTxt);
         Assert.Contains("txt", Converter.TargetsFor(MediaKind.Document, @"C:\a\cv.docx").Select(t => t.Id));
         Assert.Equal(["pdftxt", "pdfdocx", "pdfpng"], Converter.TargetsFor(MediaKind.Pdf, @"C:\a\cv.pdf").Select(t => t.Id));
+    }
+
+    [Fact]
+    public void Every_widget_look_key_is_a_brush_the_dock_defines()
+    {
+        var xaml = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "WinDock", "Views", "DockWindow.xaml"));
+        Assert.All(WidgetLooks.Keys, key => Assert.Contains($"x:Key=\"{key}\"", xaml));
+        Assert.DoesNotContain("StaticResource WClock", xaml);
+    }
+
+    static readonly string DockXaml = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "WinDock", "Views", "DockWindow.xaml"));
+
+    static System.Windows.Media.Color[] Stops(string key)
+    {
+        var at = DockXaml.IndexOf($"x:Key=\"{key}\"", StringComparison.Ordinal);
+        Assert.True(at >= 0, key);
+        var end = DockXaml.IndexOf("Brush>", at, StringComparison.Ordinal);
+        var block = end > 0 && !DockXaml[at..end].Contains("x:Key=\"", StringComparison.Ordinal) ? DockXaml[at..end] : DockXaml[at..DockXaml.IndexOf("/>", at, StringComparison.Ordinal)];
+        return System.Text.RegularExpressions.Regex.Matches(block, "Color=\"([^\"]+)\"").Select(m => WidgetLooks.Hex(m.Groups[1].Value)).ToArray();
+    }
+
+    static IEnumerable<System.Windows.Media.Color> Accents()
+    {
+        foreach (var hex in new[] { "#7C5CFF", "#FFB547", "#3DDC97", "#FF6B8A", "#FFFFFF", "#000000", "#808080", "#FFE07A" }) yield return WidgetLooks.Hex(hex);
+        for (var hue = 0; hue < 360; hue += 10)
+            foreach (var light in new[] { 0.3, 0.5, 0.75 })
+            {
+                var c = (1 - Math.Abs(2 * light - 1));
+                var x = c * (1 - Math.Abs(hue / 60.0 % 2 - 1));
+                var (r, g, b) = (hue / 60) switch { 0 => (c, x, 0.0), 1 => (x, c, 0.0), 2 => (0.0, c, x), 3 => (0.0, x, c), 4 => (x, 0.0, c), _ => (c, 0.0, x) };
+                var m = light - c / 2;
+                yield return System.Windows.Media.Color.FromRgb((byte)((r + m) * 255), (byte)((g + m) * 255), (byte)((b + m) * 255));
+            }
+    }
+
+    [Fact]
+    public void Every_widget_text_is_readable_in_every_theme_look_and_color()
+    {
+        var failures = new List<string>();
+        foreach (var theme in WinDock.Models.DockTheme.All)
+        foreach (var look in WidgetLooks.All.Where(l => l != WidgetLooks.Colorful))
+        foreach (var accent in Accents())
+            if (!WidgetLooks.Readable(WidgetLooks.Palette(look, theme, accent)!)) failures.Add($"{theme.Id}/{look}/{accent}");
+
+        string[] surfaces =
+        [
+            "WClock", "WPomodoro", "WBreak", "WStopwatch", "WTimer", "WCountdown", "WProgress", "WActivity", "WBattery", "WPeripherals", "WMusic",
+            "WWeather", "WWeatherNight", "WNetwork", "WTodo", "WClaude", "WClaudeHot", "WNote", "WRigdeck", "WSteam", "WEpic", "CoverScrim"
+        ];
+        foreach (var surface in surfaces)
+            if (!WidgetLooks.Readable(Stops(surface))) failures.Add($"colorful/{surface}");
+        foreach (var surface in new[] { "WPeripherals", "WWeather" })
+            if (!WidgetLooks.AlertReadable(Stops(surface))) failures.Add($"colorful/{surface}/alert");
+        foreach (var (surface, text) in new[] { ("WRigdeck", "WRigdeckInk"), ("WRigdeck", "WRigdeckAccent"), ("WSteam", "WGamesInk"), ("WSteam", "WSteamAccent"), ("WEpic", "WGamesInk"), ("WEpic", "WEpicAccent") })
+            if (Stops(surface).Any(s => WidgetLooks.Contrast(Stops(text)[0], s) < WidgetLooks.MinContrast)) failures.Add($"colorful/{surface}/{text}");
+
+        foreach (var theme in WinDock.Models.DockTheme.All)
+        {
+            var bar = WidgetLooks.Mix(WidgetLooks.Hex(theme.BarTop), WidgetLooks.Hex(theme.BarBottom), 0.5);
+            bar = System.Windows.Media.Color.FromRgb(bar.R, bar.G, bar.B);
+            var plate = WidgetLooks.Over(WidgetLooks.Hex(theme.TileFace), bar);
+            var ink = WidgetLooks.Hex(theme.Ink);
+            var muted = WidgetLooks.Over(WidgetLooks.Hex(theme.Muted), plate);
+            if (WidgetLooks.Contrast(ink, plate) < WidgetLooks.MinContrast) failures.Add($"compact/{theme.Id}/ink {WidgetLooks.Contrast(ink, plate):0.00}");
+            if (WidgetLooks.Contrast(muted, plate) < WidgetLooks.MinContrast) failures.Add($"compact/{theme.Id}/muted {WidgetLooks.Contrast(muted, plate):0.00}");
+            if (WidgetLooks.Contrast(ink, WidgetLooks.AlertPlate(ink)) < WidgetLooks.MinContrast) failures.Add($"compact/{theme.Id}/alert");
+        }
+        Assert.True(failures.Count == 0, $"{failures.Count} unreadable:\n" + string.Join('\n', failures.Take(60)));
+    }
+
+    [Fact]
+    public void Widget_looks_pick_the_ink_that_reads_on_the_environment_color()
+    {
+        var dark = WinDock.Models.DockTheme.Find("dark");
+        Assert.Null(WidgetLooks.Palette(WidgetLooks.Colorful, dark, System.Windows.Media.Colors.Orange));
+        Assert.Equal(WidgetLooks.DarkInk, WidgetLooks.Palette(WidgetLooks.Accent, dark, WidgetLooks.Hex("#FFE07A"))!.Ink);
+        Assert.Equal(System.Windows.Media.Colors.White, WidgetLooks.Palette(WidgetLooks.Accent, dark, WidgetLooks.Hex("#2F5FE0"))!.Ink);
+        Assert.Equal(3, WidgetLooks.Samples(WidgetLooks.Colorful, dark, System.Windows.Media.Colors.Orange).Select(s => s.Top).Distinct().Count());
+        Assert.Single(WidgetLooks.Samples(WidgetLooks.Graphite, dark, System.Windows.Media.Colors.Orange).Distinct());
     }
 
     [Fact]

@@ -32,7 +32,7 @@ public partial class ProgramPicker : Window
         var entries = Catalog.Load().Select(e => new PickerEntry(e)).ToList();
         List.ItemsSource = entries;
 
-        var names = new[] { All, Catalog.Programs, Catalog.Store, Catalog.Steam, Catalog.Epic };
+        string[] names = [All, Catalog.Programs, Catalog.Store, .. Games.Platforms];
         foreach (var name in names.Where(n => n == All || entries.Any(e => e.Entry.Category == n)))
         {
             var tab = new ToggleButton { Content = Loc.T(name == All ? "tabAll" : "cat" + name), Style = (Style)FindResource("ChipToggle"), IsChecked = name == All, Tag = name };

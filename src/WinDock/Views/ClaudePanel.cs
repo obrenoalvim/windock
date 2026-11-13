@@ -9,6 +9,7 @@ public sealed class ClaudePanel : Flyout
 {
     readonly ClaudeUsage usage;
     readonly StackPanel body = new() { Width = 300 };
+    bool failed;
 
     public ClaudePanel(ClaudeUsage usage, bool dark) : base(dark)
     {
@@ -16,7 +17,12 @@ public sealed class ClaudePanel : Flyout
         SetBody(body);
         Render();
         usage.Updated += Render;
-        Closed += (_, _) => usage.Updated -= Render;
+        ClaudeSessions.Shared.Changed += Render;
+        Closed += (_, _) =>
+        {
+            usage.Updated -= Render;
+            ClaudeSessions.Shared.Changed -= Render;
+        };
     }
 
     public static Brush LevelBrush(double percent) => percent switch
@@ -62,6 +68,8 @@ public sealed class ClaudePanel : Flyout
             body.Children.Add(note);
         }
 
+        body.Children.Add(Sessions(now));
+
         var footer = new DockPanel { Margin = new Thickness(0, 4, 0, 0) };
         var actions = new StackPanel { Orientation = Orientation.Horizontal };
         actions.Children.Add(Action(Loc.T("refresh"), () =>
@@ -80,6 +88,69 @@ public sealed class ClaudePanel : Flyout
         if (usage.Last is { } last) footer.Children.Add(Text(Ago(last.FetchedAt, now), 10, muted: true));
         body.Children.Add(footer);
     }
+
+    StackPanel Sessions(DateTime now)
+    {
+        var section = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
+        var live = ClaudeSessions.Installed;
+        if (live)
+        {
+            section.Children.Add(Text(Loc.T("claudeSessions"), 11, muted: true));
+            var open = ClaudeSessions.Read(ClaudeSessions.Dir, now.ToUniversalTime());
+            if (open.Count == 0) section.Children.Add(Spaced(Text(Loc.T("claudeNoSessions"), 10, muted: true)));
+            foreach (var session in open) section.Children.Add(SessionRow(session, now));
+        }
+        else
+        {
+            var hint = Text(Loc.T("claudeLiveHint"), 10, muted: true);
+            hint.TextWrapping = TextWrapping.Wrap;
+            section.Children.Add(hint);
+        }
+        var toggle = Action(Loc.T(live ? "claudeLiveOff" : "claudeLiveOn"), () =>
+        {
+            failed = !(live ? ClaudeSessions.Remove() : ClaudeSessions.Install());
+            Render();
+        }, live ? "\uE7ED" : "\uEA8F");
+        toggle.HorizontalAlignment = HorizontalAlignment.Left;
+        toggle.Margin = new Thickness(0, 8, 0, 0);
+        section.Children.Add(toggle);
+        if (failed)
+        {
+            var problem = Text(Loc.T("claudeLiveFailed"), 10);
+            problem.Foreground = Paint("#FF8A7A");
+            problem.TextWrapping = TextWrapping.Wrap;
+            problem.Margin = new Thickness(0, 6, 0, 0);
+            section.Children.Add(problem);
+            failed = false;
+        }
+        return section;
+    }
+
+    static T Spaced<T>(T element) where T : FrameworkElement
+    {
+        element.Margin = new Thickness(0, 6, 0, 0);
+        return element;
+    }
+
+    DockPanel SessionRow(ClaudeSession session, DateTime now)
+    {
+        var state = Text(Loc.T(StateKey(session.State)), 10, muted: session.State == ClaudeSessionState.Working);
+        if (session.State == ClaudeSessionState.Waiting) state.Foreground = Paint("#FFB547");
+        DockPanel.SetDock(state, Dock.Right);
+        var name = Text(session.Name, 11.5);
+        name.ToolTip = session.Message is { Length: > 0 } message ? $"{session.Folder}\n{message}" : session.Folder;
+        var row = Spaced(new DockPanel());
+        row.Children.Add(state);
+        row.Children.Add(name);
+        return row;
+    }
+
+    public static string StateKey(ClaudeSessionState state) => state switch
+    {
+        ClaudeSessionState.Waiting => "claudeWaitingState",
+        ClaudeSessionState.Done => "claudeDoneState",
+        _ => "claudeWorkingState"
+    };
 
     StackPanel Section(string title, double? used, DateTime? reset, double? projected, DateTime now)
     {

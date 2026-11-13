@@ -20,6 +20,76 @@ public sealed class RigStepSpec
     public int? Monitor { get; set; }
     public bool Fullscreen { get; set; }
     public string? Icon { get; set; }
+    public double[]? Area { get; set; }
+    public string? App { get; set; }
+    public string? Window { get; set; }
+}
+
+public static class RigLayout
+{
+    const string AppsFolder = @"shell:AppsFolder\";
+
+    public static double[] Fractions(System.Drawing.Rectangle window, System.Drawing.Rectangle area) =>
+    [
+        Part(window.X - area.X, area.Width), Part(window.Y - area.Y, area.Height),
+        Part(window.Width, area.Width), Part(window.Height, area.Height)
+    ];
+
+    public static System.Drawing.Rectangle Pixels(double[] area, System.Drawing.Rectangle screen) => new(
+        screen.X + (int)Math.Round(area[0] * screen.Width), screen.Y + (int)Math.Round(area[1] * screen.Height),
+        (int)Math.Round(area[2] * screen.Width), (int)Math.Round(area[3] * screen.Height));
+
+    static double Part(int value, int whole) => Math.Round(value / (double)whole, 4);
+
+    public static int Overlap(string title, string? hint) => hint is null ? 0 : Words(title).Intersect(Words(hint)).Count();
+
+    static HashSet<string> Words(string text) =>
+        new string(text.Select(c => char.IsLetterOrDigit(c) ? char.ToLowerInvariant(c) : ' ').ToArray())
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries).ToHashSet();
+
+    public static RigAction Capture(IEnumerable<AppWindow> windows)
+    {
+        var screens = Forms.Screen.AllScreens;
+        var scene = new RigAction();
+        foreach (var w in windows.Reverse())
+        {
+            if (w.Minimized || w.Exe is not { } exe || !Native.GetWindowRect(w.Handle, out var r)) continue;
+            var packaged = w.AppId?.Contains('!') == true;
+            if (!packaged && exe.EndsWith("ApplicationFrameHost.exe", StringComparison.OrdinalIgnoreCase)) continue;
+            var screen = Forms.Screen.FromHandle(w.Handle);
+            var zoomed = Native.IsZoomed(w.Handle);
+            scene.Steps.Add(new RigStepSpec
+            {
+                Target = packaged ? AppsFolder + w.AppId : exe,
+                Icon = packaged ? AppsFolder + w.AppId : null,
+                Monitor = Math.Max(0, Array.IndexOf(screens, screen)),
+                Fullscreen = zoomed,
+                Area = zoomed ? null : Fractions(System.Drawing.Rectangle.FromLTRB(r.Left, r.Top, r.Right, r.Bottom), screen.WorkingArea),
+                App = w.AppId,
+                Window = w.Title
+            });
+        }
+        return scene;
+    }
+
+    public static bool Known(RigStepSpec step, string target) => Identity(step, target) is not (null, null);
+
+    public static AppWindow? Pick(IEnumerable<AppWindow> windows, RigStepSpec step, string target, ICollection<nint> claimed)
+    {
+        var (app, exe) = Identity(step, target);
+        bool SameApp(AppWindow w) => app is not null && string.Equals(w.AppId, app, StringComparison.OrdinalIgnoreCase);
+        bool SameExe(AppWindow w) => exe is not null && w.Exe is { } running && Path.GetFileName(running).Equals(exe, StringComparison.OrdinalIgnoreCase);
+        var fits = windows.Where(w => !claimed.Contains(w.Handle) && (SameApp(w) || SameExe(w))).ToList();
+        if (fits.Where(SameApp).ToList() is { Count: > 0 } exact) fits = exact;
+        return fits.OrderByDescending(w => Overlap(w.Title, step.Window)).FirstOrDefault();
+    }
+
+    static (string? App, string? Exe) Identity(RigStepSpec step, string target)
+    {
+        var app = step.App ?? (target.StartsWith(AppsFolder, StringComparison.OrdinalIgnoreCase) ? target[AppsFolder.Length..] : null);
+        if (target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase)) target = ShellLinks.ReadTarget(target) ?? "";
+        return (app, target.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? Path.GetFileName(target) : null);
+    }
 }
 
 public sealed class RigAction
@@ -132,18 +202,22 @@ public static class RigRunner
 
     static readonly Dictionary<string, List<(int Pid, nint Hwnd)>> Opened = [];
     static readonly List<MediaPlayer> Players = [];
+    static readonly TimeSpan Arrive = TimeSpan.FromSeconds(30), Settle = TimeSpan.FromSeconds(5), Look = TimeSpan.FromMilliseconds(400);
 
-    public static async Task Run(RigAction action)
+    sealed record Desk(Func<IReadOnlyList<AppWindow>> Windows, HashSet<nint> Claimed);
+
+    public static async Task Run(RigAction action, Func<IReadOnlyList<AppWindow>> windows)
     {
+        var desk = new Desk(windows, []);
         var steps = action.Steps.ToList();
-        if (action.Parallel) await Task.WhenAll(steps.Select(s => Safe(action, s)));
+        if (action.Parallel) await Task.WhenAll(steps.Select(s => Safe(action, s, desk)));
         else
-            foreach (var step in steps) await Safe(action, step);
+            foreach (var step in steps) await Safe(action, step, desk);
     }
 
-    static async Task Safe(RigAction action, RigStepSpec step)
+    static async Task Safe(RigAction action, RigStepSpec step, Desk desk)
     {
-        try { await Step(action, step); }
+        try { await Step(action, step, desk); }
         catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException or IOException or UriFormatException or ArgumentException) { }
     }
 
@@ -166,15 +240,15 @@ public static class RigRunner
         return list.Count;
     }
 
-    public static Task Press(string id) => Step(null, new RigStepSpec { Type = RigStep.System, Target = id });
+    public static Task Press(string id) => Step(null, new RigStepSpec { Type = RigStep.System, Target = id }, new Desk(() => [], []));
 
-    static async Task Step(RigAction? owner, RigStepSpec step)
+    static async Task Step(RigAction? owner, RigStepSpec step, Desk desk)
     {
         var target = Environment.ExpandEnvironmentVariables(step.Target.Trim());
         switch (step.Type)
         {
             case RigStep.Open:
-                await Open(owner, step, target);
+                await Open(owner, step, target, desk);
                 break;
             case RigStep.Command:
                 Process.Start(new ProcessStartInfo("cmd.exe", "/c " + target) { CreateNoWindow = true, UseShellExecute = false })?.Dispose();
@@ -228,15 +302,19 @@ public static class RigRunner
         }
     }
 
-    static async Task Open(RigAction? owner, RigStepSpec step, string target)
+    static async Task Open(RigAction? owner, RigStepSpec step, string target, Desk desk)
     {
-        if (!Launcher.OpenFile(target)) return;
-        var exe = ExeOf(target);
-        if (exe is null) return;
-
-        var found = await Task.Run(() => WaitWindow(Path.GetFileNameWithoutExtension(exe), TimeSpan.FromSeconds(30)));
-        if (found is null) return;
-        var (pid, hwnd) = found.Value;
+        var before = desk.Windows().Select(w => w.Handle).ToHashSet();
+        var window = step.Window is null ? null : RigLayout.Pick(desk.Windows(), step, target, desk.Claimed);
+        if (window is null)
+        {
+            if (!Launcher.OpenFile(target) || !RigLayout.Known(step, target)) return;
+            window = await Arrival(step, target, before, desk);
+        }
+        if (window is null) return;
+        var hwnd = window.Handle;
+        desk.Claimed.Add(hwnd);
+        Native.GetWindowThreadProcessId(hwnd, out var pid);
         if (owner is not null)
             lock (Opened)
             {
@@ -244,30 +322,19 @@ public static class RigRunner
                 list.RemoveAll(e => e.Pid == pid && e.Hwnd == hwnd);
                 list.Add((pid, hwnd));
             }
-        if (step.Monitor is not null || step.Fullscreen) Place(hwnd, step);
+        if (step.Monitor is not null || step.Fullscreen || step.Area is not null) Place(hwnd, step);
     }
 
-    static string? ExeOf(string target)
+    static async Task<AppWindow?> Arrival(RigStepSpec step, string target, HashSet<nint> before, Desk desk)
     {
-        if (target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase)) target = ShellLinks.ReadTarget(target) ?? "";
-        return target.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? target : null;
-    }
-
-    static (int Pid, nint Hwnd)? WaitWindow(string name, TimeSpan timeout)
-    {
-        var until = DateTime.UtcNow + timeout;
-        do
+        var started = DateTime.UtcNow;
+        while (DateTime.UtcNow - started < Arrive)
         {
-            foreach (var p in Process.GetProcessesByName(name))
-            {
-                using (p)
-                {
-                    var hwnd = p.MainWindowHandle;
-                    if (hwnd != 0 && Native.IsWindowVisible(hwnd)) return (p.Id, hwnd);
-                }
-            }
-            Thread.Sleep(400);
-        } while (DateTime.UtcNow < until);
+            await Task.Delay(Look);
+            var windows = desk.Windows();
+            if (RigLayout.Pick(windows.Where(w => !before.Contains(w.Handle)), step, target, desk.Claimed) is { } arrived) return arrived;
+            if (DateTime.UtcNow - started > Settle && RigLayout.Pick(windows, step, target, desk.Claimed) is { } already) return already;
+        }
         return null;
     }
 
@@ -275,9 +342,16 @@ public static class RigRunner
     {
         const int Restore = 9, Maximize = 3;
         Native.ShowWindow(hwnd, Restore);
-        if (step.Monitor is { } m && Forms.Screen.AllScreens is { Length: > 0 } screens)
+        var screens = Forms.Screen.AllScreens;
+        var screen = step.Monitor is { } m && screens.Length > 0 ? screens[Math.Clamp(m, 0, screens.Length - 1)] : Forms.Screen.FromHandle(hwnd);
+        if (step.Area is { Length: 4 } area)
         {
-            var b = screens[Math.Clamp(m, 0, screens.Length - 1)].Bounds;
+            var spot = RigLayout.Pixels(area, screen.WorkingArea);
+            Native.SetWindowPos(hwnd, 0, spot.X, spot.Y, spot.Width, spot.Height, 0);
+        }
+        else if (step.Monitor is not null)
+        {
+            var b = screen.Bounds;
             Native.SetWindowPos(hwnd, 0, b.X, b.Y, 0, 0, Native.SWP_NOSIZE);
             if (!step.Fullscreen) Native.SetWindowPos(hwnd, 0, b.X, b.Y, b.Width, b.Height, 0);
         }

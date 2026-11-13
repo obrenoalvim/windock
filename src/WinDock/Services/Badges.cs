@@ -9,10 +9,8 @@ public static partial class Badges
 {
     public const int Dot = -1;
 
-    static readonly string Folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\Windows\Notifications");
-    static readonly string Database = Path.Combine(Folder, "wpndatabase.db");
-    static FileSystemWatcher? watcher;
-    static DispatcherTimer? debounce;
+    static readonly string Database = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\Windows\Notifications\wpndatabase.db");
+    static DispatcherTimer? poll;
 
     public static IReadOnlyDictionary<string, int> Current { get; private set; } = new Dictionary<string, int>();
 
@@ -20,26 +18,20 @@ public static partial class Badges
 
     public static void Start()
     {
-        if (watcher is not null || !File.Exists(Database)) return;
-        Current = Read();
-        debounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
-        debounce.Tick += (_, _) =>
+        if (poll is not null || !File.Exists(Database)) return;
+        Current = Read() ?? Current;
+        poll = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(2) };
+        poll.Tick += (_, _) =>
         {
-            debounce.Stop();
-            var next = Read();
-            if (next.Count == Current.Count && next.All(p => Current.TryGetValue(p.Key, out var v) && v == p.Value)) return;
+            if (Read() is not { } next || Same(next, Current)) return;
             Current = next;
             Changed?.Invoke();
         };
-        var dispatcher = Dispatcher.CurrentDispatcher;
-        watcher = new FileSystemWatcher(Folder, "wpndatabase.db*") { NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size };
-        watcher.Changed += (_, _) => dispatcher.BeginInvoke(() =>
-        {
-            debounce.Stop();
-            debounce.Start();
-        });
-        watcher.EnableRaisingEvents = true;
+        poll.Start();
     }
+
+    static bool Same(IReadOnlyDictionary<string, int> a, IReadOnlyDictionary<string, int> b) =>
+        a.Count == b.Count && a.All(p => b.TryGetValue(p.Key, out var v) && v == p.Value);
 
     public static int For(IEnumerable<string?> appIds)
     {
@@ -67,17 +59,18 @@ public static partial class Badges
     [GeneratedRegex("value=\"([^\"]*)\"")]
     private static partial Regex BadgeValue();
 
-    static Dictionary<string, int> Read()
+    static Dictionary<string, int>? Read()
     {
         var badges = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         nint db = 0, statement = 0;
         try
         {
-            if (sqlite3_open_v2(Utf8(Database), out db, OpenReadOnly, 0) != 0) return badges;
+            if (sqlite3_open_v2(Utf8(Database), out db, OpenReadOnly, 0) != 0) return null;
             sqlite3_busy_timeout(db, 300);
             const string sql = "select h.PrimaryId, n.Payload from Notification n join NotificationHandler h on h.RecordId = n.HandlerId where n.Type = 'badge'";
-            if (sqlite3_prepare_v2(db, Utf8(sql), -1, out statement, 0) != 0) return badges;
-            while (sqlite3_step(statement) == Row)
+            if (sqlite3_prepare_v2(db, Utf8(sql), -1, out statement, 0) != 0) return null;
+            int step;
+            while ((step = sqlite3_step(statement)) == Row)
             {
                 var id = Marshal.PtrToStringUTF8(sqlite3_column_text(statement, 0));
                 var size = sqlite3_column_bytes(statement, 1);
@@ -88,8 +81,9 @@ public static partial class Badges
                 var count = Parse(Encoding.UTF8.GetString(bytes));
                 if (count != 0) badges[id] = count;
             }
+            if (step != Done) return null;
         }
-        catch (Exception e) when (e is DllNotFoundException or EntryPointNotFoundException) { }
+        catch (Exception e) when (e is DllNotFoundException or EntryPointNotFoundException) { return null; }
         finally
         {
             if (statement != 0) sqlite3_finalize(statement);
@@ -100,7 +94,7 @@ public static partial class Badges
 
     static byte[] Utf8(string text) => Encoding.UTF8.GetBytes(text + "\0");
 
-    const int OpenReadOnly = 0x1, Row = 100;
+    const int OpenReadOnly = 0x1, Row = 100, Done = 101;
 
     [DllImport("winsqlite3.dll")] static extern int sqlite3_open_v2(byte[] filename, out nint db, int flags, nint vfs);
     [DllImport("winsqlite3.dll")] static extern int sqlite3_busy_timeout(nint db, int ms);

@@ -17,6 +17,58 @@ public class SystemTests
         """;
 
     [Fact]
+    public void Claude_retries_after_a_fetch_that_ends_at_once()
+    {
+        var dir = Directory.CreateTempSubdirectory().FullName;
+        var old = Environment.GetEnvironmentVariable("CLAUDE_CONFIG_DIR");
+        Environment.SetEnvironmentVariable("CLAUDE_CONFIG_DIR", dir);
+        try
+        {
+            var usage = new ClaudeUsage();
+            var fetches = 0;
+            usage.Updated += () => fetches++;
+            var now = DateTime.Now;
+            usage.Tick(now);
+            usage.Tick(now.AddMinutes(2));
+            Assert.Equal(ClaudeStatus.NoLogin, usage.Status);
+            Assert.Equal(2, fetches);
+        }
+        finally { Environment.SetEnvironmentVariable("CLAUDE_CONFIG_DIR", old); }
+    }
+
+    [Fact]
+    public void Claude_hooks_are_added_once_and_removed_without_touching_the_rest()
+    {
+        const string Mine = """
+            { "model": "x", "hooks": { "Stop": [ { "hooks": [ { "type": "command", "command": "echo mine" } ] } ] } }
+            """;
+        var once = ClaudeSessions.WithHooks(Mine, @"C:\Apps\WinDock.exe")!;
+        var twice = ClaudeSessions.WithHooks(once, @"C:\Apps\WinDock.exe")!;
+        Assert.Equal(once, twice);
+        Assert.True(ClaudeSessions.HasHooks(once));
+        Assert.Contains("\"C:/Apps/WinDock.exe\" --claude-hook", System.Text.Json.Nodes.JsonNode.Parse(once)!["hooks"]!["Notification"]![0]!["hooks"]![0]!["command"]!.GetValue<string>());
+        var back = ClaudeSessions.WithoutHooks(once)!;
+        Assert.False(ClaudeSessions.HasHooks(back));
+        Assert.Contains("echo mine", back);
+        Assert.DoesNotContain("--claude-hook", back);
+        Assert.Null(ClaudeSessions.WithHooks("{ broken", "x"));
+    }
+
+    [Fact]
+    public void Claude_sessions_follow_the_hook_events()
+    {
+        var dir = Directory.CreateTempSubdirectory().FullName;
+        ClaudeSessions.Record("""{"session_id":"abc-1","cwd":"F:\\GitHub\\windock","hook_event_name":"Notification","message":"needs permission"}""", dir);
+        var waiting = Assert.Single(ClaudeSessions.Read(dir, DateTime.UtcNow));
+        Assert.Equal((ClaudeSessionState.Waiting, "windock"), (waiting.State, waiting.Name));
+        ClaudeSessions.Record("""{"session_id":"abc-1","cwd":"F:\\GitHub\\windock","hook_event_name":"Stop"}""", dir);
+        Assert.Equal(ClaudeSessionState.Done, Assert.Single(ClaudeSessions.Read(dir, DateTime.UtcNow)).State);
+        ClaudeSessions.Record("""{"session_id":"..\\evil","hook_event_name":"Stop"}""", dir);
+        ClaudeSessions.Record("""{"session_id":"abc-1","hook_event_name":"SessionEnd"}""", dir);
+        Assert.Empty(ClaudeSessions.Read(dir, DateTime.UtcNow));
+    }
+
+    [Fact]
     public void Claude_usage_reads_session_and_week()
     {
         var now = new DateTime(2026, 10, 12, 18, 0, 0);
@@ -134,6 +186,18 @@ public class SystemTests
     [InlineData(0.9, false, "\uE995")]
     public void Volume_glyph_follows_level_and_mute(double volume, bool muted, string glyph) =>
         Assert.Equal(glyph, Audio.Glyph(new AudioState(volume, muted, "Speakers")));
+
+    [Fact]
+    public void Double_click_swaps_to_the_output_not_in_use()
+    {
+        AudioDevice speaker = new("a", "Soundbar", false), fifine = new("b", "Fifine", true), monitor = new("c", "Monitor", false);
+        Assert.Equal(speaker, Audio.NextOutput([speaker, fifine], []));
+        Assert.Equal("b", Audio.NextOutput([speaker with { IsDefault = true }, fifine with { IsDefault = false }], [])?.Id);
+        Assert.Null(Audio.NextOutput([fifine], []));
+        Assert.Equal("a", Audio.NextOutput([speaker, monitor, fifine], ["a", "b"])?.Id);
+        Assert.Equal("b", Audio.NextOutput([speaker with { IsDefault = true }, monitor, fifine with { IsDefault = false }], ["a", "b"])?.Id);
+        Assert.Equal("a", Audio.NextOutput([speaker, monitor, fifine], ["b"])?.Id);
+    }
 
     [Fact]
     public void Network_text_names_the_wifi_and_flags_missing_internet()

@@ -13,6 +13,7 @@ public sealed class WindowTracker : IDisposable
     const uint EventForeground = 0x0003, EventNameChange = 0x800C, EventLocationChange = 0x800B;
     const int DwmCloaked = 14;
     const string FrameHost = "applicationframehost.exe";
+    const string Shell = "explorer.exe";
 
     static readonly TimeSpan HideGrace = TimeSpan.FromSeconds(1.5);
 
@@ -73,6 +74,19 @@ public sealed class WindowTracker : IDisposable
 
     public event Action? Reshaped;
 
+    public event Action<nint>? Flagged;
+
+    readonly HashSet<nint> attention = [];
+
+    public bool WantsAttention(nint h) => attention.Contains(h);
+
+    public void Flag(nint h)
+    {
+        if (h == foreground || Windows.All(w => w.Handle != h) || !attention.Add(h)) return;
+        Changed?.Invoke();
+        Flagged?.Invoke(h);
+    }
+
     void OnEvent(nint hook, uint ev, nint hwnd, int idObject, int idChild, uint thread, uint time)
     {
         if (idObject != 0 || idChild != 0) return;
@@ -123,7 +137,8 @@ public sealed class WindowTracker : IDisposable
                    && list.Zip(Windows).All(p => p.First with { Title = "" } == p.Second with { Title = "" });
         Windows = list;
         foreground = top;
-        if (!same) Changed?.Invoke();
+        var calmed = attention.RemoveWhere(h => h == top || !alive.Contains(h)) > 0;
+        if (!same || calmed) Changed?.Invoke();
     }
 
     public void SwitchEnvironment(string? from, string? to, Func<AppWindow, bool> stays)
@@ -172,6 +187,35 @@ public sealed class WindowTracker : IDisposable
         if (!Native.PostMessage(h, Native.WM_CLOSE, 0, 0)) Native.EndTask(h, false, false);
     }
 
+    public static HashSet<int> ProcessIds(IEnumerable<AppWindow> windows)
+    {
+        var pids = new HashSet<int>();
+        foreach (var w in windows)
+        {
+            if (w.Exe is null || IsExe(w.Exe, Shell)) continue;
+            Native.GetWindowThreadProcessId(w.Handle, out var pid);
+            if (IsExe(w.Exe, FrameHost)) pid = HostedProcessId(w.Handle, pid);
+            if (pid != 0) pids.Add(pid);
+        }
+        return pids;
+    }
+
+    static bool IsExe(string path, string name) => Path.GetFileName(path).Equals(name, StringComparison.OrdinalIgnoreCase);
+
+    static int HostedProcessId(nint frame, int framePid)
+    {
+        var hosted = 0;
+        Native.EnumChildWindows(frame, (child, _) =>
+        {
+            if (Native.ClassOf(child) != "Windows.UI.Core.CoreWindow") return true;
+            Native.GetWindowThreadProcessId(child, out var pid);
+            if (pid == framePid) return true;
+            hosted = pid;
+            return false;
+        }, 0);
+        return hosted;
+    }
+
     AppWindow? Describe(nint h, HashSet<int> pids)
     {
         if (!Native.IsWindowVisible(h)) return null;
@@ -207,7 +251,7 @@ public sealed class WindowTracker : IDisposable
     string? AppIdOf(nint h, int pid, string? exe)
     {
         if (appIdByWindow.TryGetValue(h, out var hit)) return hit;
-        var frameHost = exe is not null && Path.GetFileName(exe).Equals(FrameHost, StringComparison.OrdinalIgnoreCase);
+        var frameHost = exe is not null && IsExe(exe, FrameHost);
         var id = ShellLinks.WindowAppId(h) ?? (frameHost ? HostedAppId(h) : PackageAppId(pid));
         if (id is not null || !frameHost) appIdByWindow[h] = id;
         return id;

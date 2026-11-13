@@ -166,6 +166,56 @@
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
 
+                                <TextBlock Text="{Binding [iconStyle], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" FontFamily="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Muted}" Margin="0,14,0,8"/>
+                                <ComboBox x:Name="IconStyleBox" Style="{StaticResource FlatCombo}" Width="320" HorizontalAlignment="Left"
+                                          SelectedValuePath="Id" SelectionChanged="OnIconStylePicked">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <ItemsControl ItemsSource="{Binding Previews}" Margin="0,2,10,2">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Orientation="Horizontal"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Image Source="{Binding}" Width="28" Height="28" Margin="0,0,4,0" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <TextBlock Text="{Binding [widgetLook], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" FontFamily="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Muted}" Margin="0,14,0,8"/>
+                                <ComboBox x:Name="WidgetLookBox" Style="{StaticResource FlatCombo}" Width="320" HorizontalAlignment="Left"
+                                          SelectedValuePath="Id" SelectionChanged="OnWidgetLookPicked">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <ItemsControl ItemsSource="{Binding Samples}" Margin="0,2,10,2">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Orientation="Horizontal"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Width="34" Height="22" CornerRadius="6" Margin="0,0,4,0" Background="{Binding Surface}" BorderBrush="{Binding Border}" BorderThickness="1">
+                                                                <TextBlock Text="12" FontSize="10" FontWeight="Bold" Foreground="{Binding Ink}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
                                 <StackPanel x:Name="ScreenRow" Margin="0,14,0,0" Visibility="Collapsed">
                                     <TextBlock Text="{Binding [screen], Source={x:Static svc:Loc.Instance}, Mode=OneWay}" FontFamily="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Muted}" Margin="0,0,0,8"/>
                                     <StackPanel x:Name="Screens" Orientation="Horizontal"/>

@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using WinDock.Models;
 using WinDock.Services;
 
 namespace WinDock.Views;
@@ -14,10 +15,16 @@ public sealed class SoundPanel : Flyout
     readonly Slider slider;
     readonly TextBlock muteGlyph;
     readonly StackPanel outputs = new();
+    readonly StackPanel apps = new() { Margin = new Thickness(0, 0, 0, 10) };
+    readonly Dictionary<string, (Slider Slider, TextBlock Mute)> appRows = new(StringComparer.OrdinalIgnoreCase);
+    const int AppsEvery = 5;
+    int ticks;
+    readonly Settings settings;
     bool syncing;
 
-    public SoundPanel(bool dark) : base(dark)
+    public SoundPanel(bool dark, Settings settings) : base(dark)
     {
+        this.settings = settings;
         device = Text("", 12);
         level = Text("", 11, muted: true);
         level.Width = 40;
@@ -73,10 +80,15 @@ public sealed class SoundPanel : Flyout
         };
         device.Margin = new Thickness(0, 6, 0, 0);
         outputs.Margin = new Thickness(-6, 0, -6, 10);
-        SetBody(new StackPanel { Width = 330, Children = { title, device, row, outputs, actions } });
+        SetBody(new StackPanel { Width = 330, Children = { title, device, row, outputs, apps, actions } });
         FillOutputs();
+        SyncApps();
 
-        poll.Tick += (_, _) => Sync();
+        poll.Tick += (_, _) =>
+        {
+            Sync();
+            if (++ticks % AppsEvery == 0) SyncApps();
+        };
         Loaded += (_, _) =>
         {
             Sync();
@@ -95,13 +107,17 @@ public sealed class SoundPanel : Flyout
         {
             var check = Glyph(output.IsDefault ? "\uE73E" : "", 11);
             check.Width = 18;
+            var favorite = Glyph(settings.FavoriteOutputs.Contains(output.Id) ? "\uE735" : "", 11);
+            favorite.Width = 18;
             var icon = Glyph("\uE7F5", 13);
             icon.Margin = new Thickness(0, 0, 10, 0);
             var name = Text(output.Name, 11.5);
             var line = new DockPanel();
             DockPanel.SetDock(check, Dock.Right);
+            DockPanel.SetDock(favorite, Dock.Right);
             DockPanel.SetDock(icon, Dock.Left);
             line.Children.Add(check);
+            line.Children.Add(favorite);
             line.Children.Add(icon);
             line.Children.Add(name);
             var rowBorder = new Border
@@ -110,7 +126,15 @@ public sealed class SoundPanel : Flyout
                 CornerRadius = new CornerRadius(9),
                 Background = output.IsDefault ? Track : System.Windows.Media.Brushes.Transparent,
                 Cursor = Cursors.Hand,
+                ToolTip = Loc.T("favoriteOutputHint"),
                 Child = line
+            };
+            rowBorder.MouseRightButtonUp += (_, e) =>
+            {
+                e.Handled = true;
+                if (!settings.FavoriteOutputs.Remove(output.Id)) settings.FavoriteOutputs.Add(output.Id);
+                settings.Save();
+                FillOutputs();
             };
             rowBorder.MouseEnter += (_, _) => rowBorder.Background = Hover;
             rowBorder.MouseLeave += (_, _) => rowBorder.Background = output.IsDefault ? Track : System.Windows.Media.Brushes.Transparent;
@@ -123,6 +147,79 @@ public sealed class SoundPanel : Flyout
             };
             outputs.Children.Add(rowBorder);
         }
+    }
+
+    void SyncApps()
+    {
+        var playing = Audio.Apps();
+        if (!playing.Select(a => a.Key).ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(appRows.Keys))
+        {
+            apps.Children.Clear();
+            appRows.Clear();
+            if (playing.Count > 0) apps.Children.Add(Text(Loc.T("soundApps"), 10, muted: true));
+            foreach (var app in playing) apps.Children.Add(AppRow(app));
+        }
+        syncing = true;
+        try
+        {
+            foreach (var app in playing)
+            {
+                var (appSlider, mute) = appRows[app.Key];
+                if (!appSlider.IsMouseCaptureWithin) appSlider.Value = Math.Round(app.Volume * 100);
+                mute.Text = Audio.Glyph(new AudioState(app.Volume, app.Muted, null));
+            }
+        }
+        finally { syncing = false; }
+    }
+
+    DockPanel AppRow(AudioApp app)
+    {
+        FrameworkElement icon = app.Exe is { } exe && ShellIcons.ForPath(exe) is { } image
+            ? new Image { Source = image, Width = 18, Height = 18 }
+            : Glyph("", 14);
+        icon.Width = 18;
+        icon.Margin = new Thickness(0, 0, 10, 0);
+        icon.VerticalAlignment = VerticalAlignment.Center;
+
+        var mute = Glyph("", 13);
+        mute.Width = 24;
+        mute.TextAlignment = TextAlignment.Center;
+        mute.Cursor = Cursors.Hand;
+        mute.ToolTip = Loc.T("mute");
+        mute.MouseLeftButtonUp += (_, e) =>
+        {
+            e.Handled = true;
+            Audio.SetAppMute(app.Key, Audio.Apps().FirstOrDefault(a => a.Key == app.Key) is { Muted: false });
+            SyncApps();
+        };
+
+        var appSlider = new Slider
+        {
+            Minimum = 0,
+            Maximum = 100,
+            Width = 120,
+            Style = (Style)Application.Current.FindResource("FlatSlider"),
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(8, 0, 4, 0)
+        };
+        appSlider.ValueChanged += (_, e) =>
+        {
+            if (!syncing) Audio.SetAppVolume(app.Key, e.NewValue / 100);
+        };
+        System.Windows.Automation.AutomationProperties.SetName(appSlider, app.Name);
+
+        var name = Text(app.Name, 11.5);
+        name.ToolTip = app.Name;
+        var line = new DockPanel { Margin = new Thickness(0, 5, 0, 0) };
+        DockPanel.SetDock(icon, Dock.Left);
+        DockPanel.SetDock(mute, Dock.Right);
+        DockPanel.SetDock(appSlider, Dock.Right);
+        line.Children.Add(icon);
+        line.Children.Add(mute);
+        line.Children.Add(appSlider);
+        line.Children.Add(name);
+        appRows[app.Key] = (appSlider, mute);
+        return line;
     }
 
     static TextBlock Spacer(TextBlock text)

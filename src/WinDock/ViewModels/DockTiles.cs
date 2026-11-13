@@ -25,6 +25,13 @@ public sealed class StartTile : DockTile
     public string Tip => Loc.T("start");
 }
 
+public sealed class HintTile : DockTile
+{
+    public override string Key => "hint";
+    public override bool Lens => true;
+    public string Tip => Loc.T("hintTip");
+}
+
 public sealed partial class AppTile : DockTile, IDisposable
 {
     readonly AppMatch match;
@@ -33,6 +40,7 @@ public sealed partial class AppTile : DockTile, IDisposable
     {
         Key = key;
         Name = name;
+        original = icon;
         Icon = icon;
         Pin = pin;
         this.match = match;
@@ -50,7 +58,19 @@ public sealed partial class AppTile : DockTile, IDisposable
     public override int Indicator => IsFocused ? 2 : Windows.Count > 0 ? 1 : 0;
 
     public string Name { get; }
-    public ImageSource? Icon { get; }
+    public ImageSource? Icon { get; private set; }
+
+    readonly ImageSource? original;
+    string styled = "";
+
+    public void Restyle(string style, DockTheme theme, string accent)
+    {
+        var signature = $"{style}|{theme.Id}|{accent}";
+        if (signature == styled) return;
+        styled = signature;
+        Icon = IconStyles.Apply(original, style, theme, accent);
+        OnPropertyChanged(nameof(Icon));
+    }
     public bool HasIcon => Icon is not null;
     public string Initial { get; }
     public PinItem? Pin { get; }
@@ -148,6 +168,7 @@ public sealed record AppMatch(HashSet<string> Ids, HashSet<string> Exes, List<st
             {
                 { } id when id.StartsWith("WinDock.Steam.") => (steamPath ?? GameLibraries.SteamInstallPath)(id["WinDock.Steam.".Length..]),
                 { } id when id.StartsWith("WinDock.Epic.") => (epicPath ?? GameLibraries.EpicInstallPath)(id["WinDock.Epic.".Length..]),
+                { } id when id.StartsWith("WinDock.Ubisoft.") => GameLibraries.UbisoftInstallPath(id["WinDock.Ubisoft.".Length..]),
                 _ => null
             };
             if (folder is { Length: > 0 }) match.Folders.Add(folder.TrimEnd('\\') + "\\");

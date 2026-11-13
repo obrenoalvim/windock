@@ -27,6 +27,7 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     readonly DispatcherTimer musicGrace = new() { Interval = TimeSpan.FromSeconds(3) };
     readonly HashSet<PresetViewModel> dirty = [];
     readonly StartTile start = new();
+    readonly HintTile hint = new();
     readonly SystemTile system = new();
     List<AppMatch> always = [];
     string? activeId;
@@ -160,7 +161,7 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
             tracker.ShowAll();
             shell.SetHiddenWindows([]);
         }
-        if (name == nameof(DockOptions.ReplaceTaskbar)) Rebuild();
+        if (name is nameof(DockOptions.ReplaceTaskbar) or nameof(DockOptions.IconStyle) or nameof(DockOptions.Theme)) Rebuild();
     }
 
     void OnActiveChanged()
@@ -273,6 +274,7 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         var running = loose.Select(g => (AppTile)Get(g.Key, () => RunningTile(g.Key, g.Windows[0]))).ToList();
         if (running.Count > 0) desired.Add(Get("sep:run", () => new SeparatorTile("sep:run")));
         desired.AddRange(running);
+        if (pinned.Count == 0 && running.Count == 0) desired.Add(hint);
 
         var foreground = tracker.Foreground;
         foreach (var (tile, list) in assigned.Select(p => (p.Key, p.Value)).Concat(running.Select((t, i) => (t, loose[i].Windows))))
@@ -298,16 +300,20 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
             desired.Add(system);
         }
 
+        var theme = DockTheme.Find(Options.Theme);
+        foreach (var tile in desired.OfType<AppTile>()) tile.Restyle(Options.IconStyle, theme, env?.Model.Accent ?? "#FFB547");
+
         Sync(desired);
         if (resized) Options.Retemplate();
         if (shown.Any(w => !lastShown.Contains(w))) Wake();
     }
 
-    static int BadgeOf(AppTile tile)
+    int BadgeOf(AppTile tile)
     {
         var stored = Badges.For(tile.BadgeIds);
         var titled = tile.Windows.Select(w => Badges.FromTitle(w.Title)).DefaultIfEmpty(0).Max();
-        return Math.Max(stored, titled) is var count and > 0 ? count : stored;
+        if (Math.Max(stored, titled) is var count and > 0) return count;
+        return tile.Windows.Any(w => tracker.WantsAttention(w.Handle)) ? Badges.Dot : stored;
     }
 
     static void StackAlike(List<(string Key, List<AppWindow> Windows)> groups)

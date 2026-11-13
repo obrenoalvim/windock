@@ -20,88 +20,104 @@
         <SolidColorBrush x:Key="TileFace" Color="#1FFFFFFF"/>
         <SolidColorBrush x:Key="DockInk" Color="#F4EFE7"/>
         <SolidColorBrush x:Key="DockMuted" Color="#B3F4EFE7"/>
+        <SolidColorBrush x:Key="DockAlert" Color="#E6E5483B"/>
         <FontFamily x:Key="Glyphs">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+        <v:InkConverter x:Key="Ink"/>
+        <SolidColorBrush x:Key="CoverScrim" Color="#666666"/>
 
         <LinearGradientBrush x:Key="WClock" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#4F8CFF" Offset="0"/>
-            <GradientStop Color="#2F5FE0" Offset="1"/>
+            <GradientStop Color="#3965B8" Offset="0"/>
+            <GradientStop Color="#2245A1" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WPomodoro" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#FF6F5B" Offset="0"/>
-            <GradientStop Color="#E0453A" Offset="1"/>
+            <GradientStop Color="#FF8F7F" Offset="0"/>
+            <GradientStop Color="#E66D65" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WBreak" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#34D399" Offset="0"/>
-            <GradientStop Color="#0E9F6E" Offset="1"/>
+            <GradientStop Color="#44D7A1" Offset="0"/>
+            <GradientStop Color="#21A77A" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WStopwatch" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#FFB547" Offset="0"/>
             <GradientStop Color="#E8890C" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WTimer" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#A07CFF" Offset="0"/>
-            <GradientStop Color="#7044F0" Offset="1"/>
+            <GradientStop Color="#7459B8" Offset="0"/>
+            <GradientStop Color="#5132AD" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WCountdown" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#3DDC97" Offset="0"/>
             <GradientStop Color="#13A86B" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WProgress" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#22C3E6" Offset="0"/>
-            <GradientStop Color="#0A8FB8" Offset="1"/>
+            <GradientStop Color="#43CBEA" Offset="0"/>
+            <GradientStop Color="#2F9FC3" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WActivity" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#FF8A3D" Offset="0"/>
-            <GradientStop Color="#E3601A" Offset="1"/>
+            <GradientStop Color="#FF9753" Offset="0"/>
+            <GradientStop Color="#E67234" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WBattery" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#5BD46B" Offset="0"/>
-            <GradientStop Color="#2EA043" Offset="1"/>
+            <GradientStop Color="#68D877" Offset="0"/>
+            <GradientStop Color="#3EA852" Offset="1"/>
         </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WPeripherals" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#3A4250" Offset="0"/>
+            <GradientStop Color="#1E232C" Offset="1"/>
+        </LinearGradientBrush>
+        <SolidColorBrush x:Key="WLow" Color="#FF6B5E"/>
         <LinearGradientBrush x:Key="WMusic" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#2D2F3A" Offset="0"/>
             <GradientStop Color="#17181F" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WWeather" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#56B8FF" Offset="0"/>
-            <GradientStop Color="#2B7FE6" Offset="1"/>
+            <GradientStop Color="#6FC3FF" Offset="0"/>
+            <GradientStop Color="#4B93EA" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WWeatherNight" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#3D4C8F" Offset="0"/>
             <GradientStop Color="#1A2152" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WNetwork" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#5B6CFF" Offset="0"/>
-            <GradientStop Color="#3A43D6" Offset="1"/>
+            <GradientStop Color="#4E5CD9" Offset="0"/>
+            <GradientStop Color="#3239B5" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WNote" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#FFE58A" Offset="0"/>
             <GradientStop Color="#F6C945" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WTodo" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#3CC98F" Offset="0"/>
-            <GradientStop Color="#1E8E62" Offset="1"/>
+            <GradientStop Color="#60D3A3" Offset="0"/>
+            <GradientStop Color="#48A37F" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WRigdeck" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#1D2126" Offset="0"/>
             <GradientStop Color="#0A0B0D" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WClaude" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#E58A68" Offset="0"/>
-            <GradientStop Color="#C4603E" Offset="1"/>
+            <GradientStop Color="#EA9F84" Offset="0"/>
+            <GradientStop Color="#CE7D62" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WClaudeHot" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#F05A48" Offset="0"/>
-            <GradientStop Color="#B8261B" Offset="1"/>
+            <GradientStop Color="#B44436" Offset="0"/>
+            <GradientStop Color="#8A1E14" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="WindowsBlue" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#7FD3FF" Offset="0"/>
             <GradientStop Color="#1E88E5" Offset="1"/>
         </LinearGradientBrush>
 
-        <SolidColorBrush x:Key="WInk" Color="White"/>
-        <SolidColorBrush x:Key="WSoft" Color="#E0FFFFFF"/>
-        <SolidColorBrush x:Key="WTrack" Color="#40FFFFFF"/>
+        <SolidColorBrush x:Key="WBorder" Color="#33FFFFFF"/>
+        <SolidColorBrush x:Key="WRigdeckInk" Color="#EAE7DE"/>
+        <SolidColorBrush x:Key="WRigdeckAccent" Color="#FF8A1E"/>
+        <SolidColorBrush x:Key="WRigdeckEdge" Color="#55FF8A1E"/>
+        <SolidColorBrush x:Key="WSteam" Color="#1B2838"/>
+        <SolidColorBrush x:Key="WSteamAccent" Color="#66C0F4"/>
+        <SolidColorBrush x:Key="WSteamEdge" Color="#66C0F4"/>
+        <SolidColorBrush x:Key="WEpic" Color="#2A2D33"/>
+        <SolidColorBrush x:Key="WEpicAccent" Color="#E6E8EB"/>
+        <SolidColorBrush x:Key="WEpicEdge" Color="#E6E8EB"/>
+        <SolidColorBrush x:Key="WGamesInk" Color="#E6EEF5"/>
 
         <Style x:Key="TileRoot" TargetType="Grid">
             <Setter Property="Background" Value="Transparent"/>
@@ -134,20 +150,21 @@
                         <ImageBrush ImageSource="{Binding Face.Image}" Stretch="UniformToFill"/>
                     </Border.Background>
                 </Border>
+                <Image Source="{Binding Face.Image}" RenderOptions.BitmapScalingMode="HighQuality" Visibility="{Binding Face.HasLogo, Converter={StaticResource Show}}"/>
                 <Ellipse Margin="4" Stroke="{DynamicResource DockLine}" StrokeThickness="2.4" Visibility="{Binding Face.HasRing, Converter={StaticResource Show}}"/>
                 <v:RingArc x:Name="Outer" Margin="4" Progress="{Binding Face.Ring}" Stroke="{DynamicResource DockInk}" StrokeThickness="2.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                            Visibility="{Binding Face.HasRing, Converter={StaticResource Show}}"/>
                 <Ellipse Margin="10" Stroke="{DynamicResource DockLine}" StrokeThickness="2.4" Visibility="{Binding Face.HasInnerRing, Converter={StaticResource Show}}"/>
                 <v:RingArc Margin="10" Progress="{Binding Face.InnerRing}" Stroke="{Binding Face.InnerTint}" StrokeThickness="2.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                            Visibility="{Binding Face.HasInnerRing, Converter={StaticResource Show}}"/>
-                <Border CornerRadius="13" Background="{StaticResource WNote}" Visibility="{Binding Face.HasPaper, Converter={StaticResource Show}}">
-                    <TextBlock Text="{Binding Face.Paper}" FontFamily="{StaticResource DockFont}" FontSize="8" FontWeight="SemiBold" Foreground="#3A2E12"
+                <Border CornerRadius="13" Background="{DynamicResource WNote}" v:Surface.Brush="{DynamicResource WNote}" Visibility="{Binding Face.HasPaper, Converter={StaticResource Show}}">
+                    <TextBlock Text="{Binding Face.Paper}" FontFamily="{StaticResource DockFont}" FontSize="8" FontWeight="SemiBold" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"
                                TextWrapping="Wrap" TextTrimming="CharacterEllipsis" LineHeight="9.5" LineStackingStrategy="BlockLineHeight"
                                Margin="5,5,4,5" VerticalAlignment="Center"/>
                 </Border>
                 <Grid VerticalAlignment="Bottom" Height="2.5" Margin="8,0,8,5" Visibility="{Binding Face.HasBar, Converter={StaticResource Show}}">
-                    <Border CornerRadius="1.25" Background="#66FFFFFF"/>
-                    <Border CornerRadius="1.25" Background="White" RenderTransformOrigin="0,0.5">
+                    <Border CornerRadius="1.25" Background="{DynamicResource DockLine}"/>
+                    <Border CornerRadius="1.25" Background="{DynamicResource DockInk}" RenderTransformOrigin="0,0.5">
                         <Border.RenderTransform>
                             <ScaleTransform ScaleX="{Binding Face.Bar}"/>
                         </Border.RenderTransform>
@@ -170,8 +187,11 @@
                 <DataTrigger Binding="{Binding Face.HasRing}" Value="True">
                     <Setter TargetName="Content" Property="Margin" Value="10"/>
                 </DataTrigger>
+                <DataTrigger Binding="{Binding Face.HasLogo}" Value="True">
+                    <Setter TargetName="Plate" Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
                 <DataTrigger Binding="{Binding Face.Alert}" Value="True">
-                    <Setter TargetName="Plate" Property="Background" Value="#E6E5483B"/>
+                    <Setter TargetName="Plate" Property="Background" Value="{DynamicResource DockAlert}"/>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Face.HasTint}" Value="True">
                     <Setter TargetName="Outer" Property="Stroke" Value="{Binding Face.Tint}"/>
@@ -192,7 +212,7 @@
         <Style x:Key="Caption" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="{StaticResource DockFont}"/>
             <Setter Property="FontSize" Value="8.5"/>
-            <Setter Property="Foreground" Value="{StaticResource WSoft}"/>
+            <Setter Property="Foreground" Value="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}, ConverterParameter=soft}"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         </Style>
 
@@ -200,14 +220,15 @@
             <Setter Property="FontFamily" Value="{StaticResource DockFont}"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Foreground" Value="{StaticResource WInk}"/>
+            <Setter Property="Foreground" Value="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"/>
         </Style>
 
         <Style x:Key="WidgetFace" TargetType="Border">
             <Setter Property="Width" Value="100"/>
             <Setter Property="Height" Value="46"/>
             <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="BorderBrush" Value="#33FFFFFF"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource WBorder}"/>
+            <Setter Property="v:Surface.Brush" Value="{Binding Background, RelativeSource={RelativeSource Self}}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
         </Style>
@@ -259,6 +280,13 @@
             </Grid>
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:HintTile}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource IconSize}">
+                <Border CornerRadius="13" Background="{DynamicResource TileFace}" BorderBrush="{DynamicResource DockLine}" BorderThickness="1.5"/>
+                <TextBlock Text="&#xE710;" FontFamily="{StaticResource Glyphs}" FontSize="18" Foreground="{DynamicResource DockInk}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:SystemTile}">
             <StackPanel Orientation="Horizontal" Height="{DynamicResource IconSize}">
                 <Border Background="Transparent" Padding="6,0" Cursor="Hand" ToolTip="{Binding TrayTip}" MouseLeftButtonUp="OnTrayClick">
@@ -302,9 +330,9 @@
         <DataTemplate DataType="{x:Type vm:ClockWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
                 <Viewbox>
-                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WClock}">
+                    <Border Style="{StaticResource WidgetFace}" Background="{DynamicResource WClock}">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <TextBlock Text="{Binding Time}" FontFamily="{StaticResource Display}" FontSize="16.5" Foreground="{StaticResource WInk}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding Time}" FontFamily="{StaticResource Display}" FontSize="16.5" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" HorizontalAlignment="Center"/>
                             <TextBlock Text="{Binding Date}" Style="{StaticResource Caption}" FontSize="8" HorizontalAlignment="Center" Margin="0,3,0,0"/>
                         </StackPanel>
                     </Border>
@@ -315,17 +343,17 @@
         <DataTemplate DataType="{x:Type vm:PomodoroWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
                 <Viewbox>
-                    <Border x:Name="Face" Style="{StaticResource WidgetFace}" Background="{StaticResource WPomodoro}">
+                    <Border x:Name="Face" Style="{StaticResource WidgetFace}" Background="{DynamicResource WPomodoro}">
                         <Grid Margin="9,0,6,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="28"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Grid Width="26" Height="26" VerticalAlignment="Center">
-                                <Ellipse Stroke="{StaticResource WTrack}" StrokeThickness="3"/>
-                                <v:RingArc Progress="{Binding Progress}" Stroke="{StaticResource WInk}" StrokeThickness="3"
+                                <Ellipse Stroke="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}, ConverterParameter=track}" StrokeThickness="3"/>
+                                <v:RingArc Progress="{Binding Progress}" Stroke="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" StrokeThickness="3"
                                            StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
-                                <TextBlock Text="{Binding Done}" FontFamily="{StaticResource DockFont}" FontWeight="Bold" FontSize="9" Foreground="{StaticResource WInk}"
+                                <TextBlock Text="{Binding Done}" FontFamily="{StaticResource DockFont}" FontWeight="Bold" FontSize="9" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="7,0,0,0">
@@ -338,7 +366,7 @@
             </Grid>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding IsBreak}" Value="True">
-                    <Setter TargetName="Face" Property="Background" Value="{StaticResource WBreak}"/>
+                    <Setter TargetName="Face" Property="Background" Value="{DynamicResource WBreak}"/>
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
@@ -346,13 +374,13 @@
         <DataTemplate DataType="{x:Type vm:StopwatchWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
                 <Viewbox>
-                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WStopwatch}">
+                    <Border Style="{StaticResource WidgetFace}" Background="{DynamicResource WStopwatch}">
                         <Grid Margin="10,0,6,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="&#xE916;" FontFamily="{StaticResource Glyphs}" FontSize="19" Foreground="{StaticResource WInk}" VerticalAlignment="Center"/>
+                            <TextBlock Text="&#xE916;" FontFamily="{StaticResource Glyphs}" FontSize="19" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" VerticalAlignment="Center"/>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
                                 <TextBlock Text="{Binding Text}" Style="{StaticResource Big}" FontSize="13"/>
                                 <TextBlock Text="{Binding Label}" Style="{StaticResource Caption}" Margin="0,1,0,0"/>
@@ -366,17 +394,17 @@
         <DataTemplate DataType="{x:Type vm:TimerWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
                 <Viewbox>
-                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WTimer}">
+                    <Border Style="{StaticResource WidgetFace}" Background="{DynamicResource WTimer}">
                         <Grid Margin="9,0,6,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="28"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Grid Width="26" Height="26" VerticalAlignment="Center">
-                                <Ellipse Stroke="{StaticResource WTrack}" StrokeThickness="3"/>
-                                <v:RingArc Progress="{Binding Progress}" Stroke="{StaticResource WInk}" StrokeThickness="3"
+                                <Ellipse Stroke="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}, ConverterParameter=track}" StrokeThickness="3"/>
+                                <v:RingArc Progress="{Binding Progress}" Stroke="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" StrokeThickness="3"
                                            StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
-                                <TextBlock Text="&#xE823;" FontFamily="{StaticResource Glyphs}" FontSize="10" Foreground="{StaticResource WInk}"
+                                <TextBlock Text="&#xE823;" FontFamily="{StaticResource Glyphs}" FontSize="10" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="7,0,0,0">
@@ -392,18 +420,18 @@
         <DataTemplate DataType="{x:Type vm:TodoWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
                 <Viewbox>
-                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WTodo}">
+                    <Border Style="{StaticResource WidgetFace}" Background="{DynamicResource WTodo}">
                         <Grid Margin="8,0,7,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <Border Width="22" Height="22" CornerRadius="11" BorderBrush="{StaticResource WInk}" BorderThickness="1.6" VerticalAlignment="Center">
-                                <TextBlock x:Name="Left" Text="{Binding Left}" FontFamily="{StaticResource DockFont}" FontWeight="Bold" FontSize="10.5" Foreground="{StaticResource WInk}"
+                            <Border Width="22" Height="22" CornerRadius="11" BorderBrush="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" BorderThickness="1.6" VerticalAlignment="Center">
+                                <TextBlock x:Name="Left" Text="{Binding Left}" FontFamily="{StaticResource DockFont}" FontWeight="Bold" FontSize="10.5" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="6,0,0,0">
-                                <TextBlock Text="{Binding Count}" Style="{StaticResource Caption}" FontSize="8" FontWeight="Bold" Foreground="{StaticResource WInk}"/>
+                                <TextBlock Text="{Binding Count}" Style="{StaticResource Caption}" FontSize="8" FontWeight="Bold" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"/>
                                 <TextBlock Text="{Binding Next}" Style="{StaticResource Caption}" FontSize="7.5" Margin="0,1,0,0"/>
                             </StackPanel>
                         </Grid>
@@ -420,13 +448,13 @@
         <DataTemplate DataType="{x:Type vm:CountdownWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
                 <Viewbox>
-                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WCountdown}">
+                    <Border Style="{StaticResource WidgetFace}" Background="{DynamicResource WCountdown}">
                         <Grid Margin="8,0,6,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="{Binding Text}" FontFamily="{StaticResource Display}" FontSize="16" Foreground="{StaticResource WInk}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Text}" FontFamily="{StaticResource Display}" FontSize="16" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="1" Text="{Binding Label}" Style="{StaticResource Caption}" FontSize="7" LineHeight="8.5" TextWrapping="Wrap"
                                        TextTrimming="CharacterEllipsis" MaxHeight="27" VerticalAlignment="Center" Margin="5,0,0,0"/>
                         </Grid>
@@ -438,7 +466,7 @@
         <DataTemplate DataType="{x:Type vm:ProgressWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
                 <Viewbox>
-                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WProgress}">
+                    <Border Style="{StaticResource WidgetFace}" Background="{DynamicResource WProgress}">
                         <Grid Margin="10,7,10,8">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="*"/>
@@ -449,8 +477,8 @@
                                 <TextBlock Text="{Binding Label}" Style="{StaticResource Caption}" VerticalAlignment="Bottom" Margin="6,0,0,2"/>
                             </StackPanel>
                             <Grid Grid.Row="1" Height="4">
-                                <Border CornerRadius="2" Background="{StaticResource WTrack}"/>
-                                <Border CornerRadius="2" Background="{StaticResource WInk}" RenderTransformOrigin="0,0.5">
+                                <Border CornerRadius="2" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}, ConverterParameter=track}"/>
+                                <Border CornerRadius="2" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" RenderTransformOrigin="0,0.5">
                                     <Border.RenderTransform>
                                         <ScaleTransform ScaleX="{Binding Value}"/>
                                     </Border.RenderTransform>
@@ -465,7 +493,7 @@
         <DataTemplate DataType="{x:Type vm:ActivityWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
                 <Viewbox>
-                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WActivity}">
+                    <Border Style="{StaticResource WidgetFace}" Background="{DynamicResource WActivity}">
                         <Grid Margin="9,8,9,8">
                             <Grid.RowDefinitions>
                                 <RowDefinition/>
@@ -478,24 +506,24 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="CPU" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
                             <Grid Grid.Column="1" Height="4" Margin="2,0,4,0">
-                                <Border CornerRadius="2" Background="{StaticResource WTrack}"/>
-                                <Border CornerRadius="2" Background="{StaticResource WInk}" RenderTransformOrigin="0,0.5">
+                                <Border CornerRadius="2" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}, ConverterParameter=track}"/>
+                                <Border CornerRadius="2" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" RenderTransformOrigin="0,0.5">
                                     <Border.RenderTransform>
                                         <ScaleTransform ScaleX="{Binding Cpu}"/>
                                     </Border.RenderTransform>
                                 </Border>
                             </Grid>
-                            <TextBlock Grid.Column="2" Text="{Binding CpuText}" Style="{StaticResource Caption}" Foreground="{StaticResource WInk}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="{Binding CpuText}" Style="{StaticResource Caption}" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                             <TextBlock Grid.Row="1" Text="RAM" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
                             <Grid Grid.Row="1" Grid.Column="1" Height="4" Margin="2,0,4,0">
-                                <Border CornerRadius="2" Background="{StaticResource WTrack}"/>
-                                <Border CornerRadius="2" Background="{StaticResource WInk}" RenderTransformOrigin="0,0.5">
+                                <Border CornerRadius="2" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}, ConverterParameter=track}"/>
+                                <Border CornerRadius="2" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" RenderTransformOrigin="0,0.5">
                                     <Border.RenderTransform>
                                         <ScaleTransform ScaleX="{Binding Ram}"/>
                                     </Border.RenderTransform>
                                 </Border>
                             </Grid>
-                            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding RamText}" Style="{StaticResource Caption}" Foreground="{StaticResource WInk}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding RamText}" Style="{StaticResource Caption}" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
                 </Viewbox>
@@ -505,14 +533,14 @@
         <DataTemplate DataType="{x:Type vm:ClaudeWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
                 <Viewbox>
-                    <Border x:Name="Face" Style="{StaticResource WidgetFace}" Background="{StaticResource WClaude}">
+                    <Border x:Name="Face" Style="{StaticResource WidgetFace}" Background="{DynamicResource WClaude}">
                         <Grid Margin="8,7,9,7">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="17"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Path Data="M 6.5,0.8 L 6.5,12.2 M 0.8,6.5 L 12.2,6.5 M 2.5,2.5 L 10.5,10.5 M 10.5,2.5 L 2.5,10.5"
-                                  Stroke="{StaticResource WInk}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Stroke="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                   Width="13" Height="13" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                             <Grid Grid.Column="1">
                                 <Grid.RowDefinitions>
@@ -526,24 +554,24 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="5h" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
                                 <Grid Grid.Column="1" Height="4" Margin="1,0,4,0">
-                                    <Border CornerRadius="2" Background="{StaticResource WTrack}"/>
-                                    <Border CornerRadius="2" Background="{StaticResource WInk}" RenderTransformOrigin="0,0.5">
+                                    <Border CornerRadius="2" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}, ConverterParameter=track}"/>
+                                    <Border CornerRadius="2" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform ScaleX="{Binding Session}"/>
                                         </Border.RenderTransform>
                                     </Border>
                                 </Grid>
-                                <TextBlock Grid.Column="2" Text="{Binding SessionText}" Style="{StaticResource Caption}" Foreground="{StaticResource WInk}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="{Binding SessionText}" Style="{StaticResource Caption}" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Row="1" Text="7d" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
                                 <Grid Grid.Row="1" Grid.Column="1" Height="4" Margin="1,0,4,0">
-                                    <Border CornerRadius="2" Background="{StaticResource WTrack}"/>
-                                    <Border CornerRadius="2" Background="{StaticResource WInk}" RenderTransformOrigin="0,0.5">
+                                    <Border CornerRadius="2" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}, ConverterParameter=track}"/>
+                                    <Border CornerRadius="2" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform ScaleX="{Binding Week}"/>
                                         </Border.RenderTransform>
                                     </Border>
                                 </Grid>
-                                <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding WeekText}" Style="{StaticResource Caption}" Foreground="{StaticResource WInk}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding WeekText}" Style="{StaticResource Caption}" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                             </Grid>
                         </Grid>
                     </Border>
@@ -551,7 +579,7 @@
             </Grid>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding Hot}" Value="True">
-                    <Setter TargetName="Face" Property="Background" Value="{StaticResource WClaudeHot}"/>
+                    <Setter TargetName="Face" Property="Background" Value="{DynamicResource WClaudeHot}"/>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Stale}" Value="True">
                     <Setter TargetName="Face" Property="Opacity" Value="0.72"/>
@@ -562,8 +590,8 @@
         <DataTemplate x:Key="MusicFull">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WiderSize}" ToolTip="{Binding Tip}">
                 <Viewbox>
-                    <Border Style="{StaticResource WidgetFace}" Width="154" Background="{StaticResource WMusic}">
-                        <Grid>
+                    <Border Style="{StaticResource WidgetFace}" Width="154" Background="{DynamicResource WMusic}">
+                        <Grid v:Surface.Brush="{StaticResource CoverScrim}">
                             <Border CornerRadius="11" Visibility="{Binding HasCover, Converter={StaticResource Show}}">
                                 <Border.Background>
                                     <ImageBrush ImageSource="{Binding Backdrop}" Stretch="Fill" RenderOptions.BitmapScalingMode="HighQuality"/>
@@ -576,9 +604,9 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Width="34" Height="34" CornerRadius="7" Background="{StaticResource WTrack}">
+                                <Border Width="34" Height="34" CornerRadius="7" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}, ConverterParameter=track}">
                                     <Grid>
-                                        <TextBlock Text="&#xE8D6;" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{StaticResource WInk}"
+                                        <TextBlock Text="&#xE8D6;" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"
                                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         <Border CornerRadius="7" Visibility="{Binding HasCover, Converter={StaticResource Show}}">
                                             <Border.Background>
@@ -588,11 +616,11 @@
                                     </Grid>
                                 </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="6,0,4,0">
-                                    <TextBlock Text="{Binding Title}" Style="{StaticResource Caption}" FontSize="8" FontWeight="Bold" Foreground="{StaticResource WInk}"/>
+                                    <TextBlock Text="{Binding Title}" Style="{StaticResource Caption}" FontSize="8" FontWeight="Bold" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"/>
                                     <TextBlock Text="{Binding Artist}" Style="{StaticResource Caption}" FontSize="7.5" Margin="0,1,0,0"/>
                                     <Grid Height="2" Margin="0,4,0,0" Visibility="{Binding HasProgress, Converter={StaticResource Show}}">
-                                        <Border CornerRadius="1" Background="{StaticResource WTrack}"/>
-                                        <Border CornerRadius="1" Background="{StaticResource WInk}" RenderTransformOrigin="0,0.5">
+                                        <Border CornerRadius="1" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}, ConverterParameter=track}"/>
+                                        <Border CornerRadius="1" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" RenderTransformOrigin="0,0.5">
                                             <Border.RenderTransform>
                                                 <ScaleTransform ScaleX="{Binding Progress}"/>
                                             </Border.RenderTransform>
@@ -610,13 +638,13 @@
                                         </Style>
                                     </StackPanel.Style>
                                     <Border Background="Transparent" Cursor="Hand" Padding="3,2" MouseUp="OnMediaPrevious" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE892;" FontFamily="{StaticResource Glyphs}" FontSize="8" Foreground="{StaticResource WInk}"/>
+                                        <TextBlock Text="&#xE892;" FontFamily="{StaticResource Glyphs}" FontSize="8" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"/>
                                     </Border>
                                     <Border Background="Transparent" Cursor="Hand" Padding="4,2" MouseUp="OnMediaToggle" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding ToggleGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="10" Foreground="{StaticResource WInk}"/>
+                                        <TextBlock Text="{Binding ToggleGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="10" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"/>
                                     </Border>
                                     <Border Background="Transparent" Cursor="Hand" Padding="3,2" MouseUp="OnMediaNext" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE893;" FontFamily="{StaticResource Glyphs}" FontSize="8" Foreground="{StaticResource WInk}"/>
+                                        <TextBlock Text="&#xE893;" FontFamily="{StaticResource Glyphs}" FontSize="8" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"/>
                                     </Border>
                                 </StackPanel>
                             </Grid>
@@ -629,8 +657,8 @@
         <DataTemplate x:Key="MusicPause">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
                 <Viewbox>
-                    <Border Style="{StaticResource WidgetFace}" Width="100" Background="{StaticResource WMusic}">
-                        <Grid>
+                    <Border Style="{StaticResource WidgetFace}" Width="100" Background="{DynamicResource WMusic}">
+                        <Grid v:Surface.Brush="{StaticResource CoverScrim}">
                             <Border CornerRadius="11" Visibility="{Binding HasCover, Converter={StaticResource Show}}">
                                 <Border.Background>
                                     <ImageBrush ImageSource="{Binding Backdrop}" Stretch="Fill" RenderOptions.BitmapScalingMode="HighQuality"/>
@@ -643,9 +671,9 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Width="34" Height="34" CornerRadius="7" Background="{StaticResource WTrack}">
+                                <Border Width="34" Height="34" CornerRadius="7" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}, ConverterParameter=track}">
                                     <Grid>
-                                        <TextBlock Text="&#xE8D6;" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{StaticResource WInk}"
+                                        <TextBlock Text="&#xE8D6;" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"
                                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         <Border CornerRadius="7" Visibility="{Binding HasCover, Converter={StaticResource Show}}">
                                             <Border.Background>
@@ -655,11 +683,11 @@
                                     </Grid>
                                 </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="6,0,4,0">
-                                    <TextBlock Text="{Binding Title}" Style="{StaticResource Caption}" FontSize="8" FontWeight="Bold" Foreground="{StaticResource WInk}"/>
+                                    <TextBlock Text="{Binding Title}" Style="{StaticResource Caption}" FontSize="8" FontWeight="Bold" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"/>
                                     <TextBlock Text="{Binding Artist}" Style="{StaticResource Caption}" FontSize="7.5" Margin="0,1,0,0"/>
                                     <Grid Height="2" Margin="0,4,0,0" Visibility="{Binding HasProgress, Converter={StaticResource Show}}">
-                                        <Border CornerRadius="1" Background="{StaticResource WTrack}"/>
-                                        <Border CornerRadius="1" Background="{StaticResource WInk}" RenderTransformOrigin="0,0.5">
+                                        <Border CornerRadius="1" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}, ConverterParameter=track}"/>
+                                        <Border CornerRadius="1" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" RenderTransformOrigin="0,0.5">
                                             <Border.RenderTransform>
                                                 <ScaleTransform ScaleX="{Binding Progress}"/>
                                             </Border.RenderTransform>
@@ -677,7 +705,7 @@
                                         </Style>
                                     </StackPanel.Style>
                                     <Border Background="Transparent" Cursor="Hand" Padding="3,2" MouseUp="OnMediaToggle" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding ToggleGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="10" Foreground="{StaticResource WInk}"/>
+                                        <TextBlock Text="{Binding ToggleGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="10" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"/>
                                     </Border>
                                 </StackPanel>
                             </Grid>
@@ -690,21 +718,21 @@
         <DataTemplate x:Key="MusicBackdrop">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WiderSize}" ToolTip="{Binding Tip}">
                 <Viewbox>
-                    <Border Style="{StaticResource WidgetFace}" Width="154" Background="{StaticResource WMusic}">
-                        <Grid>
+                    <Border Style="{StaticResource WidgetFace}" Width="154" Background="{DynamicResource WMusic}">
+                        <Grid v:Surface.Brush="{StaticResource CoverScrim}">
                             <Border CornerRadius="11" Visibility="{Binding HasCover, Converter={StaticResource Show}}">
                                 <Border.Background>
                                     <ImageBrush ImageSource="{Binding Backdrop}" Stretch="Fill" RenderOptions.BitmapScalingMode="HighQuality"/>
                                 </Border.Background>
                             </Border>
-                            <Border CornerRadius="11" Background="#38000000"/>
+                            <Border CornerRadius="11" Background="#99000000"/>
                             <Grid Margin="10,5,10,6">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-                                <TextBlock Text="{Binding Title}" Style="{StaticResource Caption}" FontSize="8.5" FontWeight="Bold" Foreground="{StaticResource WInk}"/>
+                                <TextBlock Text="{Binding Title}" Style="{StaticResource Caption}" FontSize="8.5" FontWeight="Bold" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"/>
                                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <StackPanel.Style>
                                         <Style TargetType="StackPanel">
@@ -716,18 +744,18 @@
                                         </Style>
                                     </StackPanel.Style>
                                     <Border Background="Transparent" Cursor="Hand" Padding="6,2" MouseUp="OnMediaPrevious">
-                                        <TextBlock Text="&#xE892;" FontFamily="{StaticResource Glyphs}" FontSize="10" Foreground="{StaticResource WInk}"/>
+                                        <TextBlock Text="&#xE892;" FontFamily="{StaticResource Glyphs}" FontSize="10" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"/>
                                     </Border>
                                     <Border Background="Transparent" Cursor="Hand" Padding="10,2" MouseUp="OnMediaToggle">
-                                        <TextBlock Text="{Binding ToggleGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="12" Foreground="{StaticResource WInk}"/>
+                                        <TextBlock Text="{Binding ToggleGlyph}" FontFamily="{StaticResource Glyphs}" FontSize="12" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"/>
                                     </Border>
                                     <Border Background="Transparent" Cursor="Hand" Padding="6,2" MouseUp="OnMediaNext">
-                                        <TextBlock Text="&#xE893;" FontFamily="{StaticResource Glyphs}" FontSize="10" Foreground="{StaticResource WInk}"/>
+                                        <TextBlock Text="&#xE893;" FontFamily="{StaticResource Glyphs}" FontSize="10" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"/>
                                     </Border>
                                 </StackPanel>
                                 <Grid Grid.Row="2" Height="2" Visibility="{Binding HasProgress, Converter={StaticResource Show}}">
-                                    <Border CornerRadius="1" Background="{StaticResource WTrack}"/>
-                                    <Border CornerRadius="1" Background="{StaticResource WInk}" RenderTransformOrigin="0,0.5">
+                                    <Border CornerRadius="1" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}, ConverterParameter=track}"/>
+                                    <Border CornerRadius="1" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform ScaleX="{Binding Progress}"/>
                                         </Border.RenderTransform>
@@ -745,13 +773,13 @@
         <DataTemplate DataType="{x:Type vm:WeatherWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
                 <Viewbox>
-                    <Border x:Name="Face" Style="{StaticResource WidgetFace}" Background="{StaticResource WWeather}">
+                    <Border x:Name="Face" Style="{StaticResource WidgetFace}" Background="{DynamicResource WWeather}">
                         <Grid Margin="9,6,9,6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="26"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="{Binding Glyph}" FontFamily="Segoe UI Symbol" FontSize="19" Foreground="{StaticResource WInk}"
+                            <TextBlock Text="{Binding Glyph}" FontFamily="Segoe UI Symbol" FontSize="19" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"
                                        VerticalAlignment="Center" HorizontalAlignment="Left"/>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding Temp}" Style="{StaticResource Big}" FontSize="15"/>
@@ -763,7 +791,7 @@
             </Grid>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding Day}" Value="False">
-                    <Setter TargetName="Face" Property="Background" Value="{StaticResource WWeatherNight}"/>
+                    <Setter TargetName="Face" Property="Background" Value="{DynamicResource WWeatherNight}"/>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Stale}" Value="True">
                     <Setter TargetName="Face" Property="Opacity" Value="0.72"/>
@@ -868,7 +896,7 @@
         <DataTemplate DataType="{x:Type vm:RigdeckWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
                 <Viewbox>
-                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WRigdeck}" BorderBrush="#55FF8A1E">
+                    <Border Style="{StaticResource WidgetFace}" Background="{DynamicResource WRigdeck}" BorderBrush="{DynamicResource WRigdeckEdge}">
                         <Grid Margin="8,0,6,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -876,8 +904,8 @@
                             </Grid.ColumnDefinitions>
                             <Image Source="{Binding Logo}" Width="30" Height="30" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="6,0,0,0">
-                                <TextBlock Text="RigDeck" Style="{StaticResource Caption}" FontSize="10" FontWeight="Bold" Foreground="#EAE7DE"/>
-                                <TextBlock Text="{Binding Count}" Style="{StaticResource Caption}" FontSize="7.5" Foreground="#FF8A1E" Margin="0,1,0,0" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="RigDeck" Style="{StaticResource Caption}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource WRigdeckInk}"/>
+                                <TextBlock Text="{Binding Count}" Style="{StaticResource Caption}" FontSize="7.5" Foreground="{DynamicResource WRigdeckAccent}" Margin="0,1,0,0" TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -888,28 +916,47 @@
         <DataTemplate DataType="{x:Type vm:GamesWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
                 <Viewbox>
-                    <Border Style="{StaticResource WidgetFace}" Background="{Binding Back}" BorderBrush="{Binding Accent}">
+                    <Border x:Name="Face" Style="{StaticResource WidgetFace}" Background="{DynamicResource WEpic}" BorderBrush="{DynamicResource WEpicEdge}">
                         <Grid Margin="8,0,6,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="&#xE7FC;" FontFamily="{StaticResource Glyphs}" FontSize="24" Foreground="{Binding Accent}" VerticalAlignment="Center"/>
                             <Image Source="{Binding Logo}" Width="30" Height="30" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <TextBlock x:Name="Fallback" Text="&#xE7FC;" FontFamily="{StaticResource Glyphs}" FontSize="24" Foreground="{DynamicResource WEpicAccent}" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Logo}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
-                                <TextBlock Text="{Binding Count}" Style="{StaticResource Caption}" FontSize="9" FontWeight="Bold" Foreground="#E6EEF5" TextTrimming="CharacterEllipsis"/>
-                                <TextBlock Text="{Binding Name}" Style="{StaticResource Caption}" FontSize="7.5" Foreground="{Binding Accent}" Margin="0,1,0,0"/>
+                                <TextBlock Text="{Binding Count}" Style="{StaticResource Caption}" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource WGamesInk}" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock x:Name="Store" Text="{Binding Name}" Style="{StaticResource Caption}" FontSize="7.5" Foreground="{DynamicResource WEpicAccent}" Margin="0,1,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Border>
                 </Viewbox>
             </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsSteam}" Value="True">
+                    <Setter TargetName="Face" Property="Background" Value="{DynamicResource WSteam}"/>
+                    <Setter TargetName="Face" Property="BorderBrush" Value="{DynamicResource WSteamEdge}"/>
+                    <Setter TargetName="Fallback" Property="Foreground" Value="{DynamicResource WSteamAccent}"/>
+                    <Setter TargetName="Store" Property="Foreground" Value="{DynamicResource WSteamAccent}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:NetworkWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}">
                 <Viewbox>
-                    <Border Style="{StaticResource WidgetFace}" Background="{StaticResource WNetwork}">
+                    <Border Style="{StaticResource WidgetFace}" Background="{DynamicResource WNetwork}">
                         <Grid Margin="10,8,10,8">
                             <Grid.RowDefinitions>
                                 <RowDefinition/>
@@ -919,10 +966,10 @@
                                 <ColumnDefinition Width="14"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="↓" Style="{StaticResource Caption}" FontSize="9" Foreground="{StaticResource WInk}" VerticalAlignment="Center"/>
+                            <TextBlock Text="↓" Style="{StaticResource Caption}" FontSize="9" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="1" Text="{Binding Down}" Style="{StaticResource Big}" FontSize="10.5" VerticalAlignment="Center"/>
                             <TextBlock Grid.Row="1" Text="↑" Style="{StaticResource Caption}" FontSize="9" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Up}" Style="{StaticResource Caption}" FontSize="8.5" Foreground="{StaticResource WInk}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Up}" Style="{StaticResource Caption}" FontSize="8.5" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
                 </Viewbox>
@@ -932,8 +979,8 @@
         <DataTemplate DataType="{x:Type vm:NoteWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Text}">
                 <Viewbox>
-                    <Border x:Name="Face" Style="{StaticResource WidgetFace}" Background="{StaticResource WNote}">
-                        <TextBlock Text="{Binding Text}" FontFamily="{StaticResource DockFont}" FontSize="9.5" FontWeight="SemiBold" Foreground="#3A2E12" Margin="9,5,9,5"
+                    <Border x:Name="Face" Style="{StaticResource WidgetFace}" Background="{DynamicResource WNote}">
+                        <TextBlock Text="{Binding Text}" FontFamily="{StaticResource DockFont}" FontSize="9.5" FontWeight="SemiBold" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" Margin="9,5,9,5"
                                    TextWrapping="Wrap" TextTrimming="CharacterEllipsis" LineHeight="11.5" VerticalAlignment="Center"/>
                     </Border>
                 </Viewbox>
@@ -948,11 +995,56 @@
         <DataTemplate DataType="{x:Type vm:BatteryWidget}">
             <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource IconSize}" ToolTip="{Binding Tip}">
                 <Viewbox>
-                    <Border Style="{StaticResource WidgetFace}" Width="46" Background="{StaticResource WBattery}">
+                    <Border Style="{StaticResource WidgetFace}" Width="46" Background="{DynamicResource WBattery}">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <TextBlock Text="{Binding Glyph}" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{StaticResource WInk}" HorizontalAlignment="Center"/>
-                            <TextBlock Text="{Binding Text}" Style="{StaticResource Caption}" FontSize="8.5" Foreground="{StaticResource WInk}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                            <TextBlock Text="{Binding Glyph}" FontFamily="{StaticResource Glyphs}" FontSize="15" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding Text}" Style="{StaticResource Caption}" FontSize="8.5" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
                         </StackPanel>
+                    </Border>
+                </Viewbox>
+            </Grid>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PeripheralsWidget}">
+            <Grid Style="{StaticResource TileRoot}" Width="{DynamicResource WideSize}" ToolTip="{Binding Tip}">
+                <Viewbox>
+                    <Border Style="{StaticResource WidgetFace}" Background="{DynamicResource WPeripherals}">
+                        <Grid Margin="9,5,9,5">
+                            <TextBlock Text="{Binding Tip}" Style="{StaticResource Caption}" FontSize="8" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" TextWrapping="Wrap"
+                                       VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center" Visibility="{Binding Empty, Converter={StaticResource Show}}"/>
+                            <ItemsControl ItemsSource="{Binding Top}" VerticalAlignment="Center" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid x:Name="Row" Height="11.5">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="14"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="30"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Glyph}" FontFamily="{StaticResource Glyphs}" FontSize="9" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" VerticalAlignment="Center"/>
+                                            <Grid Grid.Column="1" Height="4" Margin="2,0,4,0">
+                                                <Border CornerRadius="2" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}, ConverterParameter=track}"/>
+                                                <Border x:Name="Fill" CornerRadius="2" Background="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}" RenderTransformOrigin="0,0.5">
+                                                    <Border.RenderTransform>
+                                                        <ScaleTransform ScaleX="{Binding Level}"/>
+                                                    </Border.RenderTransform>
+                                                </Border>
+                                            </Grid>
+                                            <TextBlock x:Name="Value" Grid.Column="2" Text="{Binding Text}" Style="{StaticResource Caption}" Foreground="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}}"
+                                                       HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding Low}" Value="True">
+                                                <Setter TargetName="Fill" Property="Background" Value="{DynamicResource WLow}"/>
+                                                <Setter TargetName="Value" Property="Foreground" Value="{Binding (v:Surface.Brush), RelativeSource={RelativeSource Self}, Converter={StaticResource Ink}, ConverterParameter=alert}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Asleep}" Value="True">
+                                                <Setter TargetName="Row" Property="Opacity" Value="0.5"/>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
                     </Border>
                 </Viewbox>
             </Grid>

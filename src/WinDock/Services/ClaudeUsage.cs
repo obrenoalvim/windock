@@ -64,7 +64,7 @@ public sealed class ClaudeUsage
             loginChanged = false;
             lastTry = DateTime.MinValue;
         }
-        if (running is not null || now < retryAfter) return;
+        if (running is { IsCompleted: false } || now < retryAfter) return;
         if (Last is not null && Status == ClaudeStatus.Ok && now - Last.FetchedAt < Fresh - Slack) return;
         if (now - lastTry < (Status == ClaudeStatus.Ok ? Fresh : Manual) - Slack) return;
         running = Fetch(now);
@@ -72,7 +72,7 @@ public sealed class ClaudeUsage
 
     public bool Refresh(DateTime now)
     {
-        if (running is not null || now < retryAfter || now - lastTry < Manual) return false;
+        if (running is { IsCompleted: false } || now < retryAfter || now - lastTry < Manual) return false;
         running = Fetch(now);
         return true;
     }

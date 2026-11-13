@@ -8,8 +8,9 @@ namespace WinDock.ViewModels;
 public sealed record CompactFace(string Value, string Caption = "", string? Glyph = null, string? Symbol = null,
     double Ring = -1, System.Windows.Media.ImageSource? Image = null, bool Alert = false, string? Tip = null,
     double InnerRing = -1, System.Windows.Media.Brush? Tint = null, System.Windows.Media.Brush? InnerTint = null, double Bar = -1,
-    string? Paper = null, bool Dim = false)
+    string? Paper = null, bool Dim = false, bool Logo = false)
 {
+    public bool HasLogo => Image is not null && Logo;
     public bool HasPaper => Paper is not null;
     public bool HasBar => Bar >= 0;
     public bool HasInnerRing => InnerRing >= 0;
@@ -19,7 +20,7 @@ public sealed record CompactFace(string Value, string Caption = "", string? Glyp
     public bool HasValue => Value.Length > 0;
     public bool HasCaption => Caption.Length > 0;
     public bool HasRing => Ring >= 0;
-    public bool HasImage => Image is not null;
+    public bool HasImage => Image is not null && !Logo;
 }
 
 public abstract partial class WidgetTile(string key, WidgetSpec spec) : DockTile
@@ -108,6 +109,7 @@ public abstract partial class WidgetTile(string key, WidgetSpec spec) : DockTile
         WidgetSpec.Progress => new ProgressWidget(key, spec),
         WidgetSpec.Activity => new ActivityWidget(key, spec),
         WidgetSpec.Battery => new BatteryWidget(key, spec),
+        WidgetSpec.Peripherals => new PeripheralsWidget(key, spec),
         WidgetSpec.Claude => new ClaudeWidget(key, spec),
         WidgetSpec.Music => new MusicWidget(key, spec),
         WidgetSpec.Weather => new WeatherWidget(key, spec),
@@ -116,8 +118,7 @@ public abstract partial class WidgetTile(string key, WidgetSpec spec) : DockTile
         WidgetSpec.Note => new NoteWidget(key, spec),
         WidgetSpec.Todo => new TodoWidget(key, spec),
         WidgetSpec.Rigdeck => new RigdeckWidget(key, spec),
-        WidgetSpec.Steam => new SteamWidget(key, spec),
-        WidgetSpec.Epic => new EpicWidget(key, spec),
+        WidgetSpec.Steam or WidgetSpec.Epic or WidgetSpec.Gog or WidgetSpec.Ea or WidgetSpec.Ubisoft or WidgetSpec.BattleNet => new GamesWidget(key, spec, Games.ForKind(spec.Kind)),
         WidgetSpec.Uninstall => new UninstallWidget(key, spec),
         WidgetSpec.Convert => new ConvertWidget(key, spec),
         WidgetSpec.Shelf => new ShelfWidget(key, spec),
@@ -516,9 +517,102 @@ public sealed partial class BatteryWidget : WidgetTile
     }
 }
 
+public sealed record PeripheralRow(Peripheral Device, bool Asleep)
+{
+    public string Name => Device.Name;
+    public string Glyph => Peripherals.Glyph(Device.Kind);
+    public double Level => Device.Percent / 100.0;
+    public string Text => Device.Charging ? $"⚡{Device.Percent}%" : $"{Device.Percent}%";
+    public bool Low => Device.Low;
+
+    public string Describe() =>
+        $"{Name} · {Device.Percent}%" + (Device.Charging ? $" · {Loc.T("peripheralCharging")}" : "") + (Asleep ? $" · {Loc.T("peripheralAsleep")}" : "");
+}
+
+public sealed partial class PeripheralsWidget(string key, WidgetSpec spec) : WidgetTile(key, spec)
+{
+    static readonly TimeSpan Every = TimeSpan.FromMinutes(5), Forget = TimeSpan.FromHours(6);
+    static readonly HashSet<string> Warned = new(StringComparer.OrdinalIgnoreCase);
+
+    protected override CompactFace Compact() => Rows.FirstOrDefault() is { } first
+        ? new(first.Text, Glyph: first.Glyph, Ring: first.Level, Alert: first.Low, Tip: Tip, Dim: first.Asleep)
+        : new("—", Glyph: Peripherals.Glyph(PeripheralKind.Other), Tip: Tip, Dim: true);
+
+    readonly Dictionary<string, (Peripheral Device, DateTime Seen)> known = new(StringComparer.OrdinalIgnoreCase);
+    Task? running;
+    DateTime lastRead = DateTime.MinValue;
+
+    public override DateTime Due(DateTime now) => running is null ? lastRead + Every : DateTime.MaxValue;
+
+    [ObservableProperty] IReadOnlyList<PeripheralRow> rows = [];
+    [ObservableProperty] IReadOnlyList<PeripheralRow> top = [];
+    [ObservableProperty] bool empty = true;
+    [ObservableProperty] string tip = Loc.T("peripheralsSearching");
+
+    public override void Tick(DateTime now)
+    {
+        if (running is null && now - lastRead >= Every) running = Read(now);
+    }
+
+    public override void Click(DateTime now) => lastRead = DateTime.MinValue;
+
+    async Task Read(DateTime now)
+    {
+        lastRead = now;
+        try { Show(await Peripherals.ReadAsync(), now); }
+        finally
+        {
+            running = null;
+            Poke();
+        }
+    }
+
+    public void Show(IReadOnlyList<Peripheral> found, DateTime now)
+    {
+        foreach (var device in found) known[device.Name] = (device, now);
+        foreach (var name in known.Where(k => now - k.Value.Seen > Forget).Select(k => k.Key).ToList()) known.Remove(name);
+        Rows = [.. known.Values.Select(k => new PeripheralRow(k.Device, k.Seen < now)).OrderBy(r => r.Asleep).ThenBy(r => r.Device.Percent)];
+        Top = [.. Rows.Take(3)];
+        Empty = Rows.Count == 0;
+        Tip = Empty ? Loc.T("peripheralsNone") : string.Join("\n", Rows.Select(r => r.Describe()));
+        Warn(found);
+    }
+
+    void Warn(IEnumerable<Peripheral> found)
+    {
+        foreach (var device in found)
+        {
+            if (!device.Low) Warned.Remove(device.Name);
+            else if (Warned.Add(device.Name)) Raise(Loc.F("peripheralLow", device.Name, device.Percent));
+        }
+    }
+}
+
 public sealed partial class ClaudeWidget : WidgetTile
 {
-    public ClaudeWidget(string key, WidgetSpec spec) : base(key, spec) => ClaudeUsage.Shared.Updated += Poke;
+    public ClaudeWidget(string key, WidgetSpec spec) : base(key, spec)
+    {
+        ClaudeUsage.Shared.Updated += Poke;
+        ClaudeSessions.Shared.Changed += Poke;
+        ClaudeSessions.Shared.Watch();
+    }
+
+    static readonly TimeSpan Recent = TimeSpan.FromMinutes(2);
+    static readonly HashSet<string> Told = [];
+
+    [ObservableProperty] bool waiting;
+
+    void Listen(DateTime now)
+    {
+        var open = ClaudeSessions.Read(ClaudeSessions.Dir, now.ToUniversalTime());
+        Waiting = open.Any(s => s.State == ClaudeSessionState.Waiting);
+        foreach (var session in open)
+        {
+            if (session.State == ClaudeSessionState.Working || now.ToUniversalTime() - session.At > Recent) continue;
+            if (Told.Add($"{session.Id}:{session.State}:{session.At.Ticks}"))
+                Raise(Loc.F(session.State == ClaudeSessionState.Waiting ? "claudeWaiting" : "claudeDone", session.Name));
+        }
+    }
 
     public override DateTime Due(DateTime now) => now.AddMinutes(1);
 
@@ -531,7 +625,7 @@ public sealed partial class ClaudeWidget : WidgetTile
         return brush;
     }
 
-    protected override CompactFace Compact() => new(ClaudeUsage.Shared.Last is null ? "—" : "", Ring: Session, InnerRing: Week, Alert: Hot, Tip: Tip, Dim: Stale,
+    protected override CompactFace Compact() => new(ClaudeUsage.Shared.Last is null ? "—" : "", Ring: Session, InnerRing: Week, Alert: Hot || Waiting, Tip: Tip, Dim: Stale,
         Tint: Hot ? HotTint : SessionTint, InnerTint: Hot ? HotTint : WeekTint);
 
     static readonly HashSet<string> Alerted = [];
@@ -563,6 +657,8 @@ public sealed partial class ClaudeWidget : WidgetTile
             ? $"Claude · {Loc.T(StatusKey(usage.Status))}"
             : $"Claude · {Loc.T("claudeSession")} {SessionText} · {Loc.T("claudeWeek")} {WeekText}";
         if (limits is not null && usage.Status == ClaudeStatus.Ok) Warn(limits);
+        Listen(now);
+        if (Waiting) Tip += $" · {Loc.T("claudeWaitingState")}";
     }
 
     public static IEnumerable<(string Name, int Threshold, string Key)> Crossings(ClaudeLimits limits)
@@ -873,9 +969,9 @@ public sealed partial class TodoWidget(string key, WidgetSpec spec) : WidgetTile
     }
 }
 
-public abstract partial class GamesWidget(string key, WidgetSpec spec, string platform) : WidgetTile(key, spec)
+public sealed partial class GamesWidget(string key, WidgetSpec spec, string platform) : WidgetTile(key, spec)
 {
-    protected override CompactFace Compact() => Logo is null ? new(Number, Glyph: "", Tip: Tip) : new("", Image: Logo, Tip: Tip);
+    protected override CompactFace Compact() => Logo is null ? new(Number, Glyph: "", Tip: Tip) : new("", Image: Logo, Logo: true, Tip: Tip);
 
     public string Platform { get; } = platform;
     public string Name => Platform;
@@ -883,16 +979,6 @@ public abstract partial class GamesWidget(string key, WidgetSpec spec, string pl
     public System.Windows.Media.ImageSource? Logo { get; } = Games.Launcher(platform) is { } exe ? ShellIcons.ForPath(exe, 64) : null;
     public override bool HasPanel => true;
     public override DateTime Due(DateTime now) => DateTime.MaxValue;
-
-    public System.Windows.Media.Brush Back { get; } = Paint(platform == Games.Steam ? "#1B2838" : "#2A2D33");
-    public System.Windows.Media.Brush Accent { get; } = Paint(platform == Games.Steam ? "#66C0F4" : "#E6E8EB");
-
-    static System.Windows.Media.Brush Paint(string hex)
-    {
-        var brush = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex));
-        brush.Freeze();
-        return brush;
-    }
 
     public bool ShowAll
     {
@@ -916,10 +1002,6 @@ public abstract partial class GamesWidget(string key, WidgetSpec spec, string pl
         Tip = $"{Name} · {Count}";
     }
 }
-
-public sealed class SteamWidget(string key, WidgetSpec spec) : GamesWidget(key, spec, Games.Steam);
-
-public sealed class EpicWidget(string key, WidgetSpec spec) : GamesWidget(key, spec, Games.Epic);
 
 public sealed record UninstallRequest(string? Path, string? AppId, string? Name, Action? Removed = null, bool CanTrash = false)
 {

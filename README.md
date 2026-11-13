@@ -32,7 +32,7 @@ You do not need to install .NET or anything else. It is a single file.
 
 1. **Download** [`WinDock.exe`](https://github.com/obrenoalvim/windock/releases/latest/download/WinDock.exe) (about 75 MB, everything included). It needs Windows 10 version 2004 or newer.
 2. **Double-click it.** If Windows shows a blue "Windows protected your PC" screen, click **More info**, then **Run anyway**. That screen appears because the file is not code-signed yet.
-3. **The dock appears** on every screen, and the settings window opens. A short tour on the dock shows the gestures once. WinDock also puts an icon in the system tray.
+3. **The dock appears** on every screen, with a welcome tour that sets up your apps, games and look in two minutes. Replay it any time from the tray menu. WinDock also puts an icon in the system tray.
 4. It starts with Windows from then on. Turn that off in the **Dock** tab, the dock menu or the tray menu if you prefer.
 
 To remove it: right-click the dock and pick **Exit**, then delete `WinDock.exe` and the folder `%APPDATA%\WinDock`.
@@ -40,8 +40,8 @@ To remove it: right-click the dock and pick **Exit**, then delete `WinDock.exe` 
 ## Quick start
 
 1. Open the settings (right-click the dock, the tray icon, or `Ctrl+Alt+W`). The **Environments** tab has one card per environment.
-2. Click **+ Program** on a card and pick apps, Microsoft Store apps, Steam and Epic games, or a **Folder...** to stack in the dock (Downloads is a good one).
-3. Turn on the **widgets** you want for that environment: clock, weather, music, Claude usage, Pomodoro, stopwatch, timer, countdown, progress, activity, network speed, battery, microphone, note, to-do, RigDeck, Steam games, Epic games.
+2. Click **+ Program** on a card and pick apps, Microsoft Store apps, Steam, Epic, GOG, EA, Ubisoft and Battle.net games, or a **Folder...** to stack in the dock (Downloads is a good one).
+3. Turn on the **widgets** you want for that environment: clock, weather, music, Claude usage, Pomodoro, stopwatch, timer, countdown, progress, activity, network speed, battery, microphone, note, to-do, RigDeck, Steam games, Epic games, GOG games, EA games, Ubisoft games, Battle.net games.
 4. Under **Schedule**, pick the days and hours the environment is active. Or skip it and switch by hand: scroll the mouse wheel over the dock, press `Ctrl+Alt+1..9`, or pick one in the menu of the dock (right-click the glass).
 
 Programs in the **Always pinned** card show in every environment, before the others.
@@ -86,6 +86,7 @@ Programs in the **Always pinned** card show in every environment, before the oth
 | RigDeck | The RigDeck mark and how many shortcuts you have | Panel with PC controls (mic, volume, media, lock, screenshot) and your shortcuts: one app, a site, a command, a key combo, a sound, or a combo that does several at once, each app on the monitor you pick or in full screen | [RigDeck](https://github.com/obrenoalvim/rigdeck) as a widget, no server needed. Right-click a shortcut to close what it opened; a shortcut to a folder lists its files; saved with the environment |
 | Steam games | The Steam logo and how many games are installed | Panel with a search box; click a game to launch it | **Installed** or **All**: All also lists the games you own but have not installed (click installs; needs your Steam game details public) |
 | Epic games | The Epic logo and how many games are installed | Panel with a search box; click a game to launch it | Installed games only, because Epic keeps the rest of the library behind its login |
+| GOG, EA, Ubisoft and Battle.net games | The launcher logo and how many games are installed | Panel with a search box; click a game to launch it | Installed games only, read from each launcher's records in the Windows registry. Same panel as Steam and Epic |
 
 **Square or wide, per widget.** Right-click a widget on the dock and pick **Square** or **Wide**. Square is the size of an icon: the main value, a ring for progress and timers, two rings for Claude (the 5-hour session outside, the week inside), the cover for music. Wide shows more detail. Music has three wide looks: **Wide, pause only**, **Wide with controls** and **Cover as background**. Widgets you never sized follow **Square widgets by default** in the **Dock** tab (on by default; the note stays wide unless you pick square). The environment card lists the size of each widget too.
 
@@ -169,7 +170,7 @@ Before the dock, WinDock swapped the pinned apps of the real Windows taskbar. Th
 
 **Does it slow the PC down?** At rest it uses under 1% of one processor core and around 170 MB of memory, most of it the .NET runtime packed inside the single exe. It listens to Windows window events instead of polling.
 
-**Which programs can it pin?** Any `.exe`, `.lnk` or folder, Microsoft Store apps, and installed Steam and Epic Games games. A running game lights up its pinned icon.
+**Which programs can it pin?** Any `.exe`, `.lnk` or folder, Microsoft Store apps, and installed Steam, Epic, GOG, EA, Ubisoft and Battle.net games. A running game lights up its pinned icon.
 
 **Does it work on Windows 10?** It uses no Windows 11 only API, but it has only been tested on Windows 11. Reports from Windows 10 are welcome.
 

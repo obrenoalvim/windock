@@ -32,16 +32,17 @@ public partial class DockWindow : Window
     readonly SolidColorBrush accent = new(Amber);
     readonly GradientStop glowStop = new(Color.FromArgb(0x40, 0xFF, 0xB5, 0x47), 0);
     readonly RadialGradientBrush glow;
+    readonly Dictionary<string, object> colorful;
 
     LensPanel? panel;
     nint hwnd;
-    int taskbarCreated, appBarMessage;
+    int taskbarCreated, appBarMessage, shellHook;
     bool appBar;
     Native.Rect? reserved;
     bool fullscreen, concealed, menuOpen;
     int away, peekAway, revealOrder;
     double fit = 1;
-    DateTime revealBurst, lastWheel;
+    DateTime revealBurst, lastWheel, lastVolumeClick;
     FrameworkElement? hovered;
     PreviewWindow? preview;
     Flyout? flyout;
@@ -55,6 +56,11 @@ public partial class DockWindow : Window
     UninstallWidget? overBin;
     Action? undo;
     readonly DispatcherTimer toastTimer = new() { Interval = TimeSpan.FromSeconds(6) };
+    readonly DispatcherTimer nag = new() { Interval = TimeSpan.FromSeconds(4) };
+    readonly DispatcherTimer spring = new() { Interval = TimeSpan.FromMilliseconds(700) };
+    const int MaxNags = 5;
+    int nags;
+    AppTile? springApp;
 
     public DockWindow(DockViewModel vm, Action openSettings, string screenName)
     {
@@ -62,6 +68,7 @@ public partial class DockWindow : Window
         this.openSettings = openSettings;
         this.screenName = screenName;
         InitializeComponent();
+        colorful = WidgetLooks.Keys.ToDictionary(k => k, k => Resources[k]);
         ((FaceSelector)Resources["Faces"]).On = vm.Options.CompactWidgets;
         DataContext = vm;
 
@@ -92,8 +99,19 @@ public partial class DockWindow : Window
             closePreview.Stop();
             preview?.Hide();
         };
+        vm.Tracker.Flagged += OnFlagged;
+        nag.Tick += (_, _) => Nag();
+        spring.Tick += (_, _) =>
+        {
+            spring.Stop();
+            if (springApp is { IsRunning: true } app) WindowTracker.Activate(app.Windows[0].Handle);
+        };
         DragOver += OnDragOver;
-        DragLeave += (_, _) => HideName();
+        DragLeave += (_, _) =>
+        {
+            HideName();
+            Spring(null);
+        };
         Drop += OnDrop;
         PreviewMouseUp += (_, e) =>
         {
@@ -129,6 +147,8 @@ public partial class DockWindow : Window
         HwndSource.FromHwnd(hwnd)?.AddHook(WndProc);
         taskbarCreated = Native.RegisterWindowMessage("TaskbarCreated");
         appBarMessage = Native.RegisterWindowMessage("WinDock.AppBar");
+        shellHook = Native.RegisterWindowMessage("SHELLHOOK");
+        Native.RegisterShellHookWindow(hwnd);
     }
 
     void OnPanelLoaded(object sender, RoutedEventArgs e)
@@ -193,15 +213,21 @@ public partial class DockWindow : Window
         Resources["TileFace"] = Brush(theme.TileFace);
         Resources["DockInk"] = Brush(theme.Ink);
         Resources["DockMuted"] = Brush(theme.Muted);
+        Resources["DockAlert"] = new SolidColorBrush(WidgetLooks.AlertPlate(WidgetLooks.Hex(theme.Ink)));
         NameTag.Background = Brush(dark ? "#EB1E2029" : "#F5FFFFFF");
         NameTag.BorderBrush = Brush(dark ? "#26FFFFFF" : "#1F000000");
         NameText.Foreground = Brush(dark ? "#F4EFE7" : "#1B1D24");
+        ApplyWidgetLook();
     }
+
+    void ApplyWidgetLook() =>
+        WidgetLooks.Apply(Resources, colorful, vm.Options.WidgetLook, Theme, vm.Active?.Accent.Color ?? Amber);
 
     void ApplyAccent(bool animate)
     {
         var color = vm.Active?.Accent.Color ?? Amber;
         var soft = Color.FromArgb(0x48, color.R, color.G, color.B);
+        if (vm.Options.WidgetLook == WidgetLooks.Accent) ApplyWidgetLook();
         if (!animate)
         {
             accent.Color = color;
@@ -323,7 +349,39 @@ public partial class DockWindow : Window
             Place();
         }
         else if (msg == WmDisplayChange) Dispatcher.BeginInvoke(Resize, DispatcherPriority.Background);
+        else if (msg == shellHook && (int)wParam == Native.HSHELL_FLASH) vm.Tracker.Flag(lParam);
         return 0;
+    }
+
+    void OnFlagged(nint window)
+    {
+        nags = 0;
+        Nag();
+        nag.Start();
+        if (!concealed) return;
+        Reveal();
+        away = -18;
+    }
+
+    void Nag()
+    {
+        var asking = vm.Tiles.OfType<AppTile>().Where(t => t.Windows.Any(w => vm.Tracker.WantsAttention(w.Handle))).ToList();
+        if (asking.Count == 0 || nags++ >= MaxNags)
+        {
+            nag.Stop();
+            return;
+        }
+        foreach (var tile in asking)
+            if (Strip.ItemContainerGenerator.ContainerFromItem(tile) is FrameworkElement element) Bounce(element);
+    }
+
+    void Spring(AppTile? app)
+    {
+        if (app is { IsRunning: false }) app = null;
+        if (app == springApp) return;
+        springApp = app;
+        spring.Stop();
+        if (app is not null) spring.Start();
     }
 
     void OnPanelMove(object sender, MouseEventArgs e)
@@ -640,6 +698,7 @@ public partial class DockWindow : Window
         {
             AppTile app => app.Name,
             StartTile s => s.Tip,
+            HintTile h => h.Tip,
             _ => null
         };
         if (preview is { IsVisible: true } p)
@@ -716,6 +775,9 @@ public partial class DockWindow : Window
             case StartTile:
                 if (e.ChangedButton == MouseButton.Left) ShellGuard.Start();
                 else if (e.ChangedButton == MouseButton.Right) ShellGuard.PowerMenu();
+                break;
+            case HintTile:
+                if (e.ChangedButton == MouseButton.Left) openSettings();
                 break;
             case WidgetTile widget:
                 if (e.ChangedButton == MouseButton.Left && widget.HasPanel) OpenPanel(widget, element);
@@ -858,7 +920,11 @@ public partial class DockWindow : Window
 
     RigdeckPanel Rigdeck(RigdeckWidget widget, FrameworkElement element)
     {
-        var rigdeck = new RigdeckPanel(widget);
+        var rigdeck = new RigdeckPanel(widget, () =>
+        {
+            vm.Tracker.Refresh();
+            return vm.Tracker.Windows;
+        });
         rigdeck.Browse += path => ShowFlyout(new StackWindow(path, Dark), element);
         return rigdeck;
     }
@@ -917,13 +983,6 @@ public partial class DockWindow : Window
         return true;
     }
 
-    public bool ShowTour()
-    {
-        if (panel is null || !IsVisible || fullscreen) return false;
-        ShowFlyout(new TourPanel(Dark), panel);
-        return true;
-    }
-
     void OnTrayClick(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
@@ -943,7 +1002,9 @@ public partial class DockWindow : Window
     void OnStatusClick(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
-        ShellGuard.QuickSettings();
+        var bounds = TargetScreen().Bounds;
+        var monitor = Native.MonitorFromPoint(new Native.Point { X = bounds.Left + bounds.Width / 2, Y = bounds.Top + bounds.Height / 2 }, 2);
+        ShowFlyout(new QuickPanel(Dark, monitor), (FrameworkElement)sender);
     }
 
     void OnVolumeClick(object sender, MouseButtonEventArgs e)
@@ -955,7 +1016,19 @@ public partial class DockWindow : Window
             vm.System.RefreshVolume();
             return;
         }
-        ShowFlyout(new SoundPanel(Dark), (FrameworkElement)sender);
+        if (e.ChangedButton != MouseButton.Left) return;
+        var clickedAt = DateTime.Now;
+        if (clickedAt - lastVolumeClick < TimeSpan.FromMilliseconds(Native.GetDoubleClickTime()))
+        {
+            lastVolumeClick = DateTime.MinValue;
+            flyout?.Close();
+            closedKey = null;
+            Audio.SwapOutput(vm.Main.Settings.FavoriteOutputs);
+            vm.System.RefreshVolume();
+            return;
+        }
+        lastVolumeClick = clickedAt;
+        ShowFlyout(new SoundPanel(Dark, vm.Main.Settings), (FrameworkElement)sender);
     }
 
     void OnVolumeWheel(object sender, MouseWheelEventArgs e)
@@ -1090,11 +1163,8 @@ public partial class DockWindow : Window
         var m = info.Monitor;
         var ours = m.Left == screen.Left && m.Top == screen.Top;
         if (!ours || r.Left > m.Left || r.Top > m.Top || r.Right < m.Right || r.Bottom < m.Bottom) return false;
-        return !IsZoomed(window) || (r.Left == m.Left && r.Top == m.Top && r.Right == m.Right && r.Bottom == m.Bottom);
+        return !Native.IsZoomed(window) || (r.Left == m.Left && r.Top == m.Top && r.Right == m.Right && r.Bottom == m.Bottom);
     }
-
-    [DllImport("user32.dll")]
-    static extern bool IsZoomed(nint hwnd);
 
     void OnPanelMenu(object sender, MouseButtonEventArgs e)
     {
@@ -1144,6 +1214,12 @@ public partial class DockWindow : Window
         {
             menu.Items.Add(new Separator());
             var windows = app.Windows.ToList();
+            var processIds = WindowTracker.ProcessIds(windows);
+            if (processIds.Count > 0)
+                menu.Items.Add(Item(Loc.T("endProcess"), () =>
+                {
+                    if (!TrayApps.End(processIds)) vm.Main.Notify($"{app.Name}: {Loc.T("trayEndFailed")}");
+                }));
             menu.Items.Add(Item(windows.Count == 1 ? Loc.T("closeWindow") : Loc.F("closeWindows", windows.Count),
                 () => windows.ForEach(w => WindowTracker.Close(w.Handle))));
         }
@@ -1163,6 +1239,10 @@ public partial class DockWindow : Window
         menu.Items.Add(Item(Loc.T("widgetLeft"), () => vm.MoveWidget(widget, -1), enabled: vm.Neighbor(widget, -1) is not null));
         menu.Items.Add(Item(Loc.T("widgetRight"), () => vm.MoveWidget(widget, 1), enabled: vm.Neighbor(widget, 1) is not null));
         menu.Items.Add(new Separator());
+        var looks = new MenuItem { Header = Loc.T("widgetLook") };
+        foreach (var look in WidgetLooks.All)
+            looks.Items.Add(Item(Loc.T("widgetLook_" + look), () => vm.Options.WidgetLook = look, vm.Options.WidgetLook == look));
+        menu.Items.Add(looks);
         menu.Items.Add(Item(Loc.T("editWidgets"), openSettings));
         Open(menu);
     }
@@ -1212,6 +1292,7 @@ public partial class DockWindow : Window
     void OnDragOver(object sender, DragEventArgs e)
     {
         e.Handled = true;
+        Spring(DropTarget(e)?.App);
         var files = e.Data.GetDataPresent(DataFormats.FileDrop);
         if (files && DropWidgetAt(e.GetPosition(Root)) is { } target && Strip.ItemContainerGenerator.ContainerFromItem(target) is FrameworkElement box)
         {
@@ -1252,6 +1333,7 @@ public partial class DockWindow : Window
 
     void OnDrop(object sender, DragEventArgs e)
     {
+        Spring(null);
         if (e.Data.GetData(DataFormats.FileDrop) is not string[] files) return;
         HideName();
         hovered = null;
@@ -1310,6 +1392,10 @@ public partial class DockWindow : Window
         vm.Options.Changed -= OnOption;
         vm.Tracker.Changed -= CheckFullscreen;
         vm.Tracker.Reshaped -= CheckFullscreen;
+        vm.Tracker.Flagged -= OnFlagged;
+        nag.Stop();
+        spring.Stop();
+        Native.DeregisterShellHookWindow(hwnd);
         vm.ForgetWindow(this);
         SystemParameters.StaticPropertyChanged -= OnSystemParameter;
         base.OnClosing(e);

@@ -16,15 +16,17 @@ public sealed class RigdeckPanel : Flyout
     static readonly Brush Raised = Paint("#1D2126"), Lit = Paint("#33FF8A1E"), Edge = Paint("#2B3038"), Orange = Paint("#FF8A1E");
 
     readonly RigdeckWidget deck;
+    readonly Func<IReadOnlyList<AppWindow>> windows;
     bool opening;
 
     public event Action<string>? Browse;
     readonly WrapPanel grid = new() { Width = Columns * 84 };
     readonly Dictionary<string, Border> buttons = [];
 
-    public RigdeckPanel(RigdeckWidget deck) : base(true)
+    public RigdeckPanel(RigdeckWidget deck, Func<IReadOnlyList<AppWindow>> windows) : base(true)
     {
         this.deck = deck;
+        this.windows = windows;
         Brand("#F20A0B0D", "#55FF8A1E");
         var logo = new Image { Source = RigLogo.Image, Width = 30, Height = 30, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
         var title = Text("RigDeck", 14, font: Display);
@@ -114,6 +116,13 @@ public sealed class RigdeckPanel : Flyout
         for (var i = 0; i < actions.Count; i++) grid.Children.Add(Tile(i, actions[i]));
         grid.Children.Add(AddTile("", Loc.T("rigdeckApps"), AddPrograms));
         grid.Children.Add(AddTile("", Loc.T("rigdeckScene"), () => Edit(null)));
+        grid.Children.Add(AddTile("\uE7F4", Loc.T("rigdeckCapture"), Capture));
+    }
+
+    void Capture()
+    {
+        var scene = RigLayout.Capture(windows());
+        if (scene.Steps.Count > 0) Edit(null, scene);
     }
 
     Border AddTile(string glyph, string label, Action click)
@@ -147,10 +156,10 @@ public sealed class RigdeckPanel : Flyout
         deck.Set(deck.Actions.Concat(picker.Chosen.Select(RigStore.FromPin)));
     });
 
-    void Edit(int? index) => AfterClose(() =>
+    void Edit(int? index, RigAction? seed = null) => AfterClose(() =>
     {
         var actions = deck.Actions.ToList();
-        var editor = new RigdeckEditor(index is { } i ? actions[i] : new RigAction { Parallel = true });
+        var editor = new RigdeckEditor(index is { } i ? actions[i] : seed ?? new RigAction { Parallel = true });
         if (editor.ShowDialog() != true) return;
         if (index is { } at) actions[at] = editor.Result;
         else actions.Add(editor.Result);
@@ -246,7 +255,7 @@ public sealed class RigdeckPanel : Flyout
                 Browse(folder);
                 return;
             }
-            _ = RigRunner.Run(action);
+            _ = RigRunner.Run(action, windows);
             SafeClose();
         };
         tile.MouseRightButtonUp += async (_, e) =>

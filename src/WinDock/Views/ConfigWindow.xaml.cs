@@ -76,11 +76,67 @@ public partial class ConfigWindow : Window
             new System.Windows.Media.SolidColorBrush(Color(t.Stroke ?? "#59FFFFFF")))).ToList();
         ThemeBox.SelectedValue = vm.Dock.Theme;
         fillingThemes = false;
+        FillIconStyles();
+        FillWidgetLooks();
     }
 
     void OnThemePicked(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        if (!fillingThemes && ThemeBox.SelectedValue is string id && id != vm.Dock.Theme) vm.Dock.Theme = id;
+        if (fillingThemes || ThemeBox.SelectedValue is not string id || id == vm.Dock.Theme) return;
+        vm.Dock.Theme = id;
+        FillIconStyles();
+        FillWidgetLooks();
+    }
+
+    public sealed record IconStyleChoice(string Id, string Name, IReadOnlyList<System.Windows.Media.ImageSource> Previews);
+
+    bool fillingStyles;
+
+    void FillIconStyles()
+    {
+        fillingStyles = true;
+        var theme = WinDock.Models.DockTheme.Find(vm.Dock.Theme);
+        var accent = vm.Active?.Model.Accent ?? "#FFB547";
+        var samples = vm.Always.Model.Items.Concat(vm.Active?.Model.Items ?? [])
+            .Select(p => ShellIcons.ForPin(p, 128)).OfType<System.Windows.Media.ImageSource>().Distinct().Take(4).ToList();
+        if (samples.Count == 0 && ShellIcons.ForPath(Environment.ProcessPath ?? "", 128) is { } own) samples.Add(own);
+        IconStyleBox.ItemsSource = IconStyles.All.Select(s => new IconStyleChoice(
+            s,
+            Loc.T("iconStyle_" + s),
+            samples.Select(i => IconStyles.Apply(i, s, theme, accent)).OfType<System.Windows.Media.ImageSource>().ToList())).ToList();
+        IconStyleBox.SelectedValue = vm.Dock.IconStyle;
+        fillingStyles = false;
+    }
+
+    void OnIconStylePicked(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (!fillingStyles && IconStyleBox.SelectedValue is string id && id != vm.Dock.IconStyle) vm.Dock.IconStyle = id;
+    }
+
+    public sealed record LookSample(System.Windows.Media.Brush Surface, System.Windows.Media.Brush Ink, System.Windows.Media.Brush Border);
+
+    public sealed record WidgetLookChoice(string Id, string Name, IReadOnlyList<LookSample> Samples);
+
+    bool fillingLooks;
+
+    static LookSample Sample(WidgetPalette p) => new(
+        new System.Windows.Media.LinearGradientBrush(p.Top, p.Bottom, 45),
+        new System.Windows.Media.SolidColorBrush(p.Ink),
+        new System.Windows.Media.SolidColorBrush(p.Border));
+
+    void FillWidgetLooks()
+    {
+        fillingLooks = true;
+        var theme = WinDock.Models.DockTheme.Find(vm.Dock.Theme);
+        var accent = Color(vm.Active?.Model.Accent ?? "#FFB547");
+        WidgetLookBox.ItemsSource = WidgetLooks.All.Select(l => new WidgetLookChoice(l, Loc.T("widgetLook_" + l), WidgetLooks.Samples(l, theme, accent).Select(Sample).ToList())).ToList();
+        WidgetLookBox.SelectedValue = vm.Dock.WidgetLook;
+        fillingLooks = false;
+    }
+
+    void OnWidgetLookPicked(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (!fillingLooks && WidgetLookBox.SelectedValue is string id && id != vm.Dock.WidgetLook) vm.Dock.WidgetLook = id;
     }
 
     static System.Windows.Media.Color Color(string hex) => (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex);

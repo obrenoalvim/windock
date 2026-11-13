@@ -7,6 +7,7 @@ static class Native
 {
     public const int WM_HOTKEY = 0x0312;
     public const int WM_CLOSE = 0x0010;
+    public const int HSHELL_FLASH = 0x8006;
     public const uint MOD_ALT = 0x1, MOD_CONTROL = 0x2, MOD_NOREPEAT = 0x4000;
 
     public const int GWL_EXSTYLE = -20;
@@ -81,6 +82,8 @@ static class Native
         public ulong TotalPhys, AvailPhys, TotalPageFile, AvailPageFile, TotalVirtual, AvailVirtual, AvailExtendedVirtual;
     }
 
+    [DllImport("user32.dll")] public static extern uint GetDoubleClickTime();
+
     [DllImport("user32.dll")] public static extern bool RegisterHotKey(nint hWnd, int id, uint mods, uint vk);
     [DllImport("user32.dll")] public static extern bool UnregisterHotKey(nint hWnd, int id);
 
@@ -89,6 +92,9 @@ static class Native
     [DllImport("user32.dll")] public static extern bool IsWindow(nint hwnd);
     [DllImport("user32.dll")] public static extern bool IsWindowVisible(nint hwnd);
     [DllImport("user32.dll")] public static extern bool IsIconic(nint hwnd);
+    [DllImport("user32.dll")] public static extern bool IsZoomed(nint hwnd);
+    [DllImport("user32.dll")] public static extern bool RegisterShellHookWindow(nint hwnd);
+    [DllImport("user32.dll")] public static extern bool DeregisterShellHookWindow(nint hwnd);
     [DllImport("user32.dll")] public static extern nint GetWindow(nint hwnd, uint cmd);
     [DllImport("user32.dll")] public static extern nint GetAncestor(nint hwnd, uint flags);
     [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")] public static extern nint GetWindowLongPtr(nint hwnd, int index);

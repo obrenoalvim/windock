@@ -101,6 +101,43 @@ public class LibraryTests
         Assert.Equal("WinDock.Steam.42.open", ShellLinks.ReadAppId(WriteTemp(snapshot.Links["My Game.lnk"])));
     }
 
+    [Fact]
+    public void Other_launchers_read_games_from_their_own_records()
+    {
+        var folder = Directory.CreateTempSubdirectory("windock-games").FullName;
+        try
+        {
+            var exe = Path.Combine(folder, "Game.exe");
+            File.WriteAllText(exe, "");
+            Assert.Equal(exe, GameLibraries.IconExecutable($"\"{exe}\",0"));
+            Assert.Null(GameLibraries.IconExecutable(Path.Combine(folder, "missing.exe")));
+            Assert.Null(GameLibraries.IconExecutable(Path.Combine(folder, "Game.ico")));
+
+            Assert.Equal("Dead Cells", GameLibraries.ParseGog("1", "Dead Cells", exe, folder)?.Name);
+            Assert.Null(GameLibraries.ParseGog("1", "Dead Cells", Path.Combine(folder, "gone.exe"), folder));
+
+            var ubisoft = GameLibraries.ParseUbisoft("720", folder.Replace('\\', '/') + "/");
+            Assert.Equal(Path.GetFileName(folder), ubisoft?.Name);
+            Assert.Equal(exe, ubisoft?.Executable);
+            Assert.Null(GameLibraries.ParseUbisoft("720", Path.Combine(folder, "nope")));
+
+            Assert.Equal("Apex Legends", GameLibraries.ParseUninstall("Apex Legends", "Electronic Arts", exe, folder, "Electronic Arts")?.Name);
+            Assert.Null(GameLibraries.ParseUninstall("EA app", "Electronic Arts", exe, folder, "Electronic Arts"));
+            Assert.Null(GameLibraries.ParseUninstall("Battle.net", "Blizzard Entertainment", exe, folder, "Blizzard Entertainment"));
+            Assert.Null(GameLibraries.ParseUninstall("Notepad", "Microsoft", exe, folder, "Electronic Arts"));
+        }
+        finally { Directory.Delete(folder, true); }
+    }
+
+    [Fact]
+    public void Every_game_widget_kind_maps_to_one_platform()
+    {
+        Assert.Equal(Games.BattleNet, Games.ForKind(WidgetSpec.BattleNet));
+        Assert.Equal(Games.Gog, Games.ForKind(WidgetSpec.Gog));
+        Assert.All(new[] { WidgetSpec.Steam, WidgetSpec.Epic, WidgetSpec.Gog, WidgetSpec.Ea, WidgetSpec.Ubisoft, WidgetSpec.BattleNet },
+            kind => Assert.Contains(kind, WidgetSpec.Kinds));
+    }
+
     static string WriteTemp(string base64)
     {
         var path = Path.Combine(Path.GetTempPath(), $"windock-test-{Guid.NewGuid():N}.lnk");

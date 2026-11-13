@@ -32,7 +32,7 @@ Você não precisa instalar o .NET nem mais nada. É um arquivo só.
 
 1. **Baixe** o [`WinDock.exe`](https://github.com/obrenoalvim/windock/releases/latest/download/WinDock.exe) (uns 75 MB, tudo incluso). Precisa do Windows 10 versão 2004 ou mais novo.
 2. **Dê dois cliques.** Se o Windows mostrar uma tela azul "O Windows protegeu seu PC", clique em **Mais informações** e depois em **Executar assim mesmo**. Essa tela aparece porque o arquivo ainda não tem assinatura digital.
-3. **O dock aparece** em todas as telas e a janela de configurações abre. Um tour curto na dock mostra os gestos uma vez. O WinDock também coloca um ícone na bandeja do sistema.
+3. **O dock aparece** em todas as telas com um tour de boas-vindas que arruma seus apps, jogos e o visual em dois minutos. Repita quando quiser pelo menu da bandeja. O WinDock também coloca um ícone na bandeja do sistema.
 4. A partir daí ele inicia com o Windows. Desligue na aba **Dock**, no menu do dock ou no menu da bandeja se preferir.
 
 Para remover: clique com o botão direito no dock, escolha **Sair** e apague o `WinDock.exe` e a pasta `%APPDATA%\WinDock`.
@@ -40,8 +40,8 @@ Para remover: clique com o botão direito no dock, escolha **Sair** e apague o `
 ## Primeiros passos
 
 1. Abra as configurações (botão direito no dock, ícone da bandeja ou `Ctrl+Alt+W`). O app abre em inglês: clique em **PT** no canto superior direito. A aba **Ambientes** tem um cartão por ambiente.
-2. Clique em **+ Programa** em um cartão e escolha apps, apps da Microsoft Store, jogos da Steam e da Epic, ou uma **Pasta...** para empilhar no dock (a de Downloads é uma boa).
-3. Ligue os **widgets** que quiser naquele ambiente: relógio, clima, música, uso do Claude, Pomodoro, cronômetro, timer, contagem regressiva, progresso, atividade, velocidade da rede, bateria, microfone, nota, tarefas, RigDeck, jogos da Steam, jogos da Epic.
+2. Clique em **+ Programa** em um cartão e escolha apps, apps da Microsoft Store, jogos da Steam, Epic, GOG, EA, Ubisoft e Battle.net, ou uma **Pasta...** para empilhar no dock (a de Downloads é uma boa).
+3. Ligue os **widgets** que quiser naquele ambiente: relógio, clima, música, uso do Claude, Pomodoro, cronômetro, timer, contagem regressiva, progresso, atividade, velocidade da rede, bateria, microfone, nota, tarefas, RigDeck, jogos da Steam, jogos da Epic, jogos da GOG, jogos da EA, jogos da Ubisoft, jogos da Battle.net.
 4. Em **Agenda**, escolha os dias e horários em que o ambiente fica ativo. Ou pule isso e troque na mão: role a roda do mouse sobre o dock, use `Ctrl+Alt+1..9` ou escolha no menu do dock (botão direito no vidro).
 
 Os programas do cartão **Sempre fixos** aparecem em todos os ambientes, antes dos outros.
@@ -86,6 +86,7 @@ Os programas do cartão **Sempre fixos** aparecem em todos os ambientes, antes d
 | RigDeck | A marca do RigDeck e quantos atalhos você tem | Painel com os controles do PC (microfone, volume, mídia, bloquear, captura de tela) e seus atalhos: um app, um site, um comando, uma combinação de teclas, um som, ou um combo que faz várias coisas de uma vez, cada app no monitor que você escolher ou em tela cheia | O [RigDeck](https://github.com/obrenoalvim/rigdeck) como widget, sem precisar de servidor. Botão direito num atalho fecha o que ele abriu; um atalho para uma pasta lista os arquivos dela; salvo junto com o ambiente |
 | Jogos da Steam | A logo da Steam e quantos jogos estão instalados | Painel com busca; clique num jogo para abrir | **Instalados** ou **Todos**: Todos lista também os jogos que você tem e não instalou (o clique instala; precisa dos detalhes dos jogos públicos na Steam) |
 | Jogos da Epic | A logo da Epic e quantos jogos estão instalados | Painel com busca; clique num jogo para abrir | Só os instalados, porque a Epic guarda o resto da biblioteca atrás do login |
+| Jogos da GOG, EA, Ubisoft e Battle.net | A logo do launcher e quantos jogos estão instalados | Painel com busca; clique num jogo para abrir | Só os instalados, lidos dos registros de cada launcher no registro do Windows. Mesmo painel da Steam e da Epic |
 
 **Quadrado ou largo, por widget.** Clique com o botão direito num widget da dock e escolha **Quadrado** ou **Largo**. O quadrado tem o tamanho de um ícone: o valor principal, um anel para progresso e timers, dois anéis para o Claude (a sessão de 5h por fora, a semana por dentro), a capa para a música. O largo mostra mais detalhes. A música tem três versões largas: **Largo, só pausa**, **Largo com controles** e **Capa de fundo**. Os widgets que você nunca ajustou seguem **Widgets quadrados por padrão**, na aba **Dock** (ligado por padrão; a nota fica larga, a não ser que você escolha quadrado). O card do ambiente também mostra o tamanho de cada widget.
 
@@ -169,7 +170,7 @@ Antes do dock, o WinDock trocava os apps fixados na barra de tarefas de verdade.
 
 **Ele deixa o PC lento?** Parado, ele usa menos de 1% de um núcleo do processador e uns 170 MB de memória, a maior parte do runtime .NET que vem dentro do exe único. Ele ouve os eventos de janelas do Windows em vez de ficar consultando.
 
-**Quais programas ele fixa?** Qualquer `.exe`, `.lnk` ou pasta, apps da Microsoft Store e jogos instalados da Steam e da Epic Games. Um jogo aberto acende o ícone fixado dele.
+**Quais programas ele fixa?** Qualquer `.exe`, `.lnk` ou pasta, apps da Microsoft Store e jogos instalados da Steam, Epic, GOG, EA, Ubisoft e Battle.net. Um jogo aberto acende o ícone fixado dele.
 
 **Funciona no Windows 10?** Não usa nenhuma API exclusiva do Windows 11, mas só foi testado no Windows 11. Relatos do Windows 10 são bem-vindos.
 

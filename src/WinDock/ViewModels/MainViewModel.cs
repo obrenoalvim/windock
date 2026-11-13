@@ -121,10 +121,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     void AdoptCurrentTaskbar()
     {
-        var target = ScheduledNow() ?? Presets.FirstOrDefault();
-        if (target is null) return;
-        target.ReplaceItems(PinBuilder.Import(taskbar.Capture()));
-        SetActive(target.Id);
+        Always.ReplaceItems(PinBuilder.Import(taskbar.Capture()));
+        if ((ScheduledNow() ?? Presets.FirstOrDefault()) is { } target) SetActive(target.Id);
     }
 
     void MarkActive()

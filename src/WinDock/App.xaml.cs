@@ -21,6 +21,7 @@ public partial class App : System.Windows.Application
     EventWaitHandle? exitEvent;
     TrayService? tray;
     ConfigWindow? window;
+    WelcomeWindow? welcome;
     HwndSource? hotkeys;
     ShellGuard? shell;
     DockViewModel? dock;
@@ -65,8 +66,9 @@ public partial class App : System.Windows.Application
         main.Dock.Changed += _ => SyncKeys();
         SyncKeys();
 
-        tray = new TrayService(main, OpenConfig, () => Config.Toggle(), dock);
-        if (!e.Args.Contains("--tray")) OpenConfig();
+        tray = new TrayService(main, OpenConfig, () => Config.Toggle(), dock, ShowWelcome);
+        if (e.Args.Contains("--welcome") || (!settings.TourSeen && !e.Args.Contains("--tray")))
+            Dispatcher.BeginInvoke(ShowWelcome, DispatcherPriority.Background);
 
         new Thread(() =>
         {
@@ -83,6 +85,19 @@ public partial class App : System.Windows.Application
     ConfigWindow Config => window ??= new ConfigWindow(main!);
 
     void OpenConfig() => Config.Open();
+
+    void ShowWelcome()
+    {
+        if (welcome is { IsVisible: true })
+        {
+            welcome.Activate();
+            return;
+        }
+        var launchers = Onboarding.Launchers();
+        var steps = Onboarding.Plan(main!.Always.Model.Items.Count(i => i.Exists), launchers.Count);
+        welcome = new WelcomeWindow(main, steps, launchers, OpenConfig);
+        welcome.Show();
+    }
 
     void RegisterHotkeys()
     {

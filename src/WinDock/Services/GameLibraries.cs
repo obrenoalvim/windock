@@ -8,6 +8,8 @@ public sealed record SteamGame(string Id, string Name, string? IconPath, bool Ic
 
 public sealed record EpicGame(string Name, string AppName, string Namespace, string ItemId, string? Executable);
 
+public sealed record LibraryGame(string Id, string Name, string? Executable, string? Folder);
+
 public static partial class GameLibraries
 {
     static readonly string[] SteamTools =
@@ -143,5 +145,72 @@ public static partial class GameLibraries
             .OfType<EpicGame>()
             .OrderBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
+    }
+
+    static readonly string[] LauncherNames =
+        ["EA app", "EA Desktop", "Origin", "Battle.net", "Blizzard Battle.net", "EA Anticheat", "EA Javelin", "Redistributable", "Visual C++", "Ubisoft Connect"];
+
+    public static LibraryGame? ParseUninstall(string? name, string? publisher, string? icon, string? location, string wantedPublisher)
+    {
+        if (string.IsNullOrWhiteSpace(name) || publisher is null || !publisher.Contains(wantedPublisher, StringComparison.OrdinalIgnoreCase)) return null;
+        if (LauncherNames.Any(n => name.Contains(n, StringComparison.OrdinalIgnoreCase))) return null;
+        var exe = IconExecutable(icon);
+        return exe is null ? null : new LibraryGame(name, name, exe, string.IsNullOrWhiteSpace(location) ? Path.GetDirectoryName(exe) : location);
+    }
+
+    public static string? IconExecutable(string? icon)
+    {
+        if (string.IsNullOrWhiteSpace(icon)) return null;
+        var path = icon.Trim().Trim('"');
+        var comma = path.LastIndexOf(',');
+        if (comma > 0 && int.TryParse(path[(comma + 1)..], out _)) path = path[..comma].Trim().Trim('"');
+        return path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && File.Exists(path) ? path : null;
+    }
+
+    public static LibraryGame? ParseGog(string id, string? name, string? exe, string? folder) =>
+        string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(exe) || !File.Exists(exe) ? null : new LibraryGame(id, name, exe, folder);
+
+    public static LibraryGame? ParseUbisoft(string id, string? installDir)
+    {
+        if (string.IsNullOrWhiteSpace(installDir)) return null;
+        var folder = installDir.Replace('/', '\\').TrimEnd('\\');
+        var name = Path.GetFileName(folder);
+        if (name.Length == 0 || !Directory.Exists(folder)) return null;
+        var exe = Directory.EnumerateFiles(folder, "*.exe").FirstOrDefault(f => !Path.GetFileName(f).StartsWith("unins", StringComparison.OrdinalIgnoreCase));
+        return new LibraryGame(id, name, exe, folder);
+    }
+
+    public static List<LibraryGame> Gog() => Registered(@"SOFTWARE\WOW6432Node\GOG.com\Games", (id, key) =>
+        ParseGog(id, key.GetValue("gameName") as string, key.GetValue("exe") as string, key.GetValue("path") as string));
+
+    public static List<LibraryGame> Ubisoft() => Registered(@"SOFTWARE\WOW6432Node\Ubisoft\Launcher\Installs", (id, key) =>
+        ParseUbisoft(id, key.GetValue("InstallDir") as string));
+
+    public static string? UbisoftInstallPath(string id) => Ubisoft().FirstOrDefault(g => g.Id == id)?.Folder;
+
+    public static List<LibraryGame> Published(string publisher)
+    {
+        var games = new List<LibraryGame>();
+        foreach (var root in new[] { @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall", @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall" })
+            games.AddRange(Registered(root, (_, key) => ParseUninstall(
+                key.GetValue("DisplayName") as string, key.GetValue("Publisher") as string,
+                key.GetValue("DisplayIcon") as string, key.GetValue("InstallLocation") as string, publisher)));
+        return [.. games.DistinctBy(g => g.Name, StringComparer.OrdinalIgnoreCase)];
+    }
+
+    static List<LibraryGame> Registered(string path, Func<string, RegistryKey, LibraryGame?> read)
+    {
+        var games = new List<LibraryGame>();
+        try
+        {
+            using var root = Registry.LocalMachine.OpenSubKey(path);
+            foreach (var id in root?.GetSubKeyNames() ?? [])
+            {
+                using var key = root!.OpenSubKey(id);
+                if (key is not null && read(id, key) is { } game) games.Add(game);
+            }
+        }
+        catch (Exception e) when (e is System.Security.SecurityException or UnauthorizedAccessException or IOException) { }
+        return games;
     }
 }

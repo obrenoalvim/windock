@@ -57,16 +57,28 @@ public static class NetworkStatus
         catch (NetworkInformationException) { return NetworkKind.None; }
     }
 
+    [ComImport, Guid("DCB00000-570F-4A9B-8D69-199FDBA5723B"), InterfaceType(ComInterfaceType.InterfaceIsDual)]
+    interface INetworkListManager
+    {
+        [return: MarshalAs(UnmanagedType.Interface)] object GetNetworks(int flags);
+        [return: MarshalAs(UnmanagedType.Interface)] object GetNetwork(Guid id);
+        [return: MarshalAs(UnmanagedType.Interface)] object GetNetworkConnections();
+        [return: MarshalAs(UnmanagedType.Interface)] object GetNetworkConnection(Guid id);
+        [return: MarshalAs(UnmanagedType.VariantBool)] bool IsConnectedToInternet();
+    }
+
     static bool HasInternet()
     {
-        try
-        {
-            if (Type.GetTypeFromCLSID(ListManager) is not { } type) return true;
-            dynamic manager = Activator.CreateInstance(type)!;
-            try { return (bool)manager.IsConnectedToInternet; }
-            finally { Marshal.ReleaseComObject(manager); }
-        }
-        catch (Exception e) when (e is COMException or InvalidCastException or Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) { return true; }
+        try { return QueryInternet(); }
+        catch (Exception e) when (e is COMException or InvalidCastException) { return true; }
+    }
+
+    static bool QueryInternet()
+    {
+        if (Type.GetTypeFromCLSID(ListManager) is not { } type) return true;
+        var manager = (INetworkListManager)Activator.CreateInstance(type)!;
+        try { return manager.IsConnectedToInternet(); }
+        finally { Marshal.ReleaseComObject(manager); }
     }
 
     static (string? Ssid, int Signal) Wifi()

@@ -88,10 +88,12 @@ public static class TrayApps
         else Launcher.OpenFile(app.Exe);
     }
 
-    public static bool End(TrayApp app)
+    public static bool End(TrayApp app) => End(app.Pids);
+
+    public static bool End(IEnumerable<int> processIds)
     {
         var ok = true;
-        foreach (var pid in app.Pids)
+        foreach (var pid in processIds)
         {
             try
             {
@@ -104,7 +106,7 @@ public static class TrayApps
         return ok;
     }
 
-    static string NameOf(string exe, IReadOnlyList<int> pids)
+    internal static string NameOf(string exe, IReadOnlyList<int> pids)
     {
         if (AppIdOf(pids[0]) is { } id && ShellIcons.NameForAppId(id) is { Length: > 0 } packaged) return packaged;
         try
@@ -117,7 +119,7 @@ public static class TrayApps
         return System.IO.Path.GetFileNameWithoutExtension(exe);
     }
 
-    static string? Path(int pid) => With(pid, h =>
+    internal static string? Path(int pid) => With(pid, h =>
     {
         var size = 1024;
         var name = new StringBuilder(size);

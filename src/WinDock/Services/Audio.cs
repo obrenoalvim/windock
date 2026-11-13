@@ -6,7 +6,7 @@ public sealed record AudioState(double Volume, bool Muted, string? Device);
 
 public sealed record AudioDevice(string Id, string Name, bool IsDefault);
 
-public static class Audio
+public static partial class Audio
 {
     const int Render = 0, Capture = 1, Console = 0, Multimedia = 1, InProcess = 0x1;
     const uint FriendlyName = 14;
@@ -247,6 +247,18 @@ public static class Audio
             return true;
         }
         catch (Exception e) when (e is COMException or InvalidCastException) { return false; }
+    }
+
+    public static bool SwapOutput(ICollection<string> favorites) =>
+        NextOutput(Outputs(), favorites) is { } next && SetOutput(next.Id);
+
+    public static AudioDevice? NextOutput(IReadOnlyList<AudioDevice> all, ICollection<string> favorites)
+    {
+        var pool = all.Where(device => favorites.Contains(device.Id)).ToList();
+        if (pool.Count < 2) pool = [.. all];
+        if (pool.Count < 2) return null;
+        var current = pool.FindIndex(device => device.IsDefault);
+        return pool[(current + 1) % pool.Count];
     }
 
     public static string MicGlyph(AudioState? state) => state is { Muted: true } ? "" : "";

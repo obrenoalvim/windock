@@ -262,6 +262,16 @@ public sealed class RigdeckEditor : Window
             full.Click += (_, _) => step.Fullscreen = full.IsChecked == true;
             options.Children.Add(monitor);
             options.Children.Add(full);
+            if (step.Area is { Length: 4 } area)
+                options.Children.Add(new TextBlock
+                {
+                    Text = $"{Math.Round(area[2] * 100)}% × {Math.Round(area[3] * 100)}%",
+                    ToolTip = Loc.T("rigArea"),
+                    FontSize = 10,
+                    Foreground = Res<Brush>("Muted"),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(8, 0, 0, 0)
+                });
         }
 
         var tools = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) };
@@ -294,7 +304,7 @@ public sealed class RigdeckEditor : Window
     };
 
     static bool Placeable(RigStepSpec step) =>
-        step.Type == RigStep.Open && !step.Target.Contains("://") && !step.Target.StartsWith("shell:", StringComparison.OrdinalIgnoreCase);
+        step.Type == RigStep.Open && (step.Window is not null || !step.Target.Contains("://") && !step.Target.StartsWith("shell:", StringComparison.OrdinalIgnoreCase));
 
     static string MonitorText(RigStepSpec step) => step.Monitor is { } m ? Loc.F("rigMonitor", m + 1) : Loc.T("rigMonitorAny");
 

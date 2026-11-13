@@ -29,6 +29,7 @@ public sealed class WidgetSpec
     public const string Progress = "progress";
     public const string Activity = "activity";
     public const string Battery = "battery";
+    public const string Peripherals = "peripherals";
     public const string Claude = "claude";
     public const string Music = "music";
     public const string Network = "network";
@@ -39,6 +40,10 @@ public sealed class WidgetSpec
     public const string Rigdeck = "rigdeck";
     public const string Steam = "steam";
     public const string Epic = "epic";
+    public const string Gog = "gog";
+    public const string Ea = "ea";
+    public const string Ubisoft = "ubisoft";
+    public const string BattleNet = "battlenet";
     public const string Uninstall = "uninstall";
     public const string Convert = "convert";
     public const string Shelf = "shelf";
@@ -50,7 +55,7 @@ public sealed class WidgetSpec
 
     public static readonly string[] SingleSize = [Battery, Mic, Uninstall, Convert, Shelf, Cleanup];
 
-    public static readonly string[] Kinds = [Clock, Weather, Music, Claude, Pomodoro, Stopwatch, Timer, Countdown, Progress, Activity, Network, Battery, Mic, Note, Todo, Rigdeck, Steam, Epic, Uninstall, Convert, Shelf, Cleanup];
+    public static readonly string[] Kinds = [Clock, Weather, Music, Claude, Pomodoro, Stopwatch, Timer, Countdown, Progress, Activity, Network, Battery, Peripherals, Mic, Note, Todo, Rigdeck, Steam, Epic, Gog, Ea, Ubisoft, BattleNet, Uninstall, Convert, Shelf, Cleanup];
 
     public string Kind { get; set; } = Clock;
     public string? Label { get; set; }

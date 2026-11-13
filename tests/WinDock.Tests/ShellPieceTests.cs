@@ -48,6 +48,16 @@ public class ShellPieceTests
     }
 
     [Fact]
+    public void Ending_a_process_spares_the_shell_and_kills_the_rest()
+    {
+        var shell = new AppWindow(0, "Files", @"C:\Windows\explorer.exe", WindowTracker.ExplorerId, false);
+        Assert.Empty(WindowTracker.ProcessIds([shell]));
+        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("ping", "-n 60 127.0.0.1") { CreateNoWindow = true, UseShellExecute = false })!;
+        Assert.True(TrayApps.End([process.Id]));
+        Assert.True(process.WaitForExit(5000));
+    }
+
+    [Fact]
     public void Compact_faces_show_the_main_value()
     {
         var claude = (ClaudeWidget)WidgetTile.Create("k", new Models.WidgetSpec { Kind = Models.WidgetSpec.Claude });
