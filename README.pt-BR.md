@@ -41,7 +41,7 @@ Para remover: clique com o botão direito no dock, escolha **Sair** e apague o `
 
 1. Abra as configurações (botão direito no dock, ícone da bandeja ou `Ctrl+Alt+W`). O app abre em inglês: clique em **PT** no canto superior direito. A aba **Ambientes** tem um cartão por ambiente.
 2. Clique em **+ Programa** em um cartão e escolha apps, apps da Microsoft Store, jogos da Steam, Epic, GOG, EA, Ubisoft e Battle.net, ou uma **Pasta...** para empilhar no dock (a de Downloads é uma boa).
-3. Ligue os **widgets** que quiser naquele ambiente: relógio, clima, música, uso do Claude, Pomodoro, cronômetro, timer, contagem regressiva, progresso, atividade, velocidade da rede, bateria, microfone, nota, tarefas, RigDeck, jogos da Steam, jogos da Epic, jogos da GOG, jogos da EA, jogos da Ubisoft, jogos da Battle.net.
+3. Ligue os **widgets** que quiser naquele ambiente: relógio, clima, música, uso do Claude, Pomodoro, cronômetro, timer, contagem regressiva, progresso, atividade, velocidade da rede, bateria, bateria de periféricos, microfone, nota, tarefas, RigDeck, jogos da Steam, Epic, GOG, EA, Ubisoft e Battle.net, desinstalador, conversor, prateleira e limpeza.
 4. Em **Agenda**, escolha os dias e horários em que o ambiente fica ativo. Ou pule isso e troque na mão: role a roda do mouse sobre o dock, use `Ctrl+Alt+1..9` ou escolha no menu do dock (botão direito no vidro).
 
 Os programas do cartão **Sempre fixos** aparecem em todos os ambientes, antes dos outros.
@@ -50,7 +50,7 @@ Os programas do cartão **Sempre fixos** aparecem em todos os ambientes, antes d
 
 - **Lente de ampliação.** O ícone sob o ponteiro cresce a partir da base, passa da borda do vidro e empurra os vizinhos. Escolha o efeito (nenhum, escala, ampliação), a força, a largura da lente e o tamanho dos ícones na aba **Dock**.
 - **Apps abertos.** Um ponto sob o ícone indica app aberto; a barrinha colorida marca a janela da frente. Apps abertos que você não fixou aparecem depois de um divisor, então o dock também funciona como barra de tarefas. Um programa dividido em vários exes com o mesmo ícone (Google Play Games) ocupa um lugar só, e atalhos como o do Discord acendem o ícone que você fixou.
-- **Contador de não lidas.** Um número vermelho no ícone do WhatsApp, Teams, Email e de qualquer app que põe um contador na barra do Windows, e em janelas cujo título começa com um número, como "(3) WhatsApp" no navegador.
+- **Contador de não lidas.** Um número vermelho no ícone do WhatsApp, Teams, Email e de qualquer app que põe um contador na barra do Windows, e em janelas cujo título começa com um número, como "(3) WhatsApp" no navegador. Um app que pisca o botão na barra para pedir atenção ganha um ponto.
 - **Prévias ao vivo.** Pare o ponteiro num app aberto para ver cada janela dele ao vivo, com o botão de fechar.
 - **Pilhas de pastas.** Uma pasta fixada abre como uma grade com os arquivos mais novos. A de Downloads mostra quantos arquivos novos chegaram. Arraste um arquivo da pilha para qualquer app.
 - **Ambientes.** Cada um tem seus apps, widgets e cor. O dock muda de cor ao trocar, e um selo mostra o ambiente novo.
@@ -58,6 +58,9 @@ Os programas do cartão **Sempre fixos** aparecem em todos os ambientes, antes d
 - **Todas as telas.** Por padrão o dock aparece em cada monitor, ou só no que você escolher, e acompanha monitores que entram e saem. Com **Cada tela com seu próprio dock**, cada tela lista as janelas abertas nela e pode ficar em um ambiente próprio (gire a roda ou clique com o botão direito no dock daquela tela).
 - **O básico do Windows fica.** Quando a barra do Windows não está à vista (substituída, ou em ocultar automaticamente), o dock traz Iniciar, o status da internet (nome e sinal do Wi-Fi, Ethernet, sem internet), o volume, a bateria com tempo restante, o relógio e o calendário, os ícones da bandeja e mostrar área de trabalho. O Iniciar fica na ponta esquerda, como no Windows, e o resto junto na direita. Rede, som, microfone e bateria ficam numa pílula só, como no Windows 11; clique no microfone para mutar. O botão `^` lista os apps da bandeja, para abrir ou encerrar sem a barra do Windows.
 - **Som.** Role sobre o alto-falante para mudar o volume, clique do meio para silenciar, clique para um painel com o volume, cada dispositivo de saída para trocar com um clique (caixas, fones, monitor), o mixer e as configurações de som.
+- **Volume por app.** O mesmo painel tem um controle para cada app que toca som, mais os sons do sistema. Clique com o botão direito numa saída para favoritá-la; dois cliques no ícone do volume alternam entre os favoritos.
+- **Configurações rápidas.** Um painel com Wi-Fi, Bluetooth, luz noturna, não perturbe, projetar e brilho da tela, sem abrir as configurações do Windows.
+- **Visuais.** Estilos de ícone (original, placa, squircle, vidro, monocromático, duotone, cinza) e de widget (colorido, igual ao dock, cor do ambiente, grafite).
 - **Substituir a barra de tarefas** (opcional). A barra do Windows some de vez enquanto o WinDock roda. O botão `^` mostra a barra por um momento, com os ícones da bandeja.
 - **Seguro por padrão.** A barra de tarefas, o espaço reservado na tela e qualquer janela escondida voltam quando o WinDock fecha. Se o WinDock cair, um pequeno processo vigia devolve tudo.
 - **Reservar espaço na tela** para janelas maximizadas pararem acima do dock, ou **ocultar automaticamente** para ele sumir até o ponteiro encostar na borda de baixo.
@@ -71,7 +74,7 @@ Os programas do cartão **Sempre fixos** aparecem em todos os ambientes, antes d
 | Relógio | Hora e data | Abre o calendário e as notificações | Some quando o dock já mostra o relógio do Windows |
 | Clima | Temperatura e condição, azul de dia e anil à noite | Painel com sensação térmica, máxima e mínima e as próximas horas | Digite a cidade no card do ambiente, ou deixe vazio para usar a localização do Windows; dados do Open-Meteo |
 | Música | O que toca no Spotify, no navegador ou em qualquer player: quadrado, a capa; largo, a capa, título, artista e progresso com play e pausa, ou com todos os controles (como no PrimoDock), ou sobre a capa desfocada | Painel com todos os players com mídia, lado a lado, cada um com anterior, play e próxima | Some quando nada está tocando |
-| Uso do Claude | A sessão de 5 horas e a semana de 7 dias do seu plano do Claude | Painel com a renovação, o ritmo da semana e atualizar | Fica vermelho a partir de 90%; avisa em 80% e 95%; precisa do Claude Code logado no PC |
+| Uso do Claude | A sessão de 5 horas e a semana de 7 dias do seu plano do Claude | Painel com a renovação, o ritmo da semana, atualizar e as sessões abertas do Claude Code com o estado delas | Fica vermelho a partir de 90%; avisa em 80% e 95%; precisa do Claude Code logado no PC. Aviso opcional quando uma sessão espera por você ou termina (acrescenta quatro hooks ao `settings.json` do Claude Code; desliga no mesmo painel) |
 | Pomodoro | 25 min de foco, 5 de pausa, 15 a cada quatro | Inicia ou pausa | Conta os ciclos feitos hoje; botão direito zera; avisa no fim |
 | Cronômetro | Tempo decorrido | Inicia ou pausa | Botão direito zera |
 | Timer | Contagem regressiva com anel | Inicia ou pausa | Role para ajustar os minutos, que ficam salvos; avisa no fim |
@@ -80,6 +83,7 @@ Os programas do cartão **Sempre fixos** aparecem em todos os ambientes, antes d
 | Atividade | Uso de processador e memória | | |
 | Velocidade da rede | Download e upload agora | | |
 | Bateria | Carga, ou na tomada | | Tempo restante na dica |
+| Periféricos | Bateria de dispositivos Bluetooth e de mouses e teclados Logitech (pelo receptor) | Painel com a carga e o estado de carregamento de cada um | Avisa quando um está acabando |
 | Nota | Um recado curto que fica no dock; quadrada, um post-it com o texto | Abre um editor | Salva junto com o ambiente |
 | Microfone | Se o microfone está ligado | Muta ou desmuta | Fica vermelho quando mutado |
 | Tarefas | Quantas faltam e a próxima; quadrado, o número com um anel do que já foi feito | Painel para adicionar (digite e Enter), concluir e remover tarefas, e limpar as concluídas | Salvas junto com o ambiente |
@@ -87,6 +91,10 @@ Os programas do cartão **Sempre fixos** aparecem em todos os ambientes, antes d
 | Jogos da Steam | A logo da Steam e quantos jogos estão instalados | Painel com busca; clique num jogo para abrir | **Instalados** ou **Todos**: Todos lista também os jogos que você tem e não instalou (o clique instala; precisa dos detalhes dos jogos públicos na Steam) |
 | Jogos da Epic | A logo da Epic e quantos jogos estão instalados | Painel com busca; clique num jogo para abrir | Só os instalados, porque a Epic guarda o resto da biblioteca atrás do login |
 | Jogos da GOG, EA, Ubisoft e Battle.net | A logo do launcher e quantos jogos estão instalados | Painel com busca; clique num jogo para abrir | Só os instalados, lidos dos registros de cada launcher no registro do Windows. Mesmo painel da Steam e da Epic |
+| Desinstalador | Uma área para soltar | Solte apps do dock, atalhos ou arquivos nele | Acha cada programa no registro, na Loja ou na Steam e desinstala numa fila; as sobras vão para a Lixeira |
+| Conversor | Uma área para soltar | Solte imagens, vídeo, áudio ou documentos nele e escolha um formato | FFmpeg, LibreOffice e pdftotext fazem o trabalho numa fila com progresso; a cópia fica ao lado do original. Quem falta (FFmpeg ou LibreOffice) pode ser instalado com o winget |
+| Prateleira | Uma área para soltar, com os arquivos que guarda | Solte arquivos de qualquer pasta e arraste todos de uma vez, ou copie para colar com `Ctrl+V` | Os arquivos continuam onde estão |
+| Limpeza | Uma vassoura | Procura na Lixeira, arquivos temporários antigos, atalhos quebrados, dumps de falha, caches de navegador e de desenvolvimento e instaladores antigos em Downloads | Limpa só o que você marcar, depois de um segundo clique |
 
 **Quadrado ou largo, por widget.** Clique com o botão direito num widget da dock e escolha **Quadrado** ou **Largo**. O quadrado tem o tamanho de um ícone: o valor principal, um anel para progresso e timers, dois anéis para o Claude (a sessão de 5h por fora, a semana por dentro), a capa para a música. O largo mostra mais detalhes. A música tem três versões largas: **Largo, só pausa**, **Largo com controles** e **Capa de fundo**. Os widgets que você nunca ajustou seguem **Widgets quadrados por padrão**, na aba **Dock** (ligado por padrão; a nota fica larga, a não ser que você escolha quadrado). O card do ambiente também mostra o tamanho de cada widget.
 
@@ -108,7 +116,7 @@ Os widgets continuam rodando quando você troca de ambiente, então um Pomodoro 
 | Clique num app | Abre, traz a janela para a frente, ou minimiza se ela já está na frente. Várias janelas: mostra todas para escolher |
 | `Shift`+clique ou clique do meio | Abre outra janela |
 | `Ctrl`+clique | Mostra o programa no Explorador de Arquivos |
-| Botão direito num app | Nova janela, fixar ou desafixar (neste ambiente ou em todos), mostrar no Explorador, fechar janelas |
+| Botão direito num app | Nova janela, fixar ou desafixar (neste ambiente ou em todos), mostrar no Explorador, fechar janelas, encerrar processo |
 | Arrastar um ícone para o lado | Muda de lugar; arraste para cima e solte para tirar da dock (com **Desfazer**) |
 | Parar o ponteiro num app aberto | Prévia ao vivo das janelas |
 | Rolar a roda | Ambiente anterior ou próximo |
@@ -144,7 +152,7 @@ Os ambientes ficam em `%APPDATA%\WinDock\presets` como JSON, e as configuraçõe
 }
 ```
 
-`days` aceita `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. O `end` é exclusivo e `24:00` é meia-noite. Vale o primeiro ambiente (pelo nome do arquivo) que combinar com o horário. `target` é um `.exe`, `.lnk` ou pasta (variáveis de ambiente funcionam). Apps da Loja e jogos são salvos como um launcher (`target` mais `args`, `icon` e um `appId`), por exemplo `steam://rungameid/1243130`. Tipos de widget: `clock`, `weather` (`label` é a cidade), `music`, `claude`, `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `network`, `battery`, `mic`, `note` (`text` é a nota), `todo` (`text` guarda uma tarefa por linha, com `[x] ` na frente das concluídas), `rigdeck` (`text` guarda os atalhos em JSON, feitos no painel), `steam` (`text` com `all` lista também os jogos não instalados) e `epic`. `size` é `square` ou `wide` (a música aceita também `full` e `backdrop`); sem ele, vale o padrão. A `date` da contagem é `yyyy-MM-dd` para um dia fixo ou `MM-dd` para repetir todo ano.
+`days` aceita `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. O `end` é exclusivo e `24:00` é meia-noite. Vale o primeiro ambiente (pelo nome do arquivo) que combinar com o horário. `target` é um `.exe`, `.lnk` ou pasta (variáveis de ambiente funcionam). Apps da Loja e jogos são salvos como um launcher (`target` mais `args`, `icon` e um `appId`), por exemplo `steam://rungameid/1243130`. Tipos de widget: `clock`, `weather` (`label` é a cidade), `music`, `claude`, `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `network`, `battery`, `peripherals`, `mic`, `note` (`text` é a nota), `todo` (`text` guarda uma tarefa por linha, com `[x] ` na frente das concluídas), `rigdeck` (`text` guarda os atalhos em JSON, feitos no painel), `steam` (`text` com `all` lista também os jogos não instalados), `epic`, `gog`, `ea`, `ubisoft`, `battlenet`, `uninstall`, `convert`, `shelf` e `cleanup`. `size` é `square` ou `wide` (a música aceita também `full` e `backdrop`); sem ele, vale o padrão. A `date` da contagem é `yyyy-MM-dd` para um dia fixo ou `MM-dd` para repetir todo ano.
 
 ### O modo antigo da taskbar
 
@@ -168,7 +176,7 @@ Antes do dock, o WinDock trocava os apps fixados na barra de tarefas de verdade.
 
 **Ele procura atualizações?** A cada poucas horas ele pergunta ao GitHub (api.github.com) qual é a última versão, e só isso. Uma versão nova aparece no menu da bandeja e na aba **Dock** com um link para baixar; nada é baixado nem instalado sozinho. Desligue em **Avisar quando sair versão nova**.
 
-**Ele deixa o PC lento?** Parado, ele usa menos de 1% de um núcleo do processador e uns 170 MB de memória, a maior parte do runtime .NET que vem dentro do exe único. Ele ouve os eventos de janelas do Windows em vez de ficar consultando.
+**Ele deixa o PC lento?** Parado, ele usa uns 0,2% de um núcleo do processador e uns 230 MB de memória privada, a maior parte do runtime .NET que vem dentro do exe único (medido no Windows 11, veja `TODO PERFORMANCE.md`). Ele ouve os eventos de janelas do Windows em vez de ficar consultando.
 
 **Quais programas ele fixa?** Qualquer `.exe`, `.lnk` ou pasta, apps da Microsoft Store e jogos instalados da Steam, Epic, GOG, EA, Ubisoft e Battle.net. Um jogo aberto acende o ícone fixado dele.
 

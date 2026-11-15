@@ -41,7 +41,7 @@ To remove it: right-click the dock and pick **Exit**, then delete `WinDock.exe` 
 
 1. Open the settings (right-click the dock, the tray icon, or `Ctrl+Alt+W`). The **Environments** tab has one card per environment.
 2. Click **+ Program** on a card and pick apps, Microsoft Store apps, Steam, Epic, GOG, EA, Ubisoft and Battle.net games, or a **Folder...** to stack in the dock (Downloads is a good one).
-3. Turn on the **widgets** you want for that environment: clock, weather, music, Claude usage, Pomodoro, stopwatch, timer, countdown, progress, activity, network speed, battery, microphone, note, to-do, RigDeck, Steam games, Epic games, GOG games, EA games, Ubisoft games, Battle.net games.
+3. Turn on the **widgets** you want for that environment: clock, weather, music, Claude usage, Pomodoro, stopwatch, timer, countdown, progress, activity, network speed, battery, peripherals battery, microphone, note, to-do, RigDeck, Steam, Epic, GOG, EA, Ubisoft and Battle.net games, uninstaller, converter, shelf and cleanup.
 4. Under **Schedule**, pick the days and hours the environment is active. Or skip it and switch by hand: scroll the mouse wheel over the dock, press `Ctrl+Alt+1..9`, or pick one in the menu of the dock (right-click the glass).
 
 Programs in the **Always pinned** card show in every environment, before the others.
@@ -50,7 +50,7 @@ Programs in the **Always pinned** card show in every environment, before the oth
 
 - **Magnifying lens.** The icon under the pointer grows from its base, past the edge of the glass, and pushes its neighbors. Pick the effect (none, scale, magnify), the magnification, the lens width and the icon size in the **Dock** tab.
 - **Open apps.** A dot under an icon means the app is open; the colored bar marks the window in front. Apps you have open but did not pin show after a divider, so the dock also works as a taskbar. A program split over several exes with the same icon (Google Play Games) takes one slot, and shortcuts like Discord's light up the icon you pinned.
-- **Unread badges.** A red count on the icon of WhatsApp, Teams, Mail and any app that puts a badge on the Windows taskbar, and on windows whose title starts with a count, like "(3) WhatsApp" in the browser.
+- **Unread badges.** A red count on the icon of WhatsApp, Teams, Mail and any app that puts a badge on the Windows taskbar, and on windows whose title starts with a count, like "(3) WhatsApp" in the browser. An app that flashes its taskbar button to ask for attention gets a dot.
 - **Live previews.** Rest the pointer on an open app to see each of its windows live, with a close button.
 - **Folder stacks.** A pinned folder opens as a grid of its newest files. Downloads shows a badge with how many new files arrived. Drag a file out of the stack into any app.
 - **Environments.** Each one has its apps, widgets and accent color. The dock changes color when you switch, and a label shows the new environment.
@@ -58,6 +58,9 @@ Programs in the **Always pinned** card show in every environment, before the oth
 - **Every screen.** The dock shows on each monitor by default, or on the one you pick, and follows monitors as they come and go. With **Each screen has its own dock**, every screen lists the windows open on it and can sit on an environment of its own (scroll or right-click the dock of that screen).
 - **The Windows basics stay.** When the Windows taskbar is out of sight (replaced, or set to hide automatically), the dock brings Start, the internet status (Wi-Fi name and signal, Ethernet, no internet), the volume, the battery with time left, the clock and calendar, the tray icons and show desktop. Start sits at the left end, like on Windows, and the rest together at the right. Network, sound, microphone and battery share one pill like on Windows 11; click the microphone to mute it. The `^` button lists the apps of the tray, to open or quit them without the Windows taskbar.
 - **Sound.** Scroll on the speaker to change the volume, middle-click to mute, click for a panel with a volume slider, every output device to switch to with one click (speakers, headphones, monitor), the mixer and the sound settings.
+- **Volume per app.** The same panel has a slider for each app that plays sound, plus the system sounds. Right-click an output device to favorite it; double-click the volume icon to swap between favorites.
+- **Quick settings.** A panel for Wi-Fi, Bluetooth, night light, do not disturb, project and screen brightness, so you do not open the Windows settings for them.
+- **Looks.** Icon styles (original, plate, squircle, glass, monochrome, duotone, gray) and widget styles (colorful, match the dock, environment color, graphite).
 - **Replace the taskbar** (optional). The Windows taskbar hides for good while WinDock runs. The `^` button shows it for a moment, with its tray icons.
 - **Safe by design.** The taskbar, the reserved screen space and any hidden window come back when WinDock closes. If WinDock crashes, a small watchdog process puts everything back.
 - **Reserve screen space** so maximized windows stop above the dock, or **hide automatically** so it slides away until the pointer touches the bottom edge.
@@ -71,7 +74,7 @@ Programs in the **Always pinned** card show in every environment, before the oth
 | Clock | Time and date | Opens the calendar and notifications | Steps aside when the dock already shows the Windows clock |
 | Weather | Temperature and condition, blue by day and indigo at night | Panel with feels like, high and low, and the next hours | Type the city on the environment card, or leave it empty to use the Windows location; data from Open-Meteo |
 | Music | What plays in Spotify, the browser or any player: square, the cover; wide, the cover, title, artist and progress with play and pause, or with every control (like PrimoDock), or over the blurred cover | Panel with every player that has media, side by side, each with previous, play and next | Hides while nothing plays |
-| Claude usage | The 5-hour session and 7-day week of your Claude plan | Panel with the reset times, the weekly pace and a refresh | Turns red at 90%; notifies at 80% and 95%; needs Claude Code signed in on the PC |
+| Claude usage | The 5-hour session and 7-day week of your Claude plan | Panel with the reset times, the weekly pace, a refresh and the open Claude Code sessions with their state | Turns red at 90%; notifies at 80% and 95%; needs Claude Code signed in on the PC. Optional notice when a session waits for you or finishes (adds four hooks to the Claude Code `settings.json`; off in the same panel) |
 | Pomodoro | 25 min focus, 5 min break, 15 min every fourth | Start or pause | Counts the cycles done today; right-click to reset; notifies at the end |
 | Stopwatch | Elapsed time | Start or pause | Right-click to reset |
 | Timer | Countdown with a ring | Start or pause | Scroll to set the minutes, which are remembered; notifies at the end |
@@ -80,6 +83,7 @@ Programs in the **Always pinned** card show in every environment, before the oth
 | Activity | Processor and memory use | | |
 | Network speed | Download and upload right now | | |
 | Battery | Charge, or plugged in | | Time left in the tooltip |
+| Peripherals | Battery of Bluetooth devices and Logitech mice and keyboards (through their receiver) | Panel with the charge and charging state of each one | Notifies when one runs low |
 | Note | A short note that stays in the dock; square, a small post-it with the text | Opens an editor | Saved with the environment |
 | Microphone | Whether the microphone is on | Mutes or unmutes it | Red while muted |
 | To-do | How many tasks are left and the next one; square, the count with a ring of what is done | Panel to add (type and Enter), check off and remove tasks, and clear the done ones | Saved with the environment |
@@ -87,6 +91,10 @@ Programs in the **Always pinned** card show in every environment, before the oth
 | Steam games | The Steam logo and how many games are installed | Panel with a search box; click a game to launch it | **Installed** or **All**: All also lists the games you own but have not installed (click installs; needs your Steam game details public) |
 | Epic games | The Epic logo and how many games are installed | Panel with a search box; click a game to launch it | Installed games only, because Epic keeps the rest of the library behind its login |
 | GOG, EA, Ubisoft and Battle.net games | The launcher logo and how many games are installed | Panel with a search box; click a game to launch it | Installed games only, read from each launcher's records in the Windows registry. Same panel as Steam and Epic |
+| Uninstaller | A drop target | Drop dock apps, shortcuts or files on it | Finds each program in the registry, the Store or Steam and uninstalls it through a queue; the leftovers go to the Recycle Bin |
+| Converter | A drop target | Drop images, video, audio or documents on it and pick a format | FFmpeg, LibreOffice and pdftotext do the work in a queue with progress; the copy lands next to the original. Missing FFmpeg or LibreOffice can be installed with winget |
+| Shelf | A drop target with the files it holds | Drop files from any folder, then drag them all out at once or copy them to paste with `Ctrl+V` | The files stay where they are |
+| Cleanup | A broom | Scans the Recycle Bin, old temp files, dead shortcuts, crash dumps, browser and developer caches and old installers in Downloads | Cleans only what you pick, after a second click |
 
 **Square or wide, per widget.** Right-click a widget on the dock and pick **Square** or **Wide**. Square is the size of an icon: the main value, a ring for progress and timers, two rings for Claude (the 5-hour session outside, the week inside), the cover for music. Wide shows more detail. Music has three wide looks: **Wide, pause only**, **Wide with controls** and **Cover as background**. Widgets you never sized follow **Square widgets by default** in the **Dock** tab (on by default; the note stays wide unless you pick square). The environment card lists the size of each widget too.
 
@@ -108,7 +116,7 @@ Widgets keep running when you switch environments, so a Pomodoro started at work
 | Click an app | Open it, bring its window to the front, or minimize it if it is already in front. Several windows: shows them to pick one |
 | `Shift`+click or middle click | Open a new window |
 | `Ctrl`+click | Show the program in File Explorer |
-| Right-click an app | New window, pin or unpin (this environment or all), show in Explorer, close windows |
+| Right-click an app | New window, pin or unpin (this environment or all), show in Explorer, close windows, end process |
 | Drag an icon sideways | Move it; drag it up and let go to remove it (with **Undo**) |
 | Rest on an open app | Live preview of its windows |
 | Scroll the wheel | Switch to the previous or next environment |
@@ -144,7 +152,7 @@ Environments live in `%APPDATA%\WinDock\presets` as JSON, and the settings windo
 }
 ```
 
-`days` accepts `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. `end` is exclusive and `24:00` means midnight. The first environment (by file name) that matches the current time wins. `target` is an `.exe`, `.lnk` or folder (environment variables work). Store apps and games are saved as a launcher (`target` plus `args`, `icon` and an `appId`), for example `steam://rungameid/1243130`. Widget kinds: `clock`, `weather` (`label` is the city), `music`, `claude`, `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `network`, `battery`, `mic`, `note` (`text` is the note), `todo` (`text` holds one task per line, `[x] ` in front of the done ones), `rigdeck` (`text` holds its shortcuts as JSON, made in the panel), `steam` (`text` set to `all` also lists the games you have not installed) and `epic`. `size` is `square` or `wide` (music also takes `full` and `backdrop`); leave it out to follow the default. A countdown `date` is `yyyy-MM-dd` for a fixed day or `MM-dd` to repeat every year.
+`days` accepts `Mon-Fri`, `Sat,Sun`, `Fri-Mon`. `end` is exclusive and `24:00` means midnight. The first environment (by file name) that matches the current time wins. `target` is an `.exe`, `.lnk` or folder (environment variables work). Store apps and games are saved as a launcher (`target` plus `args`, `icon` and an `appId`), for example `steam://rungameid/1243130`. Widget kinds: `clock`, `weather` (`label` is the city), `music`, `claude`, `pomodoro`, `stopwatch`, `timer`, `countdown`, `progress`, `activity`, `network`, `battery`, `peripherals`, `mic`, `note` (`text` is the note), `todo` (`text` holds one task per line, `[x] ` in front of the done ones), `rigdeck` (`text` holds its shortcuts as JSON, made in the panel), `steam` (`text` set to `all` also lists the games you have not installed), `epic`, `gog`, `ea`, `ubisoft`, `battlenet`, `uninstall`, `convert`, `shelf` and `cleanup`. `size` is `square` or `wide` (music also takes `full` and `backdrop`); leave it out to follow the default. A countdown `date` is `yyyy-MM-dd` for a fixed day or `MM-dd` to repeat every year.
 
 ### The old taskbar mode
 
@@ -168,7 +176,7 @@ Before the dock, WinDock swapped the pinned apps of the real Windows taskbar. Th
 
 **Does it check for updates?** Every few hours it asks GitHub (api.github.com) for the tag of the latest release, and nothing else. A newer version shows in the tray menu and the **Dock** tab with a download link; nothing is downloaded or installed by itself. Turn it off with **Tell me when a new version is out**.
 
-**Does it slow the PC down?** At rest it uses under 1% of one processor core and around 170 MB of memory, most of it the .NET runtime packed inside the single exe. It listens to Windows window events instead of polling.
+**Does it slow the PC down?** At rest it uses about 0.2% of one processor core and around 230 MB of private memory, most of it the .NET runtime packed inside the single exe (measured on Windows 11, see `TODO PERFORMANCE.md`). It listens to Windows window events instead of polling.
 
 **Which programs can it pin?** Any `.exe`, `.lnk` or folder, Microsoft Store apps, and installed Steam, Epic, GOG, EA, Ubisoft and Battle.net games. A running game lights up its pinned icon.
 
